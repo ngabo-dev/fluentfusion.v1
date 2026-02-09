@@ -42,7 +42,7 @@ Given a user's learning history and performance, recommend the next 3-5 lessons 
 ```python
 user_features = {
     'user_id': str,
-    'user_type': ['tourist', 'tourism_worker'],
+    'user_type': ['tourist', 'Rwandan'],
     'target_language': ['kinyarwanda', 'english', 'french'],
     'joined_date': datetime,
     'total_lessons_completed': int,
@@ -223,6 +223,228 @@ class DataVisualizer:
 ---
 
 ## Model Architecture
+
+### Visual Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        FLUENTFUSION ML RECOMMENDATION ENGINE                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │                        INPUT LAYER                                       │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │   │
+│  │  │  User Data  │  │ Lesson Data │  │  Progress  │  │  Context   │    │   │
+│  │  │  (Features) │  │  (Features) │  │   Data     │  │   Data     │    │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                           │
+│                                    ▼                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │                    FEATURE ENGINEERING LAYER                            │   │
+│  │  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────┐ │   │
+│  │  │   User Embedding    │  │  Lesson Embedding   │  │ Interaction    │ │   │
+│  │  │     Generation      │  │    Generation       │  │    Matrix       │ │   │
+│  │  │  (User Features)    │  │ (Lesson Features)   │  │   Creation      │ │   │
+│  │  └─────────────────────┘  └─────────────────────┘  └─────────────────┘ │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                           │
+│                                    ▼                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │                   RECOMMENDATION ENGINE LAYERS                          │   │
+│  │                                                                          │   │
+│  │   ┌──────────────────────┐  ┌──────────────────────┐                    │   │
+│  │   │  Content-Based       │  │  Collaborative       │                    │   │
+│  │   │  Filtering           │  │  Filtering            │                    │   │
+│  │   │  (40% Weight)        │  │  (30% Weight)         │                    │   │
+│  │   │  ───────────────     │  │  ───────────────      │                    │   │
+│  │   │  • Cosine           │  │  • User Similarity    │                    │   │
+│  │   │    Similarity       │  │  • Matrix Factor.     │                    │   │
+│  │   │  • Lesson Features  │  │  • KNN Users          │                    │   │
+│  │   └──────────────────────┘  └──────────────────────┘                    │   │
+│  │                                    │                                     │   │
+│  │                                    ▼                                     │   │
+│  │   ┌────────────────────────────────────────────────────────────────┐      │   │
+│  │   │              SCORING & RANKING LAYER                         │      │   │
+│  │   │                                                                │      │   │
+│  │   │  Final Score = 0.4×Content + 0.3×Collab + 0.15×Popularity    │      │   │
+│  │   │                   + 0.15×Recency                              │      │   │
+│  │   └────────────────────────────────────────────────────────────────┘      │   │
+│  │                                    │                                     │   │
+│  │                                    ▼                                     │   │
+│  │   ┌────────────────────────────────────────────────────────────────┐      │   │
+│  │   │              RULE-BASED POST-PROCESSING                       │      │   │
+│  │   │                                                                │      │   │
+│  │   │  • Difficulty Progression Rules (avg_score >= 80)            │      │   │
+│  │   │  • Cold Start Handling (new users → beginner lessons)        │      │   │
+│  │   │  • Educational Constraints (appropriate scaffolding)          │      │   │
+│  │   └────────────────────────────────────────────────────────────────┘      │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                           │
+│                                    ▼                                           │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │                         OUTPUT LAYER                                   │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐  │   │
+│  │  │  Personalized Lesson Recommendations (Top 3-5 lessons)        │  │   │
+│  │  │  • Lesson ID  • Title  • Difficulty  • Category  • Confidence │  │   │
+│  │  └─────────────────────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Neural Network Architecture (TensorFlow/Keras)
+
+For future deep learning enhancement, the system includes a neural collaborative filtering model:
+
+```python
+import tensorflow as tf
+from tensorflow.keras import layers, Model, Input
+from tensorflow.keras.layers import Embedding, Concatenate, Dense, Dropout, Flatten
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+
+class NeuralRecommender(Model):
+    """
+    Deep learning model for lesson recommendations
+    Architecture: Neural Collaborative Filtering with Embeddings
+    
+    Input: User ID, Lesson ID, User Features, Lesson Features
+    Output: Probability of lesson completion (0-1)
+    """
+    
+    def __init__(self, num_users, num_lessons, embedding_dim=50, 
+                 user_feature_dim=20, lesson_feature_dim=20):
+        super(NeuralRecommender, self).__init__()
+        
+        # Hyperparameters
+        self.embedding_dim = embedding_dim
+        
+        # ===== EMBEDDING LAYERS =====
+        # User embedding for collaborative filtering
+        self.user_embedding = Embedding(
+            input_dim=num_users, 
+            output_dim=embedding_dim,
+            embeddings_initializer='glorot_uniform',
+            name='user_embedding'
+        )
+        
+        # Lesson embedding for collaborative filtering
+        self.lesson_embedding = Embedding(
+            input_dim=num_lessons, 
+            output_dim=embedding_dim,
+            embeddings_initializer='glorot_uniform',
+            name='lesson_embedding'
+        )
+        
+        # ===== DENSE FEATURE LAYERS =====
+        # User feature processing
+        self.user_dense1 = Dense(64, activation='relu', name='user_dense1')
+        self.user_dense2 = Dense(32, activation='relu', name='user_dense2')
+        self.user_dropout = Dropout(0.3, name='user_dropout')
+        
+        # Lesson feature processing
+        self.lesson_dense1 = Dense(64, activation='relu', name='lesson_dense1')
+        self.lesson_dense2 = Dense(32, activation='relu', name='lesson_dense2')
+        self.lesson_dropout = Dropout(0.3, name='lesson_dropout')
+        
+        # ===== FUSION LAYERS =====
+        # Concatenate all features
+        self.concat = Concatenate(name='feature_concat')
+        
+        # Shared dense layers
+        self.shared_dense1 = Dense(128, activation='relu', name='shared_dense1')
+        self.dropout1 = Dropout(0.4, name='dropout1')
+        self.shared_dense2 = Dense(64, activation='relu', name='shared_dense2')
+        self.dropout2 = Dropout(0.3, name='dropout2')
+        self.shared_dense3 = Dense(32, activation='relu', name='shared_dense3')
+        
+        # ===== OUTPUT LAYER =====
+        # Final prediction layer
+        self.output_layer = Dense(1, activation='sigmoid', name='output')
+    
+    def call(self, inputs, training=False):
+        """
+        Forward pass through the network
+        
+        Args:
+            inputs: [user_id, lesson_id, user_features, lesson_features]
+            training: Boolean for dropout regularization
+            
+        Returns:
+            Probability of lesson completion
+        """
+        user_id, lesson_id, user_features, lesson_features = inputs
+        
+        # Get embeddings
+        user_vec = Flatten()(self.user_embedding(user_id))
+        lesson_vec = Flatten()(self.lesson_embedding(lesson_id))
+        
+        # Process dense features
+        user_feat = self.user_dropout(
+            self.user_dense2(self.user_dense1(user_features)), 
+            training=training
+        )
+        lesson_feat = self.lesson_dropout(
+            self.lesson_dense2(self.lesson_dense1(lesson_features)), 
+            training=training
+        )
+        
+        # Concatenate all representations
+        concat_features = self.concat([user_vec, lesson_vec, user_feat, lesson_feat])
+        
+        # Shared dense layers with residual connections
+        x = self.dropout1(self.shared_dense1(concat_features), training=training)
+        x = self.dropout2(self.shared_dense2(x), training=training)
+        x = self.shared_dense3(x)
+        
+        # Output prediction
+        output = self.output_layer(x)
+        
+        return output
+    
+    def get_config(self):
+        return {
+            'embedding_dim': self.embedding_dim,
+            'num_users': self.user_embedding.input_dim,
+            'num_lessons': self.lesson_embedding.input_dim
+        }
+
+
+# ===== MODEL COMPILATION =====
+# Optimizer configuration
+optimizer = Adam(
+    learning_rate=0.001,
+    beta_1=0.9,
+    beta_2=0.999,
+    epsilon=1e-07,
+    amsgrad=False
+)
+
+# Loss function for binary classification
+model.compile(
+    optimizer=optimizer,
+    loss='binary_crossentropy',
+    metrics=['accuracy', 'Precision', 'Recall', 'AUC']
+)
+
+# Callbacks for training optimization
+callbacks = [
+    EarlyStopping(
+        monitor='val_loss',
+        patience=10,
+        restore_best_weights=True,
+        verbose=1
+    ),
+    ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=5,
+        min_lr=1e-6,
+        verbose=1
+    )
+]
+```
 
 ### Hybrid Recommendation System
 
@@ -598,6 +820,292 @@ def plot_confusion_matrix():
 ---
 
 ## Deployment
+
+### API Documentation (Swagger UI Mockup)
+
+```yaml
+openapi: 3.0.3
+info:
+  title: FluentFusion ML Recommendation API
+  description: |
+    AI-powered lesson recommendation API for FluentFusion Language Learning Platform
+    
+    **Features:**
+    - Personalized lesson recommendations
+    - Learning analytics and metrics
+    - User progress tracking
+    - Cold-start recommendation handling
+  version: 1.0.0
+  contact:
+    name: FluentFusion Development Team
+    email: dev@fluentfusion.rw
+
+servers:
+  - url: https://api.fluentfusion.rw/v1
+    description: Production server
+  - url: http://localhost:8000/v1
+    description: Local development server
+
+tags:
+  - name: Recommendations
+    description: ML-powered lesson recommendations
+  - name: Analytics
+    description: Learning performance analytics
+  - name: Users
+    description: User management and progress
+
+paths:
+  /recommendations:
+    get:
+      tags:
+        - Recommendations
+      summary: Get personalized lesson recommendations
+      description: |
+        Generates personalized lesson recommendations based on user's learning history,
+        performance metrics, and educational constraints.
+      operationId: getRecommendations
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+          description: Unique identifier for the user
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+            default: 5
+          description: Number of recommendations to return
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced, any]
+            default: any
+          description: Filter by difficulty level
+      responses:
+        '200':
+          description: Successful recommendation response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user_id:
+                    type: string
+                    format: uuid
+                  recommendations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        lesson_id:
+                          type: string
+                          example: "lesson_001"
+                        title:
+                          type: string
+                          example: "Greetings and Introductions"
+                        difficulty:
+                          type: string
+                          example: "beginner"
+                        category:
+                          type: string
+                          example: "greetings"
+                        confidence_score:
+                          type: number
+                          format: float
+                          minimum: 0
+                          maximum: 1
+                          example: 0.85
+                        rationale:
+                          type: string
+                          example: "Based on your progress, this lesson matches your learning pace"
+                  generated_at:
+                    type: string
+                    format: date-time
+                    example: "2026-01-15T10:30:00Z"
+              example:
+                success: true
+                user_id: "550e8400-e29b-41d4-a716-446655440000"
+                recommendations:
+                  - lesson_id: "lesson_001"
+                    title: "Greetings and Introductions"
+                    difficulty: "beginner"
+                    category: "greetings"
+                    confidence_score: 0.85
+                    rationale: "Based on your progress, this lesson matches your learning pace"
+                  - lesson_id: "lesson_002"
+                    title: "Ordering at a Restaurant"
+                    difficulty: "beginner"
+                    category: "food"
+                    confidence_score: 0.78
+                    rationale: "Popular among learners with similar profiles"
+                  - lesson_id: "lesson_003"
+                    title: "Hotel Check-in Procedures"
+                    difficulty: "intermediate"
+                    category: "accommodation"
+                    confidence_score: 0.72
+                    rationale: "Next step in your learning progression"
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Unauthorized - Invalid or missing API key
+        '404':
+          description: User not found
+        
+  /analytics/performance:
+    get:
+      tags:
+        - Analytics
+      summary: Get user learning performance metrics
+      description: Retrieves detailed performance metrics for a user including accuracy, learning velocity, and error patterns.
+      operationId: getPerformanceMetrics
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Performance metrics response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  overall_accuracy:
+                    type: number
+                    format: float
+                  precision:
+                    type: number
+                    format: float
+                  recall:
+                    type: number
+                    format: float
+                  f1_score:
+                    type: number
+                    format: float
+                  learning_velocity:
+                    type: number
+                    format: float
+                  recommended_lessons_completed:
+                    type: integer
+                  average_score:
+                    type: number
+                    format: float
+        
+  /model/info:
+    get:
+      tags:
+        - Recommendations
+      summary: Get ML model information
+      description: Returns information about the recommendation model version, architecture, and performance metrics.
+      operationId: getModelInfo
+      responses:
+        '200':
+          description: Model information response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  model_name:
+                    type: string
+                    example: "FluentFusion-Hybrid-Recommender"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  architecture:
+                    type: string
+                    example: "Hybrid (Content-Based + Collaborative + Rule-Based)"
+                  metrics:
+                    type: object
+                    properties:
+                      precision_at_k:
+                        type: number
+                        example: 0.85
+                      recall_at_k:
+                        type: number
+                        example: 0.72
+                      ndcg_at_k:
+                        type: number
+                        example: 0.88
+                      map:
+                        type: number
+                        example: 0.80
+                  last_updated:
+                    type: string
+                    format: date-time
+```
+
+### Web Interface Mockup
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  FLUENTFUSION - AI Language Learning Platform                                  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│  Dashboard  |  Lessons  |  Progress  |  Recommendations  |  Profile          │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐   │
+│  │                    YOUR RECOMMENDATIONS                                 │   │
+│  │                                                                         │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐    │   │
+│  │  │  🎯 Recommended for You                                         │    │   │
+│  │  │                                                                 │    │   │
+│  │  │  📚 Greetings and Introductions                                  │    │   │
+│  │  │     Difficulty: Beginner  |  Category: Greetings                  │    │   │
+│  │  │     Confidence: 85%  |  Duration: 15 min                       │    │   │
+│  │  │                                                                 │    │   │
+│  │  │  [Start Lesson]  [Add to Queue]  [View Details]                 │    │   │
+│  │  └─────────────────────────────────────────────────────────────────┘    │   │
+│  │                                                                         │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐    │   │
+│  │  │  🎯 Recommended for You                                         │    │   │
+│  │  │                                                                 │    │   │
+│  │  │  📚 Ordering at a Restaurant                                    │    │   │
+│  │  │     Difficulty: Beginner  |  Category: Food                       │    │   │
+│  │  │     Confidence: 78%  |  Duration: 20 min                        │    │   │
+│  │  │                                                                 │    │   │
+│  │  │  [Start Lesson]  [Add to Queue]  [View Details]                 │    │   │
+│  │  └─────────────────────────────────────────────────────────────────┘    │   │
+│  │                                                                         │   │
+│  │  ┌─────────────────────────────────────────────────────────────────┐    │   │
+│  │  │  🎯 Recommended for You                                         │    │   │
+│  │  │                                                                 │    │   │
+│  │  │  📚 Hotel Check-in Procedures                                   │    │   │
+│  │  │     Difficulty: Intermediate  |  Category: Accommodation          │    │   │
+│  │  │     Confidence: 72%  |  Duration: 25 min                       │    │   │
+│  │  │                                                                 │    │   │
+│  │  │  [Start Lesson]  [Add to Queue]  [View Details]                 │    │   │
+│  │  └─────────────────────────────────────────────────────────────────┘    │   │
+│  │                                                                         │   │
+│  │  [View All Recommendations →]                                          │   │
+│  └─────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                 │
+│  ┌────────────────────────────┐  ┌──────────────────────────────────────────┐ │
+│  │   Your Progress           │  │   ML Model Performance                  │ │
+│  │                           │  │                                          │ │
+│  │   📊 Lessons Completed: 12 │  │   🎯 Precision@3: 85%                    │ │
+│  │   ⭐ Average Score: 82%   │  │   📈 Recall@3: 72%                       │ │
+│  │   ⏱️ Time Spent: 4.5 hrs  │  │   📊 NDCG@5: 88%                         │ │
+│  │   🔥 Streak: 7 days       │  │   ✅ Recommendations Accepted: 82%      │ │
+│  └────────────────────────────┘  └──────────────────────────────────────────┘ │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ### Integration with Web Application
 
