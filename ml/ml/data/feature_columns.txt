@@ -1,0 +1,9 @@
+avg_score
+lessons_completed
+learning_velocity
+user_type_encoded
+target_language_encoded
+difficulty_num
+category_encoded
+avg_completion_score
+total_completions

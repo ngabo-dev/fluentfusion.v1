@@ -1,0 +1,18 @@
+{
+  "accuracy": 0.6512245144166968,
+  "precision": 0.6693468985887758,
+  "recall": 0.8232088799192735,
+  "f1_score": 0.7383473617521947,
+  "auc_roc": 0.6801496007559336,
+  "training_time_seconds": 384.1564371585846,
+  "epochs_trained": 88,
+  "model_architecture": "Neural Collaborative Filtering",
+  "embedding_dim": 64,
+  "hidden_dims": [
+    128,
+    64,
+    32
+  ],
+  "dropout_rate": 0.3,
+  "learning_rate": 0.001
+}
