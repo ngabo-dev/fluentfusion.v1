@@ -10,7 +10,7 @@ The application features tourism-specific content including lessons on greetings
 
 ## 🔗 Links
 
-- **Live Demo**: [FluentFusion Demo](https://fluentfusion.vercel.app)
+- **Live Demo**: [FluentFusion App](https://fluentfusionv1-begstr3qu-jean-pierre-niyongabos-projects.vercel.app)
 - **GitHub Repository**: [https://github.com/ngabo-dev/fluentfusion.v1](https://github.com/ngabo-dev/fluentfusion.v1)
 - **Video Demonstration**: [Watch Demo](https://youtu.be/w1l2uGi9vOs)
 
