@@ -157,6 +157,7 @@ Thumbs.db
 # Backend specific
 backend/fluentfusion.db
 backend/venv/
+backend/.env
 *.sqlite3
 
 # Frontend specific

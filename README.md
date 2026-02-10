@@ -10,8 +10,8 @@ The application features tourism-specific content including lessons on greetings
 
 ## 🔗 Links
 
-- **Live Demo**: [FluentFusion Demo](https://your-deployment-url.com)
-- **GitHub Repository**: https://github.com/yourusername/fluentfusion
+- **Live Demo**: [FluentFusion Demo](https://fluentfusion.vercel.app)
+- **GitHub Repository**: [https://github.com/ngabo-dev/fluentfusion.v1](https://github.com/ngabo-dev/fluentfusion.v1)
 - **Video Demonstration**: [Watch Demo](https://your-video-link.com)
 
 ## 🎯 Key Features
@@ -38,14 +38,12 @@ The application features tourism-specific content including lessons on greetings
 - **User Profile Management**: Edit profile, change learning preferences
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 
-#### Tourism-Specific Content
-1. **Essential Greetings & Courtesies** (Beginner)
-2. **Hotel & Accommodation Essentials** (Beginner)
-3. **Restaurant & Food Ordering** (Beginner)
-4. **Transportation & Directions** (Intermediate)
-5. **Shopping at Markets** (Intermediate)
-6. **Emergency Phrases** (Beginner)
-7. **English Basics for Tourism Workers** (Beginner)
+#### Backend (FastAPI + PostgreSQL)
+- **RESTful API**: Complete API with endpoints for lessons, exercises, users, progress, and recommendations
+- **PostgreSQL Database**: Aiven PostgreSQL for production, SQLite for local development
+- **Redis Caching**: Session management and caching for improved performance
+- **JWT Authentication**: Secure token-based authentication
+- **SQLAlchemy ORM**: Database operations with type safety
 
 #### ML/AI Components
 - **Recommendation Engine**: Rule-based collaborative filtering algorithm that:
@@ -55,6 +53,74 @@ The application features tourism-specific content including lessons on greetings
   - Provides confidence scores for recommendations
 - **Performance Analytics**: Data visualization and progress tracking
 - **Chatbot AI**: Context-aware conversational responses
+
+## 🎨 Designs
+
+### Figma Mockups
+The application designs are available in the [`Designs/`](Designs/) folder:
+
+| Screenshot | Description |
+|------------|-------------|
+| [`Designs/Pasted image (1).png`] | Landing Page - Hero section with call-to-action |
+| [`Designs/Pasted image (2).png`] | Dashboard - User overview with recommendations |
+| [`Designs/Pasted image (3).png`] | Lesson Viewer - Vocabulary and phrases |
+| [`Designs/Pasted image (4).png`] | Progress Tracker - Analytics charts |
+| [`Designs/Pasted image (5).png`] | Chatbot Interface - AI conversation |
+| [`Designs/Pasted image (6).png`] | Profile Page - User settings |
+| [`Designs/Pasted image (7).png`] | Login/Register - Authentication flow |
+| [`Designs/Pasted image (8).png`] | Mobile View - Responsive design |
+| [`Designs/Pasted image (9).png`] | Badge System - Achievement display |
+| [`Designs/Pasted image (10).png`] | Exercise Types - Multiple choice |
+| [`Designs/Pasted image (11).png`] | Exercise Types - Fill in the blank |
+| [`Designs/Pasted image (12).png`] | Navigation - Sidebar menu |
+
+### System Architecture
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Vercel CDN    │────▶│   FastAPI       │────▶│   Aiven         │
+│   Frontend      │     │   Backend       │     │   PostgreSQL    │
+│   (React + TS)  │     │   (Python)      │     │   Database      │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   Aiven Redis   │
+                       │   (Caching)     │
+                       └─────────────────┘
+```
+
+## 🚀 Deployment
+
+### Production Deployment
+
+#### Frontend (Vercel/Netlify)
+1. Connect your GitHub repository to Vercel
+2. Vercel auto-detects React + Vite configuration
+3. Deploy with zero configuration
+
+**Quick Deploy:**
+```bash
+npm i -g vercel
+vercel
+```
+
+#### Backend (Railway/Fly.io/AWS)
+**Aiven PostgreSQL:**
+- Create an Aiven PostgreSQL service at [aiven.io](https://aiven.io)
+- Get your connection string from the Aiven console
+- Set `DATABASE_URL` environment variable
+
+**Environment Variables:**
+```env
+DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
+REDIS_URL=redis://:password@host:port
+SECRET_KEY=your-secret-key-change-in-production
+HOST=0.0.0.0
+PORT=8000
+CORS_ORIGINS=http://localhost:5173,https://your-domain.com
+```
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🛠️ Technology Stack
 
@@ -68,7 +134,7 @@ The application features tourism-specific content including lessons on greetings
 - **Icons**: Lucide React 0.487.0
 - **Routing**: Client-side navigation
 
-### Backend (Code Structure Provided)
+### Backend
 - **Framework**: Python FastAPI
 - **Authentication**: JWT tokens
 - **Database**: PostgreSQL with SQLAlchemy ORM
@@ -84,47 +150,74 @@ The application features tourism-specific content including lessons on greetings
 ## 📦 Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - pnpm (or npm)
+- Python 3.12+
 - Git
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/yourusername/fluentfusion.git
-cd fluentfusion
+git clone https://github.com/ngabo-dev/fluentfusion.v1.git
+cd fluentfusion.v1
 ```
 
-### Step 2: Install Dependencies
+### Step 2: Frontend Setup
 ```bash
-# Using pnpm (recommended)
+# Navigate to project root
+cd fluentfusion.v1
+
+# Install dependencies
 pnpm install
 
 # Or using npm
 npm install
-```
 
-### Step 3: Environment Setup
-No environment variables needed for the frontend MVP. The application uses localStorage for data persistence.
-
-### Step 4: Run Development Server
-```bash
-# Using pnpm
+# Start development server
 pnpm dev
 
-# Or using npm
-npm run dev
-```
-
-The application will be available at `http://localhost:5173`
-
-### Step 5: Build for Production
-```bash
-# Using pnpm
+# Build for production
 pnpm build
-
-# Or using npm
-npm run build
 ```
+The frontend will be available at `http://localhost:5173`
+
+### Step 3: Backend Setup
+```bash
+cd backend
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# or
+.venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+# Copy .env.example to .env and fill in your credentials
+cp .env.example .env
+
+# Start development server
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+The backend API will be available at `http://localhost:8000`
+
+### Step 4: Database Setup
+```bash
+cd backend
+
+# For SQLite (default - no setup needed)
+python seed.py
+
+# For PostgreSQL (Aiven)
+# Update .env with your DATABASE_URL
+python seed.py
+```
+
+### Step 5: Access the Application
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
 
 ## 👤 Demo Credentials
 
@@ -134,16 +227,20 @@ To quickly test the application, use these demo credentials:
 - Email: `tourist@demo.com`
 - Password: `demo123`
 
+**Tourism Worker Account:**
+- Email: `worker@demo.com`
+- Password: `demo123`
+
 Or create your own account by clicking "Sign Up" on the landing page.
 
 ## 📱 Application Structure
 
 ```
-fluentfusion/
+fluentfusion.v1/
 ├── src/
 │   ├── app/
 │   │   ├── components/
-│   │   │   ├── ui/                    # Reusable UI components
+│   │   │   ├── ui/                    # Reusable UI components (shadcn/ui)
 │   │   │   ├── LandingPage.tsx        # Landing/marketing page
 │   │   │   ├── LoginPage.tsx          # User login
 │   │   │   ├── RegisterPage.tsx       # User registration
@@ -156,253 +253,18 @@ fluentfusion/
 │   │   │   └── Navigation.tsx         # Main navigation component
 │   │   ├── data/
 │   │   │   └── mockData.ts            # Lesson content and badges
+│   │   ├── services/
+│   │   │   └── api.ts                 # API client for backend communication
 │   │   ├── types.ts                   # TypeScript type definitions
-│   │   └── App.tsx                    # Main application component
+│   │   └── App.tsx                   # Main application component
 │   ├── styles/
 │   │   ├── index.css                  # Global styles
 │   │   ├── tailwind.css               # Tailwind config
 │   │   └── theme.css                  # Theme tokens
 │   └── main.tsx                       # Application entry point
-├── backend/                           # Backend code structure (see BACKEND.md)
-├── ml/                                # ML notebooks (see ML_NOTEBOOK.md)
-├── docs/
-│   ├── DEPLOYMENT.md                  # Deployment guide
-│   ├── BACKEND.md                     # Backend implementation guide
-│   ├── ML_NOTEBOOK.md                 # ML model documentation
-│   └── API_DOCUMENTATION.md           # API endpoints
-├── README.md                          # This file
-└── package.json                       # Dependencies
-```
-
-## 🎨 Design System
-
-### Color Palette
-- **Primary Blue**: `#3B82F6` - Main brand color
-- **Green**: `#10B981` - Success states, beginner lessons
-- **Yellow**: `#F59E0B` - Intermediate lessons, warnings
-- **Red**: `#EF4444` - Advanced lessons, errors
-- **Purple**: `#8B5CF6` - AI features, premium content
-- **Gray Scale**: `#F9FAFB` to `#111827` - UI elements
-
-### Typography
-- Headings: System font stack
-- Body: System font stack
-- Monospace: For code/IDs
-
-### Components
-All UI components are built with Radix UI primitives and styled with Tailwind CSS for consistency and accessibility.
-
-## 🧪 Testing the Application
-
-### Manual Testing Checklist
-
-#### Authentication Flow
-- [ ] Register new user (tourist)
-- [ ] Register new user (tourism worker)
-- [ ] Login with existing credentials
-- [ ] Logout functionality
-
-#### Lesson Flow
-- [ ] Browse lessons with filters
-- [ ] View lesson vocabulary
-- [ ] Read phrases and cultural notes
-- [ ] Complete exercises (multiple choice, fill-blank, matching)
-- [ ] Receive immediate feedback
-- [ ] Complete full lesson
-- [ ] View completion summary
-
-#### Progress Tracking
-- [ ] View completion statistics
-- [ ] Check score progression chart
-- [ ] View lessons by category chart
-- [ ] Earn badges
-- [ ] View recent activity
-
-#### AI Features
-- [ ] Receive personalized recommendations
-- [ ] Chat with AI tutor
-- [ ] Get contextual responses
-
-#### Profile Management
-- [ ] Edit username
-- [ ] Change email
-- [ ] Update user type
-- [ ] Change target language
-
-## 📊 Data Storage
-
-The MVP uses browser localStorage for data persistence:
-- **currentUser**: Currently logged-in user data
-- **users**: Array of all registered users
-- **userProgress**: Array of all lesson completion records
-
-## 🚀 Deployment
-
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions to:
-- Vercel (Frontend)
-- Netlify (Frontend alternative)
-- Railway (Backend when implemented)
-- AWS (Full stack deployment)
-
-Quick deployment to Vercel:
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
-
-## 🤖 ML/AI Implementation
-
-### Recommendation Engine Algorithm
-
-The recommendation system uses a hybrid approach:
-
-1. **Content-Based Filtering**:
-   - Analyzes lesson difficulty
-   - Considers user's current level
-   - Matches by category relevance
-
-2. **Performance-Based Recommendations**:
-   ```python
-   if average_score >= 80:
-       recommend(same_difficulty_or_higher)
-       confidence = 0.85
-   else:
-       recommend(same_difficulty)
-       confidence = 0.75
-   ```
-
-3. **Cold Start Handling**:
-   - New users get beginner lessons
-   - First recommendation has 90% confidence
-
-### Future ML Enhancements
-- Speech recognition for pronunciation
-- NLP for chatbot improvement
-- Deep learning for personalized learning paths
-- Spaced repetition algorithm
-
-See [ML_NOTEBOOK.md](ml/ML_NOTEBOOK.md) for detailed ML implementation.
-
-## 📈 Performance Metrics
-
-### Recommendation System Performance
-- **Cold Start Accuracy**: 90% (beginners get appropriate lessons)
-- **Recommendation Relevance**: 85% (users complete recommended lessons)
-- **Confidence Scoring**: 75-90% range based on user history
-
-### Application Performance
-- **Initial Load**: < 2 seconds
-- **Page Navigation**: < 100ms (client-side)
-- **Exercise Feedback**: Instant
-- **Chart Rendering**: < 500ms
-
-## 🎓 Educational Content
-
-### Lesson Statistics
-- **Total Lessons**: 7 comprehensive lessons
-- **Total Vocabulary**: 105+ words
-- **Total Phrases**: 40+ practical phrases
-- **Exercises**: 19 interactive exercises
-- **Cultural Notes**: 20+ cultural insights
-
-### Learning Outcomes
-After completing all lessons, users can:
-- Greet and introduce themselves
-- Navigate hotels and accommodations
-- Order food at restaurants
-- Use transportation and ask directions
-- Shop at local markets
-- Handle emergency situations
-
-## 🔐 Security Considerations
-
-Current MVP security:
-- Passwords stored in localStorage (for demo only)
-- Client-side validation
-- No sensitive data collection
-
-Production recommendations:
-- JWT authentication with httpOnly cookies
-- Password hashing (bcrypt)
-- HTTPS enforcement
-- Rate limiting
-- Input sanitization
-- CORS configuration
-
-## 🌐 Browser Support
-
-- Chrome/Edge: 90+
-- Firefox: 88+
-- Safari: 14+
-- Mobile browsers: iOS 14+, Android 10+
-
-## 🤝 Contributing
-
-This is a capstone project, but suggestions are welcome:
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
-## 📄 License
-
-This project is created as part of a BSc Software Engineering capstone project.
-
-## 👨‍💻 Author
-
-**[Your Name]**
-- Email: your.email@example.com
-- University: [Your University]
-- Program: BSc Software Engineering
-- Year: 2026
-
-## 🙏 Acknowledgments
-
-- **Supervisor**: [Supervisor Name]
-- **Rwanda Tourism Board**: For inspiration and context
-- **Open Source Community**: For excellent tools and libraries
-- **Rwandan Language Consultants**: For accurate translations and cultural notes
-
-## 📞 Support
-
-For questions or issues:
-- Create an issue on GitHub
-- Email: your.email@example.com
-- Documentation: See `/docs` folder
-
-## 🗺️ Roadmap
-
-### Phase 2 Features
-- [ ] Backend API implementation
-- [ ] Real database integration
-- [ ] Audio pronunciation playback
-- [ ] Speech recognition
-- [ ] Video lessons
-- [ ] Mobile app (React Native)
-- [ ] Offline mode
-- [ ] Social features (study groups)
-- [ ] Gamification enhancements
-- [ ] More language pairs
-- [ ] Admin dashboard
-- [ ] Content management system
-
-## 📝 Version History
-
-- **v1.0.0** (February 2026) - Initial MVP release
-  - Complete frontend application
-  - 7 tourism-focused lessons
-  - AI-powered recommendations
-  - Progress tracking and analytics
-  - Interactive chatbot
-  - Responsive design
-
----
-
-**Built with ❤️ for Rwanda's Tourism Sector**
-
-*Empowering communication, one phrase at a time.*
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                    # FastAPI application entry point
+│   │   ├── database.py               # Database connection and configuration
+│   │   ├── models.py                 #
