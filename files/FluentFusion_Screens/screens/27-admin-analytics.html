@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>9.3 Admin · Analytics — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.bar-chart-row{display:flex;align-items:flex-end;gap:10px;height:120px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.bar-body{width:100%;border-radius:4px 4px 0 0;}
+.bar-lbl{font-size:11px;color:var(--muted);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-12"><span class="badge badge-danger">🛡 Admin</span><div class="avatar avatar-sm">AD</div></div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-section">Admin Panel</div>
+    <a class="sidebar-item" href="#"><span>👥</span> Users</a>
+    <a class="sidebar-item" href="#"><span>📚</span> Course Approval</a>
+    <a class="sidebar-item active" href="#"><span>📊</span> Analytics</a>
+    <a class="sidebar-item" href="#"><span>📋</span> Reports</a>
+    <a class="sidebar-item" href="#"><span>🚩</span> Moderation</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> System Settings</a>
+  </aside>
+  <main class="main">
+    <div class="flex items-center justify-between mb-24">
+      <div class="page-hdr" style="margin:0;"><div class="h2">Platform <span class="neon">Analytics</span></div><p>Real-time platform performance overview</p></div>
+      <div class="flex gap-8">
+        <select class="select" style="width:auto;"><option>Last 30 Days</option><option>Last 7 Days</option><option>This Year</option></select>
+        <button class="btn btn-outline btn-sm">Export</button>
+      </div>
+    </div>
+    <div class="grid-4 mb-28">
+      <div class="stat-card"><div class="stat-label">Monthly Active Users</div><div class="stat-value">84,200</div><div class="stat-sub" style="color:var(--success);">↑ 12% vs last month</div></div>
+      <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value" style="font-size:26px;">$124K</div><div class="stat-sub" style="color:var(--success);">↑ 8% vs last month</div></div>
+      <div class="stat-card"><div class="stat-label">Lessons Completed</div><div class="stat-value" style="font-size:26px;">1.2M</div><div class="stat-sub" style="color:var(--success);">↑ 23% vs last month</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Session Time</div><div class="stat-value" style="font-size:26px;">24m</div><div class="stat-sub" style="color:var(--danger);">↓ 2% vs last month</div></div>
+    </div>
+    <div class="grid-2 gap-24 mb-24">
+      <div class="card"><div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;">Daily Active Users (Last 7 Days)</div>
+        <div class="bar-chart-row">
+          <div class="bar-col"><div class="bar-body" style="height:55%;background:linear-gradient(180deg,var(--neon),var(--neon2));"></div><div class="bar-lbl">Mon</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:72%;background:linear-gradient(180deg,var(--neon),var(--neon2));"></div><div class="bar-lbl">Tue</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:68%;background:linear-gradient(180deg,var(--neon),var(--neon2));"></div><div class="bar-lbl">Wed</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:90%;background:linear-gradient(180deg,var(--neon),var(--neon2));box-shadow:0 0 8px rgba(191,255,0,.4);"></div><div class="bar-lbl">Thu</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:82%;background:linear-gradient(180deg,var(--neon),var(--neon2));"></div><div class="bar-lbl">Fri</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:45%;background:linear-gradient(180deg,var(--neon),var(--neon2));"></div><div class="bar-lbl">Sat</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:60%;background:linear-gradient(180deg,var(--neon),var(--neon2));"></div><div class="bar-lbl">Sun</div></div>
+        </div>
+      </div>
+      <div class="card"><div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;">Revenue by Language</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div><div class="flex items-center justify-between mb-4"><span style="font-size:13px;">English</span><span style="font-size:13px;font-weight:700;color:var(--neon);">$68K · 55%</span></div><div class="progress-track"><div class="progress-fill" style="width:55%;"></div></div></div>
+          <div><div class="flex items-center justify-between mb-4"><span style="font-size:13px;">Kinyarwanda</span><span style="font-size:13px;font-weight:700;color:var(--info);">$24K · 19%</span></div><div class="progress-track"><div class="progress-fill" style="width:19%;background:var(--info);"></div></div></div>
+          <div><div class="flex items-center justify-between mb-4"><span style="font-size:13px;">French</span><span style="font-size:13px;font-weight:700;color:var(--warning);">$18K · 15%</span></div><div class="progress-track"><div class="progress-fill" style="width:15%;background:var(--warning);"></div></div></div>
+          <div><div class="flex items-center justify-between mb-4"><span style="font-size:13px;">Other</span><span style="font-size:13px;font-weight:700;color:var(--muted);">$14K · 11%</span></div><div class="progress-track"><div class="progress-fill" style="width:11%;background:var(--muted);"></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;">Top Performing Courses</div>
+      <div style="display:flex;gap:16px;overflow-x:auto;">
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;min-width:200px;"><div style="font-size:20px;margin-bottom:8px;">🇬🇧</div><div style="font-size:14px;font-weight:700;margin-bottom:4px;">English for Tourism</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Dr. Mary K.</div><div style="font-family:'Syne',monospace;font-size:22px;font-weight:800;color:var(--neon);">12,500</div><div style="font-size:11px;color:var(--muted);">students</div></div>
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;min-width:200px;"><div style="font-size:20px;margin-bottom:8px;">🇪🇸</div><div style="font-size:14px;font-weight:700;margin-bottom:4px;">Spanish Survival</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Carlos R.</div><div style="font-family:'Syne',monospace;font-size:22px;font-weight:800;color:var(--neon);">9,800</div><div style="font-size:11px;color:var(--muted);">students</div></div>
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;min-width:200px;"><div style="font-size:20px;margin-bottom:8px;">🇷🇼</div><div style="font-size:14px;font-weight:700;margin-bottom:4px;">Kinyarwanda Basics</div><div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Prof. Jean N.</div><div style="font-family:'Syne',monospace;font-size:22px;font-weight:800;color:var(--neon);">7,200</div><div style="font-size:11px;color:var(--muted);">students</div></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">9.3 · Admin · Analytics</div>
+</body></html>

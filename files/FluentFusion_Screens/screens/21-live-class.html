@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>6.2 Live Class — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+body { overflow: hidden; }
+.live-layout { display: grid; grid-template-columns: 1fr 320px; height: 100vh; background: #000; }
+.video-grid { padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.main-video { flex: 1; background: #0d1a0d; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.instructor-label { position: absolute; bottom: 12px; left: 12px; background: rgba(0,0,0,0.7); padding: 5px 12px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.speaking-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 6px var(--success); }
+.participants-row { display: flex; gap: 10px; height: 100px; flex-shrink: 0; }
+.participant-thumb { flex: 1; background: #1a1a2a; border-radius: 10px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.participant-thumb.you { border: 2px solid var(--neon); }
+.participant-label { position: absolute; bottom: 6px; left: 8px; font-size: 11px; font-weight: 500; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 4px; }
+.controls-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.ctrl-btn { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1px solid var(--border); background: var(--card2); color: var(--fg); transition: all 0.15s; }
+.ctrl-btn:hover { border-color: var(--border2); }
+.ctrl-btn.active { background: var(--neon); color: #000; border-color: var(--neon); }
+.ctrl-btn.leave { background: var(--danger); border-color: var(--danger); color: #fff; }
+.chat-panel { background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg); flex-shrink: 0; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.chat-msg-row { display: flex; gap: 8px; align-items: flex-start; }
+.chat-msg-bubble { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.5; max-width: 80%; }
+.chat-msg-bubble.you { background: var(--neon-dim); border-color: rgba(191,255,0,0.2); }
+.chat-footer { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0; }
+.chat-input { flex: 1; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--fg); outline: none; font-family: 'DM Sans', sans-serif; }
+.raised-hands { position: absolute; top: 60px; left: 16px; background: rgba(0,0,0,0.75); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="live-layout">
+  <!-- Video Area -->
+  <div class="video-grid">
+    <!-- Main Video -->
+    <div class="main-video">
+      <div style="font-size:64px;opacity:0.3;">🎥</div>
+      <div style="position:absolute;top:16px;left:16px;display:flex;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(255,68,68,0.85);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;">● LIVE</div>
+        <div style="background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:6px;font-size:12px;color:var(--muted);">Business English Masterclass</div>
+      </div>
+      <div class="raised-hands">✋ 3 hands raised</div>
+      <div class="instructor-label"><div class="speaking-dot"></div> Dr. Mary K. (Host)</div>
+    </div>
+
+    <!-- Participants -->
+    <div class="participants-row">
+      <div class="participant-thumb you">
+        <div class="avatar avatar-md">JP</div>
+        <div class="participant-label" style="color:var(--neon);">You</div>
+      </div>
+      <div class="participant-thumb">
+        <div class="avatar avatar-md">AM</div>
+        <div class="participant-label">Amina M.</div>
+      </div>
+      <div class="participant-thumb">
+        <div class="avatar avatar-md">KR</div>
+        <div class="participant-label">Kagiso</div>
+      </div>
+      <div class="participant-thumb" style="background:#1a1a1a;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
+        <div style="font-size:13px;color:var(--muted);">+44 more</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <div class="ctrl-btn active" title="Mute mic">🎙</div>
+      <div class="ctrl-btn" title="Camera off">📷</div>
+      <div class="ctrl-btn" title="Share screen">🖥</div>
+      <div class="ctrl-btn" title="Raise hand">✋</div>
+      <div class="ctrl-btn" title="Reactions">😊</div>
+      <div style="width:1px;height:32px;background:var(--border);margin:0 8px;"></div>
+      <div class="ctrl-btn leave" title="Leave session">✕</div>
+    </div>
+  </div>
+
+  <!-- Chat Panel -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div style="font-size:14px;font-weight:700;">Session Chat</div>
+      <div style="font-size:12px;color:var(--muted);">47 participants</div>
+    </div>
+    <div class="chat-messages">
+      <div class="chat-msg-row">
+        <div class="avatar avatar-sm">MK</div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Dr. Mary K.</div>
+        <div class="chat-msg-bubble">Welcome everyone! Let's start with a quick warm-up exercise 🎉</div></div>
+      </div>
+      <div class="chat-msg-row">
+        <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#0080ff,#00cfff);">AM</div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Amina M.</div>
+        <div class="chat-msg-bubble">Excited to be here!</div></div>
+      </div>
+      <div class="chat-msg-row" style="justify-content:flex-end;">
+        <div><div style="font-size:11px;color:var(--neon);margin-bottom:4px;text-align:right;">You</div>
+        <div class="chat-msg-bubble you">Hello everyone from Kigali 👋</div></div>
+      </div>
+      <div class="chat-msg-row">
+        <div class="avatar avatar-sm">MK</div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Dr. Mary K.</div>
+        <div class="chat-msg-bubble">Today we'll practice formal email writing for business contexts. Please open your notebooks!</div></div>
+      </div>
+    </div>
+    <div class="chat-footer">
+      <input class="chat-input" placeholder="Send a message...">
+      <button class="btn btn-primary btn-sm btn-icon">→</button>
+    </div>
+  </div>
+</div>
+<div class="screen-id">6.2 · Live Class Screen</div>
+</body></html>

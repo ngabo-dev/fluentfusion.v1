@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3.1 Student Dashboard — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.continue-banner { background: linear-gradient(135deg, rgba(191,255,0,0.1) 0%, rgba(191,255,0,0.04) 100%); border: 1px solid rgba(191,255,0,0.2); border-radius: var(--radius-lg); padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; position: relative; overflow: hidden; }
+.continue-banner::before { content: ''; position: absolute; right: -40px; top: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(191,255,0,0.08) 0%, transparent 70%); }
+.continue-left { position: relative; z-index: 1; }
+.lesson-row { display: flex; flex-direction: column; gap: 10px; }
+.lesson-li { display: flex; align-items: center; justify-content: space-between; background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; transition: border-color 0.15s; cursor: pointer; }
+.lesson-li:hover { border-color: rgba(191,255,0,0.2); }
+.session-card { background: var(--card); border: 1px solid rgba(0,207,255,0.2); border-radius: var(--radius-lg); padding: 20px; margin-top: 20px; }
+.session-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.live-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--info); font-weight: 600; }
+.live-dot::before { content: ''; width: 6px; height: 6px; background: var(--info); border-radius: 50%; box-shadow: 0 0 6px var(--info); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <div style="position:relative;cursor:pointer;font-size:20px;">🔔<span style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--neon);border-radius:50%;border:2px solid var(--bg);"></span></div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+
+<div class="app-wrap">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a class="sidebar-item active" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions <span class="sidebar-badge">2</span></a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <div class="sidebar-section">Account</div>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> Settings</a>
+    <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border);margin:auto 0 0;">
+      <a class="sidebar-item" href="#"><span>↩</span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- Greeting -->
+    <div style="margin-bottom:24px;">
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;">Good Morning, <span class="neon">Jean Pierre</span> 👋</div>
+      <div style="font-size:14px;color:var(--muted);margin-top:4px;">You're on a 7-day streak! Keep it up — you're doing amazing.</div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid-4 mb-24">
+      <div class="stat-card">
+        <div class="stat-label">XP Points</div>
+        <div class="stat-value">1,240</div>
+        <div class="stat-sub">+80 today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Daily Streak</div>
+        <div class="stat-value" style="font-size:28px;">7 🔥</div>
+        <div class="stat-sub">Best: 14 days</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Lessons Done</div>
+        <div class="stat-value">24</div>
+        <div class="stat-sub">This month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Fluency Score</div>
+        <div class="stat-value">68%</div>
+        <div class="progress-track mt-8"><div class="progress-fill" style="width:68%;"></div></div>
+      </div>
+    </div>
+
+    <!-- Continue Learning Banner -->
+    <div class="continue-banner">
+      <div class="continue-left">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--neon);text-transform:uppercase;margin-bottom:6px;">CONTINUE WHERE YOU LEFT OFF</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Unit 3 · At the Hotel 🏨</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Lesson 5 of 8 · Check-in phrases</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:200px;"><div class="progress-track"><div class="progress-fill" style="width:62%;"></div></div></div>
+          <span style="font-size:12px;color:var(--muted);">62% complete</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-lg">Continue Learning →</button>
+    </div>
+
+    <div class="grid-2 gap-24">
+      <!-- Enrolled Courses -->
+      <div>
+        <div class="flex items-center justify-between mb-16">
+          <div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">Enrolled Courses</div>
+          <a href="#" style="font-size:13px;color:var(--neon);text-decoration:none;">View All →</a>
+        </div>
+        <div class="lesson-row">
+          <div class="lesson-li">
+            <div class="flex items-center gap-12">
+              <div style="font-size:24px;">🇬🇧</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;margin-bottom:2px;">English for Tourism</div>
+                <div style="font-size:12px;color:var(--muted);">Unit 3 of 8 · 12 lessons</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px;font-weight:600;color:var(--neon);">62%</div>
+              <div style="width:80px;margin-top:4px;"><div class="progress-track-sm"><div class="progress-fill" style="width:62%;"></div></div></div>
+            </div>
+          </div>
+          <div class="lesson-li">
+            <div class="flex items-center gap-12">
+              <div style="font-size:24px;">🇫🇷</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;margin-bottom:2px;">French Essentials</div>
+                <div style="font-size:12px;color:var(--muted);">Unit 1 of 6 · 8 lessons</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px;font-weight:600;color:var(--neon);">15%</div>
+              <div style="width:80px;margin-top:4px;"><div class="progress-track-sm"><div class="progress-fill" style="width:15%;"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Live Session -->
+      <div>
+        <div class="flex items-center justify-between mb-16">
+          <div style="font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">Upcoming Live Session</div>
+          <a href="#" style="font-size:13px;color:var(--neon);text-decoration:none;">View All →</a>
+        </div>
+        <div class="session-card">
+          <div class="session-card-header">
+            <span class="live-dot">LIVE TODAY</span>
+            <span style="font-size:12px;color:var(--muted);">In 2 hours</span>
+          </div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Business English Masterclass</div>
+          <div class="flex items-center gap-8 mb-16">
+            <div class="avatar avatar-sm">MK</div>
+            <div style="font-size:13px;color:var(--muted);">with Dr. Mary K. · 47 enrolled</div>
+          </div>
+          <button class="btn btn-outline btn-sm btn-full">Set Reminder · 3:00 PM</button>
+        </div>
+
+        <!-- Daily challenge -->
+        <div style="margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">Daily Challenge</div>
+            <span class="badge badge-warning">⏰ 4h left</span>
+          </div>
+          <div style="font-size:14px;margin-bottom:12px;">Translate 10 new vocabulary words</div>
+          <div class="flex items-center gap-12">
+            <div style="flex:1;"><div class="progress-track"><div class="progress-fill" style="width:60%;"></div></div></div>
+            <span style="font-size:12px;color:var(--muted);">6/10 done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">3.1 · Student Dashboard</div>
+</body></html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Design System — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.ds-section{margin-bottom:56px;}
+.ds-section-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--neon);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.swatch-row{display:flex;gap:12px;flex-wrap:wrap;}
+.swatch{border-radius:var(--radius-lg);overflow:hidden;min-width:120px;}
+.swatch-color{height:72px;}
+.swatch-info{padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-top:none;}
+.swatch-name{font-size:12px;font-weight:700;margin-bottom:2px;}
+.swatch-hex{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+.type-row{display:flex;flex-direction:column;gap:16px;}
+.comp-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.input-demo-row{display:flex;flex-direction:column;gap:12px;max-width:440px;}
+.icon-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+.icon-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
+.icon-item .ic{font-size:24px;margin-bottom:6px;}
+.icon-item .in{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--neon);text-transform:uppercase;">🔵 Design System v1.0</div>
+</nav>
+<main style="padding:40px 48px;">
+
+  <div style="margin-bottom:48px;">
+    <div style="font-family:'Syne',sans-serif;font-size:48px;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;margin-bottom:8px;">FluentFusion <span style="color:var(--neon);">Design System</span></div>
+    <div style="font-size:15px;color:var(--muted);">Dark theme · Neon Green #BFFF00 · Syne + DM Sans + JetBrains Mono</div>
+  </div>
+
+  <!-- COLORS -->
+  <div class="ds-section">
+    <div class="ds-section-title">Colors</div>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-color" style="background:#BFFF00;box-shadow:0 0 20px rgba(191,255,0,.4);"></div><div class="swatch-info"><div class="swatch-name">Primary Neon</div><div class="swatch-hex">#BFFF00</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#8FEF00;"></div><div class="swatch-info"><div class="swatch-name">Neon Alt</div><div class="swatch-hex">#8FEF00</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0a0a0a;border:1px solid #222;"></div><div class="swatch-info"><div class="swatch-name">Background</div><div class="swatch-hex">#0A0A0A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#151515;border:1px solid #222;"></div><div class="swatch-info"><div class="swatch-name">Card</div><div class="swatch-hex">#151515</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#2a2a2a;"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#2A2A2A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#888888;"></div><div class="swatch-info"><div class="swatch-name">Muted Text</div><div class="swatch-hex">#888888</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#00FF7F;"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-hex">#00FF7F</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFB800;"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-hex">#FFB800</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FF4444;"></div><div class="swatch-info"><div class="swatch-name">Danger</div><div class="swatch-hex">#FF4444</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#00CFFF;"></div><div class="swatch-info"><div class="swatch-name">Info</div><div class="swatch-hex">#00CFFF</div></div></div>
+    </div>
+  </div>
+
+  <!-- TYPOGRAPHY -->
+  <div class="ds-section">
+    <div class="ds-section-title">Typography</div>
+    <div class="type-row">
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">H1 · Syne 800 · 52px</div><div style="font-family:'Syne',sans-serif;font-size:52px;font-weight:800;text-transform:uppercase;letter-spacing:-.03em;line-height:1.02;">Break Language Barriers</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">H2 · Syne 800 · 32px</div><div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;">Course Catalog</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">H3 · Syne 800 · 22px</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;">English for Tourism</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Body · DM Sans 400 · 15px</div><div style="font-size:15px;color:rgba(255,255,255,.85);line-height:1.65;">Master any language with AI-personalized lessons, live sessions, and a global community of learners.</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Caption · DM Sans 400 · 12px · Muted</div><div style="font-size:12px;color:var(--muted);">Last updated 2 hours ago · 12,500 students enrolled</div></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Label / Mono · JetBrains Mono 500 · 10px</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--neon);">STEP 1 OF 4 · BEGINNER · ENGLISH</div></div>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="ds-section">
+    <div class="ds-section-title">Buttons</div>
+    <div class="comp-row mb-16">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-outline">Outline</button>
+      <button class="btn btn-ghost">Ghost</button>
+      <button class="btn btn-danger">Danger</button>
+      <button class="btn btn-primary" disabled style="opacity:.4;cursor:not-allowed;">Disabled</button>
+    </div>
+    <div class="comp-row mb-16">
+      <button class="btn btn-primary btn-sm">Small Primary</button>
+      <button class="btn btn-outline btn-sm">Small Outline</button>
+      <button class="btn btn-ghost btn-sm">Small Ghost</button>
+    </div>
+    <div class="comp-row">
+      <button class="btn btn-primary btn-lg">Large Primary →</button>
+      <button class="btn btn-outline btn-lg">Large Outline</button>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="ds-section">
+    <div class="ds-section-title">Input Fields</div>
+    <div class="input-demo-row">
+      <div><label class="label">Default Input</label><input class="input" placeholder="Enter text..."></div>
+      <div><label class="label">Input with Icon</label><div class="input-icon-wrap"><span class="input-icon">✉️</span><input class="input" placeholder="Email address..."></div></div>
+      <div><label class="label">Select</label><select class="select"><option>Choose an option</option><option>English</option><option>French</option></select></div>
+      <div><label class="label">Textarea</label><textarea class="input" style="min-height:70px;resize:none;" placeholder="Write something..."></textarea></div>
+    </div>
+  </div>
+
+  <!-- BADGES -->
+  <div class="ds-section">
+    <div class="ds-section-title">Badges & Chips</div>
+    <div class="comp-row">
+      <span class="badge badge-neon">✦ Primary</span>
+      <span class="badge badge-success">✓ Success</span>
+      <span class="badge badge-warning">⚠ Warning</span>
+      <span class="badge badge-danger">✕ Danger</span>
+      <span class="badge badge-info">ℹ Info</span>
+      <span class="badge badge-muted">Muted</span>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div class="ds-section">
+    <div class="ds-section-title">Cards</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <div class="card card-glow"><div style="font-size:16px;font-weight:700;margin-bottom:6px;">Card with Glow</div><div style="font-size:13px;color:var(--muted);">Used for featured content and highlights. Has subtle neon gradient overlay.</div></div>
+      <div class="stat-card"><div class="stat-label">Stat Card</div><div class="stat-value">1,240</div><div class="stat-sub">XP Points earned</div></div>
+      <div class="card" style="border-color:rgba(191,255,0,.2);background:rgba(191,255,0,.03);"><div style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--neon);">Neon Border Card</div><div style="font-size:13px;color:var(--muted);">Used for active states, featured items, and call-to-action sections.</div></div>
+    </div>
+  </div>
+
+  <!-- AVATARS -->
+  <div class="ds-section">
+    <div class="ds-section-title">Avatars</div>
+    <div class="comp-row" style="align-items:flex-end;">
+      <div style="text-align:center;"><div class="avatar avatar-sm">JP</div><div style="font-size:11px;color:var(--muted);margin-top:6px;">32px</div></div>
+      <div style="text-align:center;"><div class="avatar avatar-md">JP</div><div style="font-size:11px;color:var(--muted);margin-top:6px;">44px</div></div>
+      <div style="text-align:center;"><div class="avatar avatar-lg">JP</div><div style="font-size:11px;color:var(--muted);margin-top:6px;">72px</div></div>
+      <div style="text-align:center;"><div class="avatar avatar-xl">JP</div><div style="font-size:11px;color:var(--muted);margin-top:6px;">96px</div></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="ds-section">
+    <div class="ds-section-title">Progress Bars</div>
+    <div style="max-width:500px;display:flex;flex-direction:column;gap:14px;">
+      <div><div class="flex items-center justify-between mb-6"><span style="font-size:12px;color:var(--muted);">Default Track (6px)</span><span style="font-size:12px;color:var(--neon);">62%</span></div><div class="progress-track"><div class="progress-fill" style="width:62%;"></div></div></div>
+      <div><div class="flex items-center justify-between mb-6"><span style="font-size:12px;color:var(--muted);">Small Track (4px)</span><span style="font-size:12px;color:var(--neon);">38%</span></div><div class="progress-track-sm"><div class="progress-fill" style="width:38%;height:100%;"></div></div></div>
+      <div><div class="flex items-center justify-between mb-6"><span style="font-size:12px;color:var(--muted);">Success Track</span><span style="font-size:12px;color:var(--success);">100%</span></div><div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--success);box-shadow:0 0 8px rgba(0,255,127,.4);"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ICONS REFERENCE -->
+  <div class="ds-section">
+    <div class="ds-section-title">Icons Used (Emoji System)</div>
+    <div class="icon-grid">
+      <div class="icon-item"><div class="ic">🧠</div><div class="in">logo</div></div>
+      <div class="icon-item"><div class="ic">⚡</div><div class="in">dashboard</div></div>
+      <div class="icon-item"><div class="ic">📚</div><div class="in">courses</div></div>
+      <div class="icon-item"><div class="ic">🎯</div><div class="in">practice</div></div>
+      <div class="icon-item"><div class="ic">🎥</div><div class="in">live</div></div>
+      <div class="icon-item"><div class="ic">🌍</div><div class="in">community</div></div>
+      <div class="icon-item"><div class="ic">🏆</div><div class="in">achievement</div></div>
+      <div class="icon-item"><div class="ic">🔥</div><div class="in">streak</div></div>
+      <div class="icon-item"><div class="ic">📊</div><div class="in">analytics</div></div>
+      <div class="icon-item"><div class="ic">🎙</div><div class="in">speaking</div></div>
+      <div class="icon-item"><div class="ic">👤</div><div class="in">profile</div></div>
+      <div class="icon-item"><div class="ic">⚙️</div><div class="in">settings</div></div>
+    </div>
+  </div>
+
+</main>
+<div class="screen-id">Design System · FluentFusion v1.0</div>
+</body></html>

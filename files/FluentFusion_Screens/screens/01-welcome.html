@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1.1 Welcome Page — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+body { overflow-x: hidden; }
+.hero { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; text-align: center; padding: 60px 40px; position: relative; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(191,255,0,0.07) 0%, transparent 70%); }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(42,42,42,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(42,42,42,0.3) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 80%); }
+.hero-content { position: relative; z-index: 2; max-width: 760px; }
+.eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: var(--neon); text-transform: uppercase; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.eyebrow::before, .eyebrow::after { content: ''; display: block; width: 32px; height: 1px; background: var(--neon); opacity: 0.5; }
+.hero-title { font-family: 'Syne', sans-serif; font-size: clamp(44px, 6vw, 76px); font-weight: 800; text-transform: uppercase; letter-spacing: -0.03em; line-height: 1.0; margin-bottom: 24px; }
+.hero-title .neon { color: var(--neon); text-shadow: var(--text-glow); }
+.hero-sub { font-size: 18px; color: var(--muted); line-height: 1.7; max-width: 520px; margin: 0 auto 40px; }
+.cta-row { display: flex; gap: 14px; justify-content: center; margin-bottom: 64px; flex-wrap: wrap; }
+
+.lang-pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+.lang-pill { display: flex; align-items: center; gap: 8px; padding: 8px 18px; background: var(--card); border: 1px solid var(--border); border-radius: 99px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.lang-pill:hover, .lang-pill.active { border-color: var(--neon); color: var(--neon); background: var(--neon-dim); }
+.lang-pill .flag { font-size: 16px; }
+
+.stats-strip { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; padding: 32px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0; background: rgba(255,255,255,0.01); }
+.stat-item { text-align: center; }
+.stat-n { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; color: var(--neon); text-shadow: var(--text-glow); }
+.stat-l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.features-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 48px 40px; }
+.feat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; text-align: center; transition: all 0.2s; }
+.feat-card:hover { border-color: rgba(191,255,0,0.25); background: rgba(191,255,0,0.03); }
+.feat-icon { font-size: 28px; margin-bottom: 12px; }
+.feat-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.feat-desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+footer { padding: 28px 40px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="#">
+    <div class="logo-mark">🧠</div>
+    <div class="logo-name">FLUENT<span>FUSION</span></div>
+  </a>
+  <div class="flex items-center gap-16">
+    <a href="#" style="font-size:14px;color:var(--muted);text-decoration:none;">Features</a>
+    <a href="#" style="font-size:14px;color:var(--muted);text-decoration:none;">Pricing</a>
+    <a href="#" style="font-size:14px;color:var(--muted);text-decoration:none;">Community</a>
+  </div>
+  <div class="flex items-center gap-12">
+    <button class="btn btn-ghost">Login</button>
+    <button class="btn btn-primary">Get Started</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="eyebrow">AI-Powered Language Learning</div>
+    <h1 class="hero-title">
+      BREAKING<br>
+      LANGUAGE<br>
+      <span class="neon">BARRIERS</span>
+    </h1>
+    <p class="hero-sub">Master any language with AI-personalized lessons, live sessions, and a global community of learners.</p>
+
+    <div class="cta-row">
+      <button class="btn btn-primary btn-lg">Get Started Free →</button>
+      <button class="btn btn-outline btn-lg">Sign In</button>
+    </div>
+
+    <div style="margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--muted2);text-transform:uppercase;">Select language to learn</div>
+    <div class="lang-pills">
+      <div class="lang-pill active"><span class="flag">🇷🇼</span> Kinyarwanda</div>
+      <div class="lang-pill"><span class="flag">🇬🇧</span> English</div>
+      <div class="lang-pill"><span class="flag">🇫🇷</span> French</div>
+      <div class="lang-pill"><span class="flag">🇪🇸</span> Spanish</div>
+      <div class="lang-pill"><span class="flag">🇩🇪</span> German</div>
+      <div class="lang-pill"><span class="flag">🇯🇵</span> Japanese</div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-strip">
+  <div class="stat-item"><div class="stat-n">2M+</div><div class="stat-l">Active Learners</div></div>
+  <div class="stat-item"><div class="stat-n">40+</div><div class="stat-l">Languages</div></div>
+  <div class="stat-item"><div class="stat-n">500+</div><div class="stat-l">Courses</div></div>
+  <div class="stat-item"><div class="stat-n">98%</div><div class="stat-l">Success Rate</div></div>
+  <div class="stat-item"><div class="stat-n">150+</div><div class="stat-l">Expert Instructors</div></div>
+</div>
+
+<div class="features-row">
+  <div class="feat-card">
+    <div class="feat-icon">🤖</div>
+    <div class="feat-title">AI Personalization</div>
+    <div class="feat-desc">Adaptive lessons that adjust to your pace and learning style in real time.</div>
+  </div>
+  <div class="feat-card">
+    <div class="feat-icon">🎥</div>
+    <div class="feat-title">Live Sessions</div>
+    <div class="feat-desc">Join real-time classes with certified native-speaker instructors.</div>
+  </div>
+  <div class="feat-card">
+    <div class="feat-icon">🏆</div>
+    <div class="feat-title">Gamification</div>
+    <div class="feat-desc">Streaks, XP, badges, and leaderboards to keep you motivated daily.</div>
+  </div>
+  <div class="feat-card">
+    <div class="feat-icon">🌍</div>
+    <div class="feat-title">Global Community</div>
+    <div class="feat-desc">Practice with millions of learners worldwide in discussion threads.</div>
+  </div>
+</div>
+
+<footer>
+  <a class="logo" href="#">
+    <div class="logo-mark" style="width:30px;height:30px;font-size:14px;">🧠</div>
+    <div class="logo-name" style="font-size:14px;">FLUENT<span>FUSION</span></div>
+  </a>
+  <div style="font-size:12px;color:var(--muted);">© 2026 FluentFusion AI · All rights reserved</div>
+  <div class="flex gap-16">
+    <a href="#" style="font-size:13px;color:var(--muted);text-decoration:none;">Privacy</a>
+    <a href="#" style="font-size:13px;color:var(--muted);text-decoration:none;">Terms</a>
+    <a href="#" style="font-size:13px;color:var(--muted);text-decoration:none;">Contact</a>
+  </div>
+</footer>
+
+<div class="screen-id">1.1 · Welcome Page</div>
+</body></html>

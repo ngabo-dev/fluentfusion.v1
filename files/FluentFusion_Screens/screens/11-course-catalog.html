@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>4.1 Course Catalog — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.filter-sidebar { width: 220px; flex-shrink: 0; }
+.filter-group { margin-bottom: 24px; }
+.filter-group-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.filter-check { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13px; cursor: pointer; color: var(--muted); transition: color 0.15s; }
+.filter-check:hover { color: var(--fg); }
+.filter-check.active { color: var(--neon); }
+.check-box { width: 16px; height: 16px; border: 1px solid var(--border2); border-radius: 4px; background: var(--input-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.check-box.checked { background: var(--neon); border-color: var(--neon); color: #000; }
+.catalog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.star-row { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.star-full { color: var(--warning); }
+.count { color: var(--muted); }
+.diff-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.diff-b { background: rgba(0,255,100,0.1); color: #00FF64; }
+.diff-i { background: rgba(255,200,0,0.1); color: var(--warning); }
+.diff-a { background: rgba(255,68,68,0.1); color: var(--danger); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <div style="position:relative;cursor:pointer;font-size:20px;">🔔</div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+
+<div class="app-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-section">Main</div>
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item active" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <div class="sidebar-section">Account</div>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> Settings</a>
+  </aside>
+
+  <main class="main">
+    <div class="page-hdr">
+      <div class="h2">Course <span class="neon">Catalog</span></div>
+      <p>Explore 500+ expert-led language courses</p>
+    </div>
+
+    <!-- Search -->
+    <div class="flex items-center gap-12 mb-24">
+      <div class="input-icon-wrap" style="flex:1;max-width:480px;">
+        <span class="input-icon">🔍</span>
+        <input class="input" type="text" placeholder="Search courses, instructors, topics...">
+      </div>
+      <select class="select" style="width:auto;min-width:160px;">
+        <option>Sort: Most Popular</option>
+        <option>Sort: Newest</option>
+        <option>Sort: Highest Rated</option>
+      </select>
+    </div>
+
+    <!-- Filter chips -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;">
+      <div class="badge badge-neon" style="cursor:pointer;padding:6px 14px;">All Languages</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">🇬🇧 English</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">🇷🇼 Kinyarwanda</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">🇫🇷 French</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">🇪🇸 Spanish</div>
+      <div style="width:1px;background:var(--border);margin:0 4px;"></div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">Beginner</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">Intermediate</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">Advanced</div>
+    </div>
+
+    <div style="display:flex;gap:28px;align-items:flex-start;">
+
+      <!-- Filter Sidebar -->
+      <div class="filter-sidebar">
+        <div class="filter-group">
+          <div class="filter-group-title">Language</div>
+          <div class="filter-check active"><div class="check-box checked">✓</div> English <span style="margin-left:auto;color:var(--muted2);font-size:11px;">142</span></div>
+          <div class="filter-check"><div class="check-box"></div> Kinyarwanda <span style="margin-left:auto;color:var(--muted2);font-size:11px;">38</span></div>
+          <div class="filter-check"><div class="check-box"></div> French <span style="margin-left:auto;color:var(--muted2);font-size:11px;">97</span></div>
+          <div class="filter-check"><div class="check-box"></div> Spanish <span style="margin-left:auto;color:var(--muted2);font-size:11px;">111</span></div>
+          <div class="filter-check"><div class="check-box"></div> German <span style="margin-left:auto;color:var(--muted2);font-size:11px;">54</span></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group-title">Level</div>
+          <div class="filter-check active"><div class="check-box checked">✓</div> Beginner</div>
+          <div class="filter-check active"><div class="check-box checked">✓</div> Intermediate</div>
+          <div class="filter-check"><div class="check-box"></div> Advanced</div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group-title">Price</div>
+          <div class="filter-check active"><div class="check-box checked">✓</div> Free</div>
+          <div class="filter-check"><div class="check-box"></div> Paid</div>
+          <div class="filter-check"><div class="check-box"></div> Subscription</div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group-title">Rating</div>
+          <div class="filter-check"><div class="check-box"></div> 4.5+ ⭐</div>
+          <div class="filter-check"><div class="check-box"></div> 4.0+ ⭐</div>
+          <div class="filter-check"><div class="check-box"></div> Any</div>
+        </div>
+        <button class="btn btn-outline btn-sm btn-full">Clear Filters</button>
+      </div>
+
+      <!-- Course Grid -->
+      <div style="flex:1;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Showing 142 courses</div>
+        <div class="catalog-grid">
+
+          <!-- Course Card 1 -->
+          <div class="course-card">
+            <div class="course-thumb" style="background:linear-gradient(135deg,#1a2a1a,#0d1f0d);">🇬🇧</div>
+            <div class="course-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="diff-badge diff-b">Beginner</span>
+                <span style="font-size:12px;color:var(--neon);font-weight:600;">FREE</span>
+              </div>
+              <div class="course-title">English for Tourism Workers</div>
+              <div class="flex items-center gap-8 mt-8 mb-12">
+                <div class="avatar avatar-sm" style="width:24px;height:24px;font-size:10px;">MK</div>
+                <span style="font-size:12px;color:var(--muted);">Dr. Mary K.</span>
+              </div>
+              <div class="star-row mb-12">
+                <span class="star-full">★★★★★</span>
+                <span style="font-size:12px;font-weight:600;margin-left:4px;">4.9</span>
+                <span class="count">(2.1k reviews)</span>
+              </div>
+              <button class="btn btn-primary btn-sm btn-full">Enroll Free →</button>
+            </div>
+          </div>
+
+          <!-- Course Card 2 -->
+          <div class="course-card">
+            <div class="course-thumb" style="background:linear-gradient(135deg,#1a1a2a,#0d0d1f);">🇷🇼</div>
+            <div class="course-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="diff-badge diff-b">Beginner</span>
+                <span style="font-size:12px;color:var(--neon);font-weight:600;">FREE</span>
+              </div>
+              <div class="course-title">Kinyarwanda for Tourists</div>
+              <div class="flex items-center gap-8 mt-8 mb-12">
+                <div class="avatar avatar-sm" style="width:24px;height:24px;font-size:10px;">JN</div>
+                <span style="font-size:12px;color:var(--muted);">Prof. Jean N.</span>
+              </div>
+              <div class="star-row mb-12">
+                <span class="star-full">★★★★★</span>
+                <span style="font-size:12px;font-weight:600;margin-left:4px;">4.8</span>
+                <span class="count">(1.4k reviews)</span>
+              </div>
+              <button class="btn btn-primary btn-sm btn-full">Enroll Free →</button>
+            </div>
+          </div>
+
+          <!-- Course Card 3 -->
+          <div class="course-card">
+            <div class="course-thumb" style="background:linear-gradient(135deg,#2a1a1a,#1f0d0d);">🇫🇷</div>
+            <div class="course-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="diff-badge diff-i">Intermediate</span>
+                <span style="font-size:12px;color:var(--warning);font-weight:600;">$12/mo</span>
+              </div>
+              <div class="course-title">French Business Communication</div>
+              <div class="flex items-center gap-8 mt-8 mb-12">
+                <div class="avatar avatar-sm" style="width:24px;height:24px;font-size:10px;">AL</div>
+                <span style="font-size:12px;color:var(--muted);">Anne L.</span>
+              </div>
+              <div class="star-row mb-12">
+                <span class="star-full">★★★★</span>
+                <span style="font-size:12px;font-weight:600;margin-left:4px;">4.6</span>
+                <span class="count">(876 reviews)</span>
+              </div>
+              <button class="btn btn-outline btn-sm btn-full">Enroll →</button>
+            </div>
+          </div>
+
+          <!-- Course Card 4 -->
+          <div class="course-card">
+            <div class="course-thumb" style="background:linear-gradient(135deg,#1a2a2a,#0d1f1f);">🇪🇸</div>
+            <div class="course-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="diff-badge diff-b">Beginner</span>
+                <span style="font-size:12px;color:var(--neon);font-weight:600;">FREE</span>
+              </div>
+              <div class="course-title">Spanish Survival Phrases</div>
+              <div class="flex items-center gap-8 mt-8 mb-12">
+                <div class="avatar avatar-sm" style="width:24px;height:24px;font-size:10px;">CR</div>
+                <span style="font-size:12px;color:var(--muted);">Carlos R.</span>
+              </div>
+              <div class="star-row mb-12">
+                <span class="star-full">★★★★★</span>
+                <span style="font-size:12px;font-weight:600;margin-left:4px;">4.7</span>
+                <span class="count">(3.2k reviews)</span>
+              </div>
+              <button class="btn btn-primary btn-sm btn-full">Enroll Free →</button>
+            </div>
+          </div>
+
+          <!-- Course Card 5 -->
+          <div class="course-card">
+            <div class="course-thumb" style="background:linear-gradient(135deg,#2a2a1a,#1f1f0d);">🇩🇪</div>
+            <div class="course-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="diff-badge diff-a">Advanced</span>
+                <span style="font-size:12px;color:var(--warning);font-weight:600;">$18/mo</span>
+              </div>
+              <div class="course-title">German C1 Mastery</div>
+              <div class="flex items-center gap-8 mt-8 mb-12">
+                <div class="avatar avatar-sm" style="width:24px;height:24px;font-size:10px;">HM</div>
+                <span style="font-size:12px;color:var(--muted);">Hans M.</span>
+              </div>
+              <div class="star-row mb-12">
+                <span class="star-full">★★★★</span>
+                <span style="font-size:12px;font-weight:600;margin-left:4px;">4.5</span>
+                <span class="count">(342 reviews)</span>
+              </div>
+              <button class="btn btn-outline btn-sm btn-full">Enroll →</button>
+            </div>
+          </div>
+
+          <!-- Course Card 6 -->
+          <div class="course-card">
+            <div class="course-thumb" style="background:linear-gradient(135deg,#1f1a2a,#140d1f);">🇯🇵</div>
+            <div class="course-body">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="diff-badge diff-i">Intermediate</span>
+                <span style="font-size:12px;color:var(--warning);font-weight:600;">$10/mo</span>
+              </div>
+              <div class="course-title">Japanese for Travelers</div>
+              <div class="flex items-center gap-8 mt-8 mb-12">
+                <div class="avatar avatar-sm" style="width:24px;height:24px;font-size:10px;">YT</div>
+                <span style="font-size:12px;color:var(--muted);">Yuki T.</span>
+              </div>
+              <div class="star-row mb-12">
+                <span class="star-full">★★★★★</span>
+                <span style="font-size:12px;font-weight:600;margin-left:4px;">4.9</span>
+                <span class="count">(1.7k reviews)</span>
+              </div>
+              <button class="btn btn-outline btn-sm btn-full">Enroll →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex items-center justify-between mt-32">
+          <div style="font-size:13px;color:var(--muted);">Page 1 of 24</div>
+          <div class="flex gap-8">
+            <button class="btn btn-ghost btn-sm">← Prev</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--neon);border-color:var(--neon);">1</button>
+            <button class="btn btn-ghost btn-sm">2</button>
+            <button class="btn btn-ghost btn-sm">3</button>
+            <button class="btn btn-ghost btn-sm">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">4.1 · Course Catalog</div>
+</body></html>

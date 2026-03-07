@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2.4 Skill Level — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.onboard-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; overflow: hidden; }
+.ob-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 50% 40%, rgba(191,255,0,0.055) 0%, transparent 70%); pointer-events: none; }
+.ob-card { width: 100%; max-width: 560px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 48px; position: relative; z-index: 2; }
+.ob-step-dots { display: flex; gap: 8px; margin-bottom: 36px; }
+.ob-dot { height: 4px; border-radius: 99px; background: var(--border); }
+.ob-dot.active { background: var(--neon); box-shadow: 0 0 8px rgba(191,255,0,0.4); }
+.ob-dot.done { background: rgba(191,255,0,0.4); }
+.level-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+.level-card { background: var(--input-bg); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 20px 24px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; }
+.level-card:hover { border-color: var(--border2); }
+.level-card.selected { border-color: var(--neon); background: var(--neon-dim); }
+.level-left { display: flex; align-items: center; gap: 16px; }
+.level-emoji { font-size: 28px; }
+.level-name { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+.level-desc { font-size: 13px; color: var(--muted); }
+.level-dots { display: flex; gap: 4px; }
+.level-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border2); }
+.level-dot.lit { background: var(--neon); box-shadow: 0 0 4px rgba(191,255,0,0.5); }
+.ob-nav { display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div style="font-size:13px;color:var(--muted);">Step 4 of 4 — Almost done!</div>
+</nav>
+<div class="onboard-wrap">
+  <div class="ob-bg"></div>
+  <div class="ob-card">
+    <div class="ob-step-dots">
+      <div class="ob-dot done" style="width:20px;"></div>
+      <div class="ob-dot done" style="width:20px;"></div>
+      <div class="ob-dot done" style="width:20px;"></div>
+      <div class="ob-dot active" style="width:32px;"></div>
+    </div>
+    <div style="margin-bottom:28px;">
+      <div class="badge badge-neon mb-12">Step 4 of 4</div>
+      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:8px;">What's your<br><span class="neon">Current Level?</span></div>
+      <div style="font-size:14px;color:var(--muted);">Be honest — we'll create the perfect starting point for you.</div>
+    </div>
+    <div class="level-list">
+      <div class="level-card selected">
+        <div class="level-left">
+          <div class="level-emoji">🌱</div>
+          <div>
+            <div class="level-name">Beginner</div>
+            <div class="level-desc">I know very little or nothing. Start from scratch.</div>
+          </div>
+        </div>
+        <div class="level-dots"><div class="level-dot lit"></div><div class="level-dot"></div><div class="level-dot"></div></div>
+      </div>
+      <div class="level-card">
+        <div class="level-left">
+          <div class="level-emoji">🌿</div>
+          <div>
+            <div class="level-name">Intermediate</div>
+            <div class="level-desc">I know the basics and can handle simple conversations.</div>
+          </div>
+        </div>
+        <div class="level-dots"><div class="level-dot lit"></div><div class="level-dot lit"></div><div class="level-dot"></div></div>
+      </div>
+      <div class="level-card">
+        <div class="level-left">
+          <div class="level-emoji">🌳</div>
+          <div>
+            <div class="level-name">Advanced</div>
+            <div class="level-desc">I'm fluent and want to polish my skills further.</div>
+          </div>
+        </div>
+        <div class="level-dots"><div class="level-dot lit"></div><div class="level-dot lit"></div><div class="level-dot lit"></div></div>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <button class="btn btn-ghost">← Back</button>
+      <button class="btn btn-primary btn-lg">Finish Setup 🎉</button>
+    </div>
+  </div>
+</div>
+<div class="screen-id">2.4 · Skill Level</div>
+</body></html>

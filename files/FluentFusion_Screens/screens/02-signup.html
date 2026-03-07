@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1.2 Sign Up — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+body { min-height: 100vh; display: flex; flex-direction: column; }
+.auth-wrap { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - var(--nav-h)); }
+.auth-left { background: var(--bg2); border-right: 1px solid var(--border); display: flex; align-items: center; justify-content: center; padding: 60px; position: relative; overflow: hidden; }
+.auth-left-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 90% 70% at 20% 50%, rgba(191,255,0,0.06) 0%, transparent 70%); }
+.auth-left-content { position: relative; z-index: 2; max-width: 380px; }
+.auth-right { display: flex; align-items: center; justify-content: center; padding: 60px 40px; overflow-y: auto; }
+.auth-box { width: 100%; max-width: 440px; }
+.auth-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em; margin-bottom: 6px; }
+.auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.role-card { background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.role-card:hover { border-color: var(--border2); }
+.role-card.selected { border-color: var(--neon); background: var(--neon-dim); }
+.role-card .ri { font-size: 24px; margin-bottom: 8px; }
+.role-card .rt { font-size: 14px; font-weight: 600; }
+.role-card .rd { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.social-btn { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 20px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--fg); transition: border-color 0.15s; margin-bottom: 10px; }
+.social-btn:hover { border-color: var(--border2); }
+.feat-li { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+.feat-li-icon { width: 36px; height: 36px; background: var(--neon-dim); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div style="font-size:14px;color:var(--muted);">Already have an account? <a href="#" style="color:var(--neon);text-decoration:none;font-weight:600;">Sign In</a></div>
+</nav>
+
+<div class="auth-wrap">
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <div class="auth-left-content">
+      <div class="badge badge-neon mb-16">✦ Start for Free</div>
+      <div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;line-height:1.1;margin-bottom:24px;">
+        JOIN 2 MILLION<br><span class="neon">LEARNERS</span><br>WORLDWIDE
+      </div>
+      <p style="font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:36px;">Create your free account and start your language learning journey today.</p>
+      <div class="feat-li"><div class="feat-li-icon">🎯</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px;">Personalized AI Learning</div><div style="font-size:13px;color:var(--muted);">Adapts to your skill level automatically</div></div></div>
+      <div class="feat-li"><div class="feat-li-icon">🔥</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px;">Daily Streaks & Gamification</div><div style="font-size:13px;color:var(--muted);">Stay motivated with XP and achievements</div></div></div>
+      <div class="feat-li"><div class="feat-li-icon">🎥</div><div><div style="font-size:14px;font-weight:600;margin-bottom:2px;">Live Instructor Sessions</div><div style="font-size:13px;color:var(--muted);">Practice with native speakers in real time</div></div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-box">
+      <div class="auth-title">Create Account</div>
+      <div class="auth-sub">Start your language learning journey</div>
+
+      <div class="form-group">
+        <label class="label">Full Name</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">👤</span>
+          <input class="input" type="text" placeholder="Jean Pierre Habimana">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Email Address</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">✉️</span>
+          <input class="input" type="email" placeholder="jean@example.com">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Password</label>
+        <div class="input-icon-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="input" type="password" placeholder="Min. 8 characters">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">I Am A...</label>
+        <div class="role-grid">
+          <div class="role-card selected">
+            <div class="ri">🎓</div>
+            <div class="rt">Student</div>
+            <div class="rd">I want to learn</div>
+          </div>
+          <div class="role-card">
+            <div class="ri">📋</div>
+            <div class="rt">Instructor</div>
+            <div class="rd">I want to teach</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-full mt-8">Create Free Account →</button>
+
+      <div class="divider-label"><span>or continue with</span></div>
+
+      <div class="social-btn"><span>🇬</span> Continue with Google</div>
+      <div class="social-btn"><span>🍎</span> Continue with Apple</div>
+
+      <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:20px;">
+        By signing up you agree to our <a href="#" style="color:var(--neon);text-decoration:none;">Terms</a> and <a href="#" style="color:var(--neon);text-decoration:none;">Privacy Policy</a>
+      </p>
+    </div>
+  </div>
+</div>
+<div class="screen-id">1.2 · Sign Up</div>
+</body></html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>11.2 Leaderboard — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:12px;margin:32px 0;}
+.podium-place{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.podium-block{width:100px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#000;}
+.podium-1 .podium-block{height:120px;background:linear-gradient(180deg,var(--neon),var(--neon2));box-shadow:var(--neon-glow);}
+.podium-2 .podium-block{height:90px;background:linear-gradient(180deg,#C0C0C0,#a0a0a0);}
+.podium-3 .podium-block{height:70px;background:linear-gradient(180deg,#CD7F32,#a06428);}
+.lb-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:var(--radius);margin-bottom:6px;transition:background .15s;cursor:pointer;}
+.lb-row:hover{background:rgba(255,255,255,.03);}
+.lb-row.you{background:var(--neon-dim);border:1px solid rgba(191,255,0,.2);}
+.rank-num{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;width:28px;text-align:center;flex-shrink:0;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16"><div style="font-size:20px;">🔔</div><div class="avatar avatar-sm">JP</div></div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>🏆</span> Achievements</a>
+    <a class="sidebar-item active" href="#"><span>📊</span> Leaderboard</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+  </aside>
+  <main class="main">
+    <div class="page-hdr"><div class="h2">Weekly <span class="neon">Leaderboard</span></div><p>Compete with learners globally · Resets every Monday</p></div>
+
+    <div class="flex gap-8 mb-24">
+      <div class="badge badge-neon" style="cursor:pointer;padding:6px 16px;">This Week</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 16px;">All Time</div>
+      <div class="badge badge-muted" style="cursor:pointer;padding:6px 16px;">Friends</div>
+      <div style="margin-left:auto;"><select class="select" style="width:auto;"><option>All Languages</option><option>English</option><option>Kinyarwanda</option></select></div>
+    </div>
+
+    <!-- Podium Top 3 -->
+    <div class="podium">
+      <div class="podium-place podium-2">
+        <div class="avatar avatar-md" style="background:linear-gradient(135deg,#0080ff,#00cfff);">KR</div>
+        <div style="text-align:center;"><div style="font-size:14px;font-weight:700;">Kagiso R.</div><div style="font-size:12px;color:var(--muted);">4,200 XP</div></div>
+        <div class="podium-block">2</div>
+      </div>
+      <div class="podium-place podium-1">
+        <div style="position:relative;"><div class="avatar avatar-lg">AM</div><div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:20px;">👑</div></div>
+        <div style="text-align:center;"><div style="font-size:15px;font-weight:700;">Amina M.</div><div style="font-size:13px;color:var(--neon);font-weight:700;">5,840 XP</div></div>
+        <div class="podium-block">1</div>
+      </div>
+      <div class="podium-place podium-3">
+        <div class="avatar avatar-md" style="background:linear-gradient(135deg,#ff8800,#ffcc00);">MH</div>
+        <div style="text-align:center;"><div style="font-size:14px;font-weight:700;">Marie H.</div><div style="font-size:12px;color:var(--muted);">3,650 XP</div></div>
+        <div class="podium-block">3</div>
+      </div>
+    </div>
+
+    <!-- Full List -->
+    <div class="card" style="padding:16px;">
+      <div class="lb-row"><div class="rank-num" style="color:var(--neon);">1</div><div class="avatar avatar-sm">AM</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Amina M.</div><div style="font-size:12px;color:var(--muted);">English · Level 12</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:var(--neon);">5,840 XP</div><div style="font-size:11px;color:var(--muted);">🔥 14-day streak</div></div></div>
+      <div class="lb-row"><div class="rank-num" style="color:var(--muted);">2</div><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#0080ff,#00cfff);">KR</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Kagiso R.</div><div style="font-size:12px;color:var(--muted);">Kinyarwanda · Level 10</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:var(--muted);">4,200 XP</div><div style="font-size:11px;color:var(--muted);">🔥 9-day streak</div></div></div>
+      <div class="lb-row"><div class="rank-num" style="color:var(--muted);">3</div><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#ff8800,#ffcc00);">MH</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Marie H.</div><div style="font-size:12px;color:var(--muted);">French · Level 9</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:var(--muted);">3,650 XP</div></div></div>
+      <div class="lb-row"><div class="rank-num" style="color:var(--muted);">4</div><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#7f00ff,#00cfff);">PH</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Patrick H.</div><div style="font-size:12px;color:var(--muted);">English · Level 8</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:var(--muted);">2,980 XP</div></div></div>
+      <div style="border-top:1px dashed var(--border);margin:8px 0;padding:6px 0;text-align:center;font-size:12px;color:var(--muted2);">· · · 12 more · · ·</div>
+      <div class="lb-row you"><div class="rank-num" style="color:var(--neon);">17</div><div class="avatar avatar-sm">JP</div><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Jean Pierre H. <span style="font-size:11px;color:var(--neon);">(You)</span></div><div style="font-size:12px;color:var(--muted);">English · Level 6</div></div><div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:var(--neon);">1,240 XP</div><div style="font-size:11px;color:var(--muted);">🔥 7-day streak</div></div></div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">11.2 · Leaderboard</div>
+</body></html>

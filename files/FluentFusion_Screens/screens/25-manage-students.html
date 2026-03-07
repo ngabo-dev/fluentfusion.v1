@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>8.3 Manage Students — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+table { width:100%; border-collapse:collapse; }
+th { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); padding:12px 16px; text-align:left; border-bottom:1px solid var(--border); font-weight:500; }
+td { padding:14px 16px; border-bottom:1px solid rgba(42,42,42,.5); font-size:14px; vertical-align:middle; }
+tr:hover td { background:rgba(255,255,255,.02); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-12"><span class="badge badge-neon">📋 Instructor</span><div class="avatar avatar-sm">MK</div></div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>📊</span> Overview</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item active" href="#"><span>👥</span> Students</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>💰</span> Earnings</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> Settings</a>
+  </aside>
+  <main class="main">
+    <div class="flex items-center justify-between mb-24">
+      <div class="page-hdr" style="margin:0;"><div class="h2">Manage <span class="neon">Students</span></div><p>12,847 total students across all courses</p></div>
+      <button class="btn btn-outline btn-sm">Export CSV</button>
+    </div>
+    <div class="flex items-center gap-12 mb-20">
+      <div class="input-icon-wrap" style="flex:1;max-width:380px;"><span class="input-icon">🔍</span><input class="input" type="text" placeholder="Search students..."></div>
+      <select class="select" style="width:auto;min-width:180px;"><option>All Courses</option><option>English for Tourism</option><option>Business English</option></select>
+      <select class="select" style="width:auto;min-width:140px;"><option>All Progress</option><option>Active</option><option>Completed</option><option>Inactive</option></select>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <thead><tr><th>Student</th><th>Course</th><th>Progress</th><th>Last Active</th><th>Avg Score</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm">AM</div><div><div style="font-weight:600;">Amina M.</div><div style="font-size:12px;color:var(--muted);">amina@example.com</div></div></div></td><td style="color:var(--muted);">English for Tourism</td><td><div class="flex items-center gap-8"><div style="width:80px;"><div class="progress-track"><div class="progress-fill" style="width:78%;"></div></div></div><span style="font-size:12px;color:var(--neon);">78%</span></div></td><td style="color:var(--muted);font-size:13px;">2 hours ago</td><td style="color:var(--neon);font-weight:600;">88%</td><td><span class="badge badge-success">Active</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#0080ff,#00cfff);">KR</div><div><div style="font-weight:600;">Kagiso R.</div><div style="font-size:12px;color:var(--muted);">kagiso@example.com</div></div></div></td><td style="color:var(--muted);">English for Tourism</td><td><div class="flex items-center gap-8"><div style="width:80px;"><div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div></div><span style="font-size:12px;color:var(--success);">100%</span></div></td><td style="color:var(--muted);font-size:13px;">Yesterday</td><td style="color:var(--neon);font-weight:600;">95%</td><td><span class="badge badge-success">Completed</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#ff4444,#ff8800);">JN</div><div><div style="font-weight:600;">James N.</div><div style="font-size:12px;color:var(--muted);">james@example.com</div></div></div></td><td style="color:var(--muted);">Business English</td><td><div class="flex items-center gap-8"><div style="width:80px;"><div class="progress-track"><div class="progress-fill" style="width:23%;"></div></div></div><span style="font-size:12px;color:var(--neon);">23%</span></div></td><td style="color:var(--muted);font-size:13px;">5 days ago</td><td style="color:var(--warning);font-weight:600;">62%</td><td><span class="badge badge-warning">At Risk</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#7f00ff,#00cfff);">PH</div><div><div style="font-weight:600;">Patrick H.</div><div style="font-size:12px;color:var(--muted);">patrick@example.com</div></div></div></td><td style="color:var(--muted);">English for Tourism</td><td><div class="flex items-center gap-8"><div style="width:80px;"><div class="progress-track"><div class="progress-fill" style="width:55%;"></div></div></div><span style="font-size:12px;color:var(--neon);">55%</span></div></td><td style="color:var(--muted);font-size:13px;">3 hours ago</td><td style="color:var(--neon);font-weight:600;">81%</td><td><span class="badge badge-success">Active</span></td><td><button class="btn btn-ghost btn-sm">View</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between mt-16" style="font-size:13px;color:var(--muted);">
+      <span>Showing 1–20 of 12,847 students</span>
+      <div class="flex gap-8"><button class="btn btn-ghost btn-sm">← Prev</button><button class="btn btn-outline btn-sm" style="color:var(--neon);border-color:var(--neon);">1</button><button class="btn btn-ghost btn-sm">2</button><button class="btn btn-ghost btn-sm">Next →</button></div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">8.3 · Manage Students</div>
+</body></html>

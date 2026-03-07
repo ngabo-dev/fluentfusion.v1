@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>11.1 Achievements — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.ach-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;transition:all .2s;cursor:pointer;}
+.ach-card:hover{border-color:rgba(191,255,0,.25);transform:translateY(-2px);}
+.ach-card.locked{opacity:.35;filter:grayscale(1);}
+.ach-card.epic{border-color:rgba(191,255,0,.3);background:rgba(191,255,0,.04);}
+.ach-icon{font-size:36px;margin-bottom:10px;}
+.ach-name{font-size:13px;font-weight:700;margin-bottom:3px;}
+.ach-desc{font-size:11px;color:var(--muted);line-height:1.4;}
+.ach-xp{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--neon);margin-top:8px;font-weight:600;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16"><div style="font-size:20px;">🔔</div><div class="avatar avatar-sm">JP</div></div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item active" href="#"><span>🏆</span> Achievements</a>
+    <a class="sidebar-item" href="#"><span>📊</span> Leaderboard</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+  </aside>
+  <main class="main">
+    <div class="page-hdr"><div class="h2">Your <span class="neon">Achievements</span></div><p>8 of 32 badges earned · Keep learning to unlock more!</p></div>
+    <div class="grid-4 mb-28">
+      <div class="stat-card"><div class="stat-label">Badges Earned</div><div class="stat-value">8</div><div class="stat-sub">of 32 total</div></div>
+      <div class="stat-card"><div class="stat-label">XP from Badges</div><div class="stat-value">1,200</div><div class="stat-sub">+50 this week</div></div>
+      <div class="stat-card"><div class="stat-label">Rarest Badge</div><div class="stat-value" style="font-size:28px;">⚡</div><div class="stat-sub">Speed Learner</div></div>
+      <div class="stat-card"><div class="stat-label">Next Badge</div><div class="stat-value" style="font-size:28px;">🔥</div><div class="stat-sub">14-Day Streak · 7 left</div></div>
+    </div>
+
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--neon);text-transform:uppercase;margin-bottom:16px;">Earned · 8 Badges</div>
+    <div class="badge-grid mb-28">
+      <div class="ach-card epic"><div class="ach-icon">🎯</div><div class="ach-name">First Step</div><div class="ach-desc">Completed your very first lesson</div><div class="ach-xp">+50 XP · Earned Jan 10</div></div>
+      <div class="ach-card epic"><div class="ach-icon">🔥</div><div class="ach-name">7-Day Streak</div><div class="ach-desc">7 consecutive days of learning</div><div class="ach-xp">+100 XP · Earned Feb 5</div></div>
+      <div class="ach-card epic"><div class="ach-icon">⚡</div><div class="ach-name">Speed Learner</div><div class="ach-desc">Completed 5 lessons in one day</div><div class="ach-xp">+150 XP · Earned Jan 15</div></div>
+      <div class="ach-card epic"><div class="ach-icon">🏆</div><div class="ach-name">Perfect Score</div><div class="ach-desc">100% on any quiz</div><div class="ach-xp">+200 XP · Earned Jan 18</div></div>
+      <div class="ach-card epic"><div class="ach-icon">📚</div><div class="ach-name">Bookworm</div><div class="ach-desc">Completed 20 lessons total</div><div class="ach-xp">+100 XP · Earned Feb 1</div></div>
+      <div class="ach-card"><div class="ach-icon">💬</div><div class="ach-name">Conversationalist</div><div class="ach-desc">Posted 5 community questions</div><div class="ach-xp">+75 XP · Earned Feb 10</div></div>
+      <div class="ach-card"><div class="ach-icon">🎙</div><div class="ach-name">Pronunciation Pro</div><div class="ach-desc">90%+ on speaking practice</div><div class="ach-xp">+150 XP · Earned Feb 12</div></div>
+      <div class="ach-card"><div class="ach-icon">🌍</div><div class="ach-name">Multilingual</div><div class="ach-desc">Enrolled in 2 language courses</div><div class="ach-xp">+100 XP · Earned Feb 14</div></div>
+    </div>
+
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted2);text-transform:uppercase;margin-bottom:16px;">Locked · 24 Badges</div>
+    <div class="badge-grid">
+      <div class="ach-card locked"><div class="ach-icon">💎</div><div class="ach-name">Diamond Streak</div><div class="ach-desc">30-day streak</div><div class="ach-xp">+500 XP</div></div>
+      <div class="ach-card locked"><div class="ach-icon">👑</div><div class="ach-name">Top Learner</div><div class="ach-desc">Rank #1 on weekly leaderboard</div><div class="ach-xp">+300 XP</div></div>
+      <div class="ach-card locked"><div class="ach-icon">🎓</div><div class="ach-name">Graduate</div><div class="ach-desc">Complete an entire course</div><div class="ach-xp">+400 XP</div></div>
+      <div class="ach-card locked"><div class="ach-icon">🗣</div><div class="ach-name">Fluent</div><div class="ach-desc">Reach 90% fluency score</div><div class="ach-xp">+600 XP</div></div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">11.1 · Achievements</div>
+</body></html>

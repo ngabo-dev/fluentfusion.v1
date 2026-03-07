@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2.3 Learning Goal — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.onboard-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; overflow: hidden; }
+.ob-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 50% 40%, rgba(191,255,0,0.055) 0%, transparent 70%); pointer-events: none; }
+.ob-card { width: 100%; max-width: 600px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 48px; position: relative; z-index: 2; }
+.ob-step-dots { display: flex; gap: 8px; margin-bottom: 36px; }
+.ob-dot { height: 4px; border-radius: 99px; background: var(--border); }
+.ob-dot.active { background: var(--neon); box-shadow: 0 0 8px rgba(191,255,0,0.4); }
+.ob-dot.done { background: rgba(191,255,0,0.4); }
+.goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 32px; }
+.goal-card { background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; cursor: pointer; transition: all 0.15s; display: flex; align-items: flex-start; gap: 14px; }
+.goal-card:hover { border-color: var(--border2); }
+.goal-card.selected { border-color: var(--neon); background: var(--neon-dim); }
+.goal-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.goal-card.selected .goal-icon { background: rgba(191,255,0,0.12); }
+.goal-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.goal-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.ob-nav { display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div style="font-size:13px;color:var(--muted);">Step 3 of 4 — Setting up your profile</div>
+</nav>
+<div class="onboard-wrap">
+  <div class="ob-bg"></div>
+  <div class="ob-card">
+    <div class="ob-step-dots">
+      <div class="ob-dot done" style="width:20px;"></div>
+      <div class="ob-dot done" style="width:20px;"></div>
+      <div class="ob-dot active" style="width:32px;"></div>
+      <div class="ob-dot" style="width:20px;"></div>
+    </div>
+    <div style="margin-bottom:28px;">
+      <div class="badge badge-neon mb-12">Step 3 of 4</div>
+      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:8px;">What's your<br><span class="neon">Learning Goal?</span></div>
+      <div style="font-size:14px;color:var(--muted);">This helps us curate the best content for you.</div>
+    </div>
+    <div class="goal-grid">
+      <div class="goal-card selected">
+        <div class="goal-icon">✈️</div>
+        <div><div class="goal-title">Travel</div><div class="goal-desc">Navigate new countries and connect with locals while travelling.</div></div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-icon">🎓</div>
+        <div><div class="goal-title">Academic</div><div class="goal-desc">Study abroad or pursue academic opportunities in a new language.</div></div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-icon">💼</div>
+        <div><div class="goal-title">Business</div><div class="goal-desc">Expand your professional network and career globally.</div></div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-icon">💬</div>
+        <div><div class="goal-title">Conversation</div><div class="goal-desc">Make new friends and communicate with people from different cultures.</div></div>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <button class="btn btn-ghost">← Back</button>
+      <button class="btn btn-primary">Continue →</button>
+    </div>
+  </div>
+</div>
+<div class="screen-id">2.3 · Learning Goal</div>
+</body></html>

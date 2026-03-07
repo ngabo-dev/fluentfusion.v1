@@ -1,0 +1,28 @@
+# Import all models so they're registered with SQLAlchemy
+from .user import User, UserSettings, EmailVerification, PasswordReset, UserSocialLogin
+from .language import Language, UserOnboarding, UserLanguage
+from .course import Course, CourseUnit, Lesson, LessonTranscript, LessonTranscriptSegment, LessonVocabulary
+from .progress import Enrollment, LessonCompletion, SkillScore, WeeklyActivity
+from .quiz import Quiz, QuizQuestion, QuizQuestionOption, QuizAttempt, QuizAnswer
+from .practice import (
+    FlashcardDeck, Flashcard, FlashcardProgress,
+    VocabularyBank,
+    SpeakingExercise, SpeakingAttempt,
+    ListeningExercise, ListeningAttempt
+)
+from .live_session import LiveSession, LiveSessionRegistration, LiveSessionMessage
+from .community import CommunityPost, CommunityPostTag, CommunityPostLike, CommunityComment, CommunityPostSave
+from .course_review import CourseReview
+from .gamification import (
+    UserXP, XPTransaction, Streak, StreakDay,
+    AchievementDefinition, UserAchievement,
+    DailyChallenge, DailyChallengeTask, UserDailyChallengeProgress,
+    Leaderboard
+)
+from .instructor import InstructorProfile, InstructorEarning, InstructorPayoutRequest
+from .payment import SubscriptionPlan, UserSubscription, Payment, CoursePurchase
+from .notification import Notification
+from .admin import AdminAuditLog, ModerationReport, PlatformAnalyticsSnapshot
+
+# Add missing import for course_review if not already there
+from .course_review import CourseReview

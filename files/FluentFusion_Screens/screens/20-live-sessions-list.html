@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>6.1 Live Sessions — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.session-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; transition: all 0.2s; cursor: pointer; }
+.session-card:hover { border-color: rgba(191,255,0,0.25); }
+.session-card.live-now { border-color: rgba(0,207,255,0.3); background: rgba(0,207,255,0.03); }
+.live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--info); letter-spacing: 0.08em; text-transform: uppercase; }
+.live-badge::before { content: ''; width: 6px; height: 6px; background: var(--info); border-radius: 50%; box-shadow: 0 0 6px var(--info); animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+.sessions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <div style="font-size:20px;cursor:pointer;">🔔</div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item active" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+  </aside>
+  <main class="main">
+    <div class="flex items-center justify-between mb-24">
+      <div class="page-hdr" style="margin:0;"><div class="h2">Live <span class="neon">Sessions</span></div><p>Join real-time classes with certified instructors</p></div>
+      <button class="btn btn-primary">+ Schedule Session</button>
+    </div>
+
+    <!-- Live Now -->
+    <div style="margin-bottom:8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--info);text-transform:uppercase;">🔴 Live Now · 2 Sessions</div>
+    <div class="sessions-grid mb-28">
+      <div class="session-card live-now">
+        <div class="flex items-center justify-between mb-12">
+          <span class="live-badge">Live Now</span>
+          <span style="font-size:12px;color:var(--muted);">47 watching</span>
+        </div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:8px;">Business English Masterclass</div>
+        <div class="flex items-center gap-8 mb-12">
+          <div class="avatar avatar-sm">MK</div><span style="font-size:13px;color:var(--muted);">Dr. Mary K.</span>
+        </div>
+        <div class="flex gap-8 mb-16 flex-wrap">
+          <span class="badge badge-info">🇬🇧 English</span>
+          <span class="badge badge-muted">Intermediate</span>
+        </div>
+        <button class="btn btn-primary btn-sm btn-full">Join Now →</button>
+      </div>
+      <div class="session-card live-now">
+        <div class="flex items-center justify-between mb-12">
+          <span class="live-badge">Live Now</span>
+          <span style="font-size:12px;color:var(--muted);">23 watching</span>
+        </div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:8px;">Kinyarwanda Conversation Club</div>
+        <div class="flex items-center gap-8 mb-12">
+          <div class="avatar avatar-sm">JN</div><span style="font-size:13px;color:var(--muted);">Prof. Jean N.</span>
+        </div>
+        <div class="flex gap-8 mb-16 flex-wrap">
+          <span class="badge badge-neon">🇷🇼 Kinyarwanda</span>
+          <span class="badge badge-muted">Beginner</span>
+        </div>
+        <button class="btn btn-primary btn-sm btn-full">Join Now →</button>
+      </div>
+    </div>
+
+    <!-- Upcoming -->
+    <div style="margin-bottom:8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">Upcoming Sessions</div>
+    <div class="sessions-grid">
+      <div class="session-card">
+        <div style="font-size:12px;font-weight:600;color:var(--warning);margin-bottom:12px;">⏰ Today · 3:00 PM</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px;">French Pronunciation Workshop</div>
+        <div class="flex items-center gap-8 mb-12"><div class="avatar avatar-sm">AL</div><span style="font-size:13px;color:var(--muted);">Anne L.</span></div>
+        <div class="flex gap-8 mb-16"><span class="badge badge-muted">🇫🇷 French</span><span class="badge badge-muted">All Levels</span></div>
+        <div class="flex gap-10">
+          <button class="btn btn-outline btn-sm" style="flex:1;">Set Reminder</button>
+          <button class="btn btn-primary btn-sm" style="flex:1;">Register →</button>
+        </div>
+      </div>
+      <div class="session-card">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:12px;">📅 Tomorrow · 10:00 AM</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Spanish for Travelers</div>
+        <div class="flex items-center gap-8 mb-12"><div class="avatar avatar-sm">CR</div><span style="font-size:13px;color:var(--muted);">Carlos R.</span></div>
+        <div class="flex gap-8 mb-16"><span class="badge badge-muted">🇪🇸 Spanish</span><span class="badge badge-muted">Beginner</span></div>
+        <div class="flex gap-10">
+          <button class="btn btn-outline btn-sm" style="flex:1;">Set Reminder</button>
+          <button class="btn btn-primary btn-sm" style="flex:1;">Register →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">6.1 · Live Sessions List</div>
+</body></html>

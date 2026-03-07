@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>4.2 Course Details — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.course-hero { background: linear-gradient(135deg, #1a2a1a 0%, #0a0a0a 60%); border-bottom: 1px solid var(--border); padding: 48px 40px; }
+.two-col { display: grid; grid-template-columns: 1fr 360px; gap: 40px; align-items: start; }
+.sticky-card { position: sticky; top: calc(var(--nav-h) + 20px); background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden; }
+.sticky-card-thumb { height: 200px; background: linear-gradient(135deg, #1a2a1a, #252525); display: flex; align-items: center; justify-content: center; font-size: 64px; }
+.sticky-card-body { padding: 24px; }
+.curriculum-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
+.curriculum-item:hover { background: rgba(255,255,255,0.04); }
+.curriculum-item.completed .ci-num { color: var(--neon); }
+.ci-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted2); margin-right: 12px; flex-shrink: 0; }
+.review-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <a href="#" style="font-size:13px;color:var(--muted);text-decoration:none;">← Back to Catalog</a>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item active" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> Settings</a>
+  </aside>
+
+  <main class="main" style="padding:0;">
+    <!-- Course Hero -->
+    <div class="course-hero">
+      <div style="max-width:700px;">
+        <div class="flex gap-8 mb-16 flex-wrap">
+          <span class="badge badge-neon">🇬🇧 English</span>
+          <span class="badge diff-badge diff-b" style="font-size:11px;padding:4px 10px;">Beginner</span>
+          <span class="badge badge-warning">⭐ Bestseller</span>
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:12px;">English for Tourism Workers</div>
+        <div style="font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:20px;">Master professional hospitality English — greetings, room service, guest handling, and more. Designed specifically for tourism workers in Rwanda.</div>
+        <div class="flex items-center gap-16 flex-wrap">
+          <div class="flex items-center gap-8">
+            <div class="avatar avatar-sm">MK</div>
+            <span style="font-size:14px;font-weight:500;">Dr. Mary K.</span>
+          </div>
+          <div class="flex items-center gap-6">
+            <span style="color:var(--warning);">★★★★★</span>
+            <span style="font-weight:700;">4.9</span>
+            <span style="color:var(--muted);">(2,147 reviews)</span>
+          </div>
+          <span style="font-size:13px;color:var(--muted);">12,500 students · 8 units · 48 lessons</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 40px;">
+      <div class="two-col">
+        <!-- LEFT: Details -->
+        <div>
+          <div class="tabs">
+            <div class="tab active">Overview</div>
+            <div class="tab">Curriculum</div>
+            <div class="tab">Instructor</div>
+            <div class="tab">Reviews</div>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-32">
+            <div style="font-size:16px;font-weight:700;margin-bottom:12px;">About This Course</div>
+            <p style="color:var(--muted);line-height:1.75;">This comprehensive English course is designed for tourism workers in Rwanda who want to communicate professionally with international guests. You'll learn real-world hospitality phrases, pronunciation tips, and cultural etiquette.</p>
+          </div>
+
+          <!-- Curriculum -->
+          <div class="mb-32">
+            <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Curriculum · 8 Units · 48 Lessons</div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+              <div style="padding:16px 20px;background:rgba(191,255,0,0.04);border-bottom:1px solid var(--border);font-weight:700;font-size:14px;">Unit 1 · Greetings & First Impressions <span style="color:var(--muted);font-weight:400;font-size:13px;">6 lessons</span></div>
+              <div class="curriculum-item completed"><span class="ci-num">01</span><span style="font-size:14px;">Welcome phrases at the front desk</span><span style="font-size:12px;color:var(--success);">✓ Done</span></div>
+              <div class="curriculum-item completed"><span class="ci-num">02</span><span style="font-size:14px;">Formal vs informal greetings</span><span style="font-size:12px;color:var(--success);">✓ Done</span></div>
+              <div class="curriculum-item"><span class="ci-num">03</span><span style="font-size:14px;">Pronunciation: vowel sounds</span><span style="font-size:12px;color:var(--muted);">15 min</span></div>
+              <div style="padding:16px 20px;background:rgba(191,255,0,0.04);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-weight:700;font-size:14px;">Unit 2 · Hotel Check-in <span style="color:var(--muted);font-weight:400;font-size:13px;">8 lessons</span></div>
+              <div class="curriculum-item"><span class="ci-num">01</span><span style="font-size:14px;">Check-in procedures vocabulary</span><span style="font-size:12px;color:var(--muted);">18 min</span></div>
+              <div class="curriculum-item"><span class="ci-num">02</span><span style="font-size:14px;">Handling special requests</span><span style="font-size:12px;color:var(--muted);">20 min</span></div>
+            </div>
+          </div>
+
+          <!-- Reviews -->
+          <div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Student Reviews</div>
+            <div class="review-item">
+              <div class="flex items-center gap-10 mb-8"><div class="avatar avatar-sm">AM</div><div><div style="font-size:14px;font-weight:600;">Amina M.</div><div style="font-size:11px;color:var(--muted);">2 days ago</div></div><span style="margin-left:auto;color:var(--warning);">★★★★★</span></div>
+              <p style="font-size:14px;color:var(--muted);">This course completely transformed how I communicate with hotel guests. The pronunciation exercises are incredible!</p>
+            </div>
+            <div class="review-item">
+              <div class="flex items-center gap-10 mb-8"><div class="avatar avatar-sm">KR</div><div><div style="font-size:14px;font-weight:600;">Kagiso R.</div><div style="font-size:11px;color:var(--muted);">1 week ago</div></div><span style="margin-left:auto;color:var(--warning);">★★★★★</span></div>
+              <p style="font-size:14px;color:var(--muted);">Very practical. I use phrases from this course every single day at work. Highly recommend!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Enroll Card -->
+        <div>
+          <div class="sticky-card">
+            <div class="sticky-card-thumb">🇬🇧</div>
+            <div class="sticky-card-body">
+              <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--neon);margin-bottom:4px;">FREE</div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Full access · No credit card needed</div>
+              <button class="btn btn-primary btn-lg btn-full mb-12">Enroll Now — Free →</button>
+              <button class="btn btn-outline btn-sm btn-full">Preview Course</button>
+              <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px;">
+                <div class="flex items-center gap-8 text-13"><span>📚</span><span style="font-size:13px;color:var(--muted);">48 lessons · 8 units</span></div>
+                <div class="flex items-center gap-8"><span>⏱</span><span style="font-size:13px;color:var(--muted);">~12 hours total</span></div>
+                <div class="flex items-center gap-8"><span>🏆</span><span style="font-size:13px;color:var(--muted);">Certificate on completion</span></div>
+                <div class="flex items-center gap-8"><span>♾️</span><span style="font-size:13px;color:var(--muted);">Lifetime access</span></div>
+                <div class="flex items-center gap-8"><span>📱</span><span style="font-size:13px;color:var(--muted);">Mobile & desktop</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">4.2 · Course Details</div>
+</body></html>

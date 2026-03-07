@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>7.1 Community Feed — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.feed-layout { display: grid; grid-template-columns: 1fr 300px; gap: 28px; }
+.post-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+.post-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.post-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.post-body { font-size: 14px; line-height: 1.7; margin-bottom: 14px; color: rgba(255,255,255,0.85); }
+.post-tag { display: inline-block; background: var(--neon-dim); color: var(--neon); border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; margin-right: 6px; margin-bottom: 8px; }
+.post-actions { display: flex; gap: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+.action-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; transition: color 0.15s; }
+.action-item:hover { color: var(--neon); }
+.action-item.liked { color: var(--danger); }
+.compose-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 20px; }
+.compose-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 14px; color: var(--fg); outline: none; resize: none; min-height: 80px; font-family: 'DM Sans', sans-serif; }
+.compose-input:focus { border-color: var(--neon); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <div style="font-size:20px;cursor:pointer;">🔔</div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item active" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+  </aside>
+  <main class="main">
+    <div class="page-hdr">
+      <div class="h2">Community <span class="neon">Feed</span></div>
+      <p>Ask questions, share insights, connect with learners worldwide</p>
+    </div>
+
+    <div class="feed-layout">
+      <div>
+        <!-- Compose -->
+        <div class="compose-box">
+          <div class="flex items-center gap-12 mb-12">
+            <div class="avatar avatar-sm">JP</div>
+            <div style="font-size:14px;color:var(--muted);">Share a question or insight...</div>
+          </div>
+          <textarea class="compose-input" placeholder="What's on your mind? Ask a question, share a tip, or start a discussion..."></textarea>
+          <div class="flex items-center justify-between mt-12">
+            <div class="flex gap-8">
+              <button class="btn btn-ghost btn-sm">📷 Photo</button>
+              <button class="btn btn-ghost btn-sm">🏷️ Tag</button>
+            </div>
+            <button class="btn btn-primary btn-sm">Post →</button>
+          </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="flex gap-8 mb-16">
+          <div class="badge badge-neon" style="cursor:pointer;padding:6px 14px;">Latest</div>
+          <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">Popular</div>
+          <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">Questions</div>
+          <div class="badge badge-muted" style="cursor:pointer;padding:6px 14px;">Tips</div>
+        </div>
+
+        <!-- Posts -->
+        <div class="post-card">
+          <div class="post-header">
+            <div class="avatar avatar-sm">AM</div>
+            <div><div style="font-size:14px;font-weight:600;">Amina M.</div><div class="post-meta">2 hours ago · Learning English</div></div>
+            <span class="badge badge-muted" style="margin-left:auto;">❓ Question</span>
+          </div>
+          <div class="post-body">What's the difference between "Could you" and "Would you" when making polite requests in English? I always get confused when speaking to hotel guests!</div>
+          <div><span class="post-tag">#English</span><span class="post-tag">#Grammar</span><span class="post-tag">#Hospitality</span></div>
+          <div class="post-actions">
+            <div class="action-item liked">❤️ 24</div>
+            <div class="action-item">💬 8 Comments</div>
+            <div class="action-item">↗ Share</div>
+            <div class="action-item" style="margin-left:auto;">🔖 Save</div>
+          </div>
+        </div>
+
+        <div class="post-card">
+          <div class="post-header">
+            <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#0080ff,#00cfff);">KR</div>
+            <div><div style="font-size:14px;font-weight:600;">Kagiso R.</div><div class="post-meta">5 hours ago · Learning Kinyarwanda</div></div>
+            <span class="badge badge-success" style="margin-left:auto;">💡 Tip</span>
+          </div>
+          <div class="post-body">Pro tip: When learning Kinyarwanda greetings, remember that "Muraho" is used any time of day, while "Mwiriwe" is specifically for afternoon/evening. This simple distinction helped me a lot!</div>
+          <div><span class="post-tag">#Kinyarwanda</span><span class="post-tag">#Greetings</span><span class="post-tag">#Tips</span></div>
+          <div class="post-actions">
+            <div class="action-item">❤️ 47</div>
+            <div class="action-item">💬 12 Comments</div>
+            <div class="action-item">↗ Share</div>
+            <div class="action-item" style="margin-left:auto;">🔖 Save</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div>
+        <div class="card mb-16">
+          <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;">Top Contributors</div>
+          <div class="flex items-center gap-10 mb-12">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--neon);width:20px;">1</div>
+            <div class="avatar avatar-sm">MK</div>
+            <div><div style="font-size:13px;font-weight:600;">Dr. Mary K.</div><div style="font-size:11px;color:var(--muted);">342 helpful answers</div></div>
+          </div>
+          <div class="flex items-center gap-10 mb-12">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted2);width:20px;">2</div>
+            <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#0080ff,#00cfff);">KR</div>
+            <div><div style="font-size:13px;font-weight:600;">Kagiso R.</div><div style="font-size:11px;color:var(--muted);">218 helpful answers</div></div>
+          </div>
+          <div class="flex items-center gap-10">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted2);width:20px;">3</div>
+            <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#ff8800,#ffcc00);">AM</div>
+            <div><div style="font-size:13px;font-weight:600;">Amina M.</div><div style="font-size:11px;color:var(--muted);">156 helpful answers</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;">Trending Topics</div>
+          <div style="font-size:13px;color:var(--neon);cursor:pointer;margin-bottom:8px;">#KinyarwandaTips</div>
+          <div style="font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:8px;">#EnglishGrammar</div>
+          <div style="font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:8px;">#FrenchPronunciation</div>
+          <div style="font-size:13px;color:var(--muted);cursor:pointer;">#TourismEnglish</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">7.1 · Community Feed</div>
+</body></html>

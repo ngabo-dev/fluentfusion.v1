@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>12.2 Checkout — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.checkout-grid{display:grid;grid-template-columns:1fr 400px;gap:40px;max-width:960px;margin:0 auto;align-items:start;}
+.order-summary{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;position:sticky;top:calc(var(--nav-h)+20px);}
+.card-input-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.secure-badge{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:16px;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div style="font-size:14px;color:var(--muted);">Secure Checkout 🔒</div>
+</nav>
+<main style="padding:40px;">
+  <div style="text-align:center;margin-bottom:36px;"><div class="h2">Complete Your <span class="neon">Subscription</span></div></div>
+  <div class="checkout-grid">
+    <!-- Left: Payment Form -->
+    <div>
+      <div class="card mb-20">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;">Contact Information</div>
+        <div class="form-group"><label class="label">Full Name</label><input class="input" value="Jean Pierre Habimana"></div>
+        <div class="form-group"><label class="label">Email</label><input class="input" value="jp@example.com"></div>
+      </div>
+      <div class="card mb-20">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;">Payment Method</div>
+        <div class="flex gap-8 mb-16">
+          <div style="flex:1;padding:10px;background:var(--neon-dim);border:1px solid var(--neon);border-radius:var(--radius);text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--neon);">💳 Card</div>
+          <div style="flex:1;padding:10px;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius);text-align:center;cursor:pointer;font-size:13px;color:var(--muted);">📱 Mobile Money</div>
+          <div style="flex:1;padding:10px;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius);text-align:center;cursor:pointer;font-size:13px;color:var(--muted);">🍎 Apple Pay</div>
+        </div>
+        <div class="form-group"><label class="label">Card Number</label><div class="input-icon-wrap"><span class="input-icon">💳</span><input class="input" placeholder="1234 5678 9012 3456"></div></div>
+        <div class="card-input-row">
+          <div class="form-group"><label class="label">Expiry Date</label><input class="input" placeholder="MM / YY"></div>
+          <div class="form-group"><label class="label">CVV</label><input class="input" placeholder="123"></div>
+        </div>
+        <div class="form-group"><label class="label">Cardholder Name</label><input class="input" placeholder="Name on card"></div>
+        <div class="secure-badge">🔒 256-bit SSL encryption · Your data is safe</div>
+      </div>
+      <button class="btn btn-primary btn-lg btn-full" style="box-shadow:var(--neon-glow);">Subscribe Now — $9/month →</button>
+      <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:12px;">Cancel anytime. No hidden fees.</div>
+    </div>
+    <!-- Right: Order Summary -->
+    <div class="order-summary">
+      <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:20px;">Order Summary</div>
+      <div style="background:var(--neon-dim);border:1px solid rgba(191,255,0,.2);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--neon);text-transform:uppercase;margin-bottom:4px;">⭐ Pro Plan · Annual</div>
+        <div style="font-size:16px;font-weight:700;">Learner Subscription</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">Billed annually · $108/year</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+        <div class="flex items-center justify-between" style="font-size:14px;"><span style="color:var(--muted);">Subtotal</span><span>$15.00/mo</span></div>
+        <div class="flex items-center justify-between" style="font-size:14px;"><span style="color:var(--success);">Annual discount (40%)</span><span style="color:var(--success);">-$6.00</span></div>
+        <div class="flex items-center justify-between" style="font-size:14px;"><span style="color:var(--muted);">VAT (0%)</span><span style="color:var(--muted);">$0.00</span></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;" class="flex items-center justify-between">
+        <span style="font-size:15px;font-weight:700;">Total today</span>
+        <span style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--neon);">$9.00</span>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:rgba(0,255,127,.06);border:1px solid rgba(0,255,127,.15);border-radius:var(--radius);">
+        <div style="font-size:12px;color:var(--success);font-weight:600;margin-bottom:2px;">✓ 7-day free trial included</div>
+        <div style="font-size:12px;color:var(--muted);">You won't be charged until your trial ends.</div>
+      </div>
+    </div>
+  </div>
+</main>
+<div class="screen-id">12.2 · Checkout</div>
+</body></html>

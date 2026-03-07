@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>5.1 Flashcards — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.practice-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; }
+.card-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+.flashcard { width: 480px; height: 300px; perspective: 1200px; cursor: pointer; margin-bottom: 32px; }
+.flashcard-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+.flashcard-front, .flashcard-back { position: absolute; inset: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; backface-visibility: hidden; }
+.flashcard-front { border-color: rgba(191,255,0,0.2); box-shadow: 0 0 0 1px rgba(191,255,0,0.08), 0 16px 48px rgba(0,0,0,0.4); }
+.flashcard-back { transform: rotateY(180deg); border-color: rgba(0,207,255,0.2); background: #0a1520; }
+.card-word { font-family: 'Syne', sans-serif; font-size: 48px; font-weight: 800; text-transform: uppercase; color: var(--neon); text-shadow: var(--text-glow); margin-bottom: 12px; }
+.card-hint { font-size: 14px; color: var(--muted); }
+.card-translation { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; text-transform: uppercase; color: var(--info); margin-bottom: 8px; }
+.card-example { font-size: 14px; color: var(--muted); font-style: italic; text-align: center; line-height: 1.6; }
+.card-actions { display: flex; gap: 16px; align-items: center; }
+.action-btn { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: transform 0.15s; border: none; }
+.action-btn:hover { transform: scale(1.1); }
+.btn-skip { background: rgba(255,68,68,0.12); color: var(--danger); }
+.btn-know { background: rgba(0,255,127,0.12); color: var(--success); }
+.btn-flip { background: var(--neon-dim); color: var(--neon); width: 72px; height: 72px; font-size: 18px; border: 1px solid rgba(191,255,0,0.2); }
+.deck-panel { width: 280px; background: var(--bg2); border-left: 1px solid var(--border); padding: 24px; overflow-y: auto; }
+.deck-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 6px; font-size: 13px; cursor: pointer; transition: background 0.15s; }
+.deck-item:hover { background: rgba(255,255,255,0.04); }
+.deck-item.current { background: var(--neon-dim); color: var(--neon); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <div class="flex items-center gap-8">
+      <span style="font-size:12px;color:var(--muted);">Card 8 of 24</span>
+      <div style="width:100px;"><div class="progress-track"><div class="progress-fill" style="width:33%;"></div></div></div>
+    </div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item active" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+  </aside>
+  <main class="main" style="padding:0;display:flex;">
+    <div class="card-area">
+      <div style="margin-bottom:20px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;">Tap card to flip · Kinyarwanda → English</div>
+      <div class="flashcard" id="fc">
+        <div class="flashcard-inner">
+          <div class="flashcard-front">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:16px;">Kinyarwanda</div>
+            <div class="card-word">Murakoze</div>
+            <div class="card-hint">Tap to reveal translation →</div>
+          </div>
+          <div class="flashcard-back">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--info);text-transform:uppercase;margin-bottom:16px;">English</div>
+            <div class="card-translation">Thank You</div>
+            <div class="card-example">"Murakoze cyane" means "Thank you very much"</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <div class="action-btn btn-skip" title="Skip / Don't know">✕</div>
+        <div class="action-btn btn-flip" onclick="document.getElementById('fc').classList.toggle('flipped')" title="Flip card">↻</div>
+        <div class="action-btn btn-know" title="I know this">✓</div>
+      </div>
+      <div class="flex gap-16 mt-24">
+        <button class="btn btn-ghost btn-sm">← Previous</button>
+        <button class="btn btn-outline btn-sm">Shuffle Deck</button>
+        <button class="btn btn-ghost btn-sm">Next →</button>
+      </div>
+    </div>
+    <div class="deck-panel">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">Deck · Greetings</div>
+      <div style="display:flex;gap-8;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <span class="badge badge-success">8 Known</span>
+        <span class="badge badge-danger">3 Learning</span>
+        <span class="badge badge-muted">13 New</span>
+      </div>
+      <div class="deck-item"><span>Muraho</span><span style="color:var(--success);font-size:12px;">✓</span></div>
+      <div class="deck-item"><span>Amakuru</span><span style="color:var(--success);font-size:12px;">✓</span></div>
+      <div class="deck-item"><span>Ni meza</span><span style="color:var(--success);font-size:12px;">✓</span></div>
+      <div class="deck-item current"><span>Murakoze</span><span style="color:var(--neon);font-size:12px;">→</span></div>
+      <div class="deck-item"><span>Mwiriwe</span><span style="color:var(--muted);font-size:12px;">·</span></div>
+      <div class="deck-item"><span>Bwakeye</span><span style="color:var(--muted);font-size:12px;">·</span></div>
+      <div class="deck-item"><span>Urakomeye</span><span style="color:var(--muted);font-size:12px;">·</span></div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">5.1 · Flashcards</div>
+</body></html>

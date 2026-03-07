@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1.5 Email Verification — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.center-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; overflow: hidden; }
+.bg-glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(191,255,0,0.06) 0%, transparent 65%); top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.auth-card { width: 100%; max-width: 460px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 48px; position: relative; z-index: 2; text-align: center; }
+.auth-card::before { content: ''; position: absolute; inset: 0; border-radius: inherit; border: 1px solid transparent; background: linear-gradient(145deg, rgba(191,255,0,0.15), transparent 50%) border-box; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; pointer-events: none; }
+.mail-anim { width: 96px; height: 96px; background: var(--neon-dim); border: 1px solid rgba(191,255,0,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 28px; box-shadow: var(--neon-glow-sm); }
+.otp-row { display: flex; gap: 10px; justify-content: center; margin: 28px 0; }
+.otp-box { width: 56px; height: 64px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--fg); text-align: center; outline: none; transition: border-color 0.15s; }
+.otp-box:focus, .otp-box.filled { border-color: var(--neon); color: var(--neon); box-shadow: 0 0 0 2px rgba(191,255,0,0.12); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+</nav>
+
+<div class="center-wrap">
+  <div class="bg-glow"></div>
+  <div class="auth-card">
+    <div class="mail-anim">📧</div>
+
+    <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:10px;">Check Your Email</div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:8px;">
+      We sent a verification code to<br>
+      <strong style="color:var(--fg);">jean@example.com</strong>
+    </div>
+
+    <div class="otp-row">
+      <input class="otp-box filled" maxlength="1" value="4">
+      <input class="otp-box filled" maxlength="1" value="7">
+      <input class="otp-box filled" maxlength="1" value="2">
+      <input class="otp-box" maxlength="1" placeholder="—">
+      <input class="otp-box" maxlength="1" placeholder="—">
+      <input class="otp-box" maxlength="1" placeholder="—">
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-full">Verify Email →</button>
+
+    <div style="margin-top:24px;font-size:13px;color:var(--muted);">
+      Didn't receive the code?
+      <a href="#" style="color:var(--neon);text-decoration:none;font-weight:600;margin-left:6px;">Resend in 0:47</a>
+    </div>
+
+    <div style="margin-top:12px;font-size:13px;color:var(--muted);">
+      Wrong email? <a href="#" style="color:var(--neon);text-decoration:none;font-weight:600;">Change it</a>
+    </div>
+  </div>
+</div>
+<div class="screen-id">1.5 · Email Verification</div>
+</body></html>

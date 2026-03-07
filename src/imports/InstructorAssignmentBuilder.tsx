@@ -1,0 +1,551 @@
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useParams } from "react-router";
+import { instructorApi } from "../app/api/config";
+
+interface Assignment {
+  id: number;
+  title: string;
+  assignment_type: "speaking" | "writing";
+  prompt: string;
+  rubric: string;
+  due_date: string | null;
+  course_id: number;
+  course_title: string;
+  unit_id: number | null;
+  created_at: string;
+}
+
+interface Submission {
+  id: number;
+  student_name: string;
+  student_email: string;
+  content: string;
+  audio_url?: string;
+  submitted_at: string;
+  grade: number | null;
+  feedback: string | null;
+  graded_at: string | null;
+}
+
+export default function InstructorAssignmentBuilder() {
+  const navigate = useNavigate();
+  const { courseId } = useParams<{ courseId?: string }>();
+  const [user, setUser] = useState<any>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [gradingMode, setGradingMode] = useState(false);
+  const [newAssignment, setNewAssignment] = useState({
+    title: "",
+    assignment_type: "writing" as "speaking" | "writing",
+    prompt: "",
+    rubric: "",
+    due_date: ""
+  });
+  const [gradeData, setGradeData] = useState({ grade: 0, feedback: "" });
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const userData = localStorage.getItem('user');
+    if (!token || !userData) {
+      navigate('/login');
+      return;
+    }
+    try {
+      const parsed = JSON.parse(userData);
+      if (parsed.role && !['instructor', 'admin'].includes(parsed.role)) {
+        navigate('/dashboard');
+        return;
+      }
+      setUser(parsed);
+    } catch (e) {
+      navigate('/login');
+    }
+    fetchData();
+  }, [navigate, courseId]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Mock data for now
+      const mockAssignments: Assignment[] = [
+        {
+          id: 1,
+          title: "Introduction Speech",
+          assignment_type: "speaking",
+          prompt: "Record a 2-minute introduction about yourself in the target language.",
+          rubric: "1. Pronunciation (25 points)\n2. Grammar (25 points)\n3. Vocabulary (25 points)\n4. Fluency (25 points)",
+          due_date: "2024-02-15T23:59:59Z",
+          course_id: 1,
+          course_title: "Kinyarwanda for Beginners",
+          unit_id: null,
+          created_at: "2024-01-15T10:00:00Z"
+        },
+        {
+          id: 2,
+          title: "Write about Your Day",
+          assignment_type: "writing",
+          prompt: "Write about your typical day using at least 10 vocabulary words from this unit.",
+          rubric: "1. Content (30 points)\n2. Grammar (30 points)\n3. Vocabulary (20 points)\n4. Organization (20 points)",
+          due_date: "2024-02-20T23:59:59Z",
+          course_id: 1,
+          course_title: "Kinyarwanda for Beginners",
+          unit_id: null,
+          created_at: "2024-01-20T10:00:00Z"
+        }
+      ];
+      
+      setAssignments(mockAssignments);
+      
+      // Mock submissions for first assignment
+      const mockSubmissions: Submission[] = [
+        {
+          id: 1,
+          student_name: "John Doe",
+          student_email: "john@email.com",
+          content: "My name is John. I am a student. I wake up at 7am...",
+          audio_url: undefined,
+          submitted_at: "2024-02-10T14:30:00Z",
+          grade: null,
+          feedback: null,
+          graded_at: null
+        },
+        {
+          id: 2,
+          student_name: "Jane Smith",
+          student_email: "jane@email.com",
+          content: "Hello everyone! My name is Jane...",
+          audio_url: "https://example.com/audio/jane-intro.mp3",
+          submitted_at: "2024-02-11T09:15:00Z",
+          grade: 85,
+          feedback: "Great pronunciation! Keep working on verb conjugation.",
+          graded_at: "2024-02-12T11:00:00Z"
+        }
+      ];
+      
+      setSubmissions(mockSubmissions);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAssignment = async () => {
+    if (!newAssignment.title || !newAssignment.prompt || !courseId) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    setSaving(true);
+    try {
+      // TODO: Replace with actual API call
+      const newId = assignments.length + 1;
+      setAssignments([...assignments, {
+        id: newId,
+        ...newAssignment,
+        course_id: Number(courseId),
+        course_title: "Course",
+        unit_id: null,
+        created_at: new Date().toISOString()
+      }]);
+      setShowCreateModal(false);
+      setNewAssignment({
+        title: "",
+        assignment_type: "writing",
+        prompt: "",
+        rubric: "",
+        due_date: ""
+      });
+    } catch (error) {
+      console.error('Failed to create assignment:', error);
+      alert('Failed to create assignment');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGrade = async (submissionId: number) => {
+    try {
+      // TODO: Replace with actual API call
+      setSubmissions(submissions.map(s => 
+        s.id === submissionId 
+          ? { 
+              ...s, 
+              grade: gradeData.grade, 
+              feedback: gradeData.feedback,
+              graded_at: new Date().toISOString()
+            }
+          : s
+      ));
+      setGradingMode(false);
+      setGradeData({ grade: 0, feedback: "" });
+    } catch (error) {
+      console.error('Failed to grade:', error);
+      alert('Failed to submit grade');
+    }
+  };
+
+  const pendingGrading = submissions.filter(s => s.grade === null).length;
+
+  if (loading) {
+    return (
+      <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
+        <div className="text-[#bfff00]">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#0a0a0a] min-h-screen">
+      {/* Navigation */}
+      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
+        <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
+        <div className="flex flex-row items-center size-full">
+          <div className="flex items-center justify-between px-[40px] w-full">
+            <Link to="/instructor/dashboard" className="flex gap-[11px] items-center no-underline">
+              <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
+                <span className="text-[18px]">🧠</span>
+              </div>
+              <span className="text-[18px] text-white font-bold">
+                FLUENT<span className="text-[#bfff00]">FUSION</span>
+              </span>
+            </Link>
+            <div className="flex items-center gap-[12px]">
+              <div className="bg-[rgba(191,255,0,0.1)] px-[13px] py-[5px] rounded-[99px]">
+                <span className="text-[#bfff00] text-[11px] font-semibold">📋 Instructor</span>
+              </div>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('access_token');
+                  localStorage.removeItem('refresh_token');
+                  localStorage.removeItem('user');
+                  navigate('/login');
+                }}
+                className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex min-h-[calc(100vh-66px)]">
+        {/* Sidebar */}
+        <div className="fixed left-0 top-[66px] w-[240px] h-[calc(100vh-66px)] bg-[#0f0f0f] border-r border-[#2a2a2a] overflow-y-auto">
+          <div className="flex flex-col py-5 px-0">
+            <div className="text-[#555] text-[9px] uppercase tracking-[1.35px] px-6 py-3">Instructor</div>
+            
+            <Link to="/instructor/dashboard" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+              <span>📊</span>
+              <span className="text-[14px]">Overview</span>
+            </Link>
+            
+            <Link to="/instructor/create-course" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+              <span>📚</span>
+              <span className="text-[14px]">Create Course</span>
+            </Link>
+            
+            <Link to="/instructor/students" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+              <span>👥</span>
+              <span className="text-[14px]">Students</span>
+            </Link>
+            
+            <Link to="/instructor/assignments" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center bg-[rgba(191,255,0,0.1)] border-l-2 border-[#bfff00]">
+              <span className="text-[#bfff00]">📝</span>
+              <span className="text-[#bfff00] text-[14px]">Assignments</span>
+              {pendingGrading > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingGrading}</span>
+              )}
+            </Link>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="ml-[240px] flex-1 p-9">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-[32px] text-white font-bold">
+                <span className="text-[#bfff00]">Assignments</span> & Grading
+              </h1>
+              <p className="text-[#888] text-[14px] mt-1">
+                Create assignments and grade student submissions
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[#bfff00] text-black px-6 py-3 rounded-[8px] font-semibold"
+            >
+              + Create Assignment
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6">
+            {/* Assignments List */}
+            <div className="col-span-1">
+              <h2 className="text-white font-bold mb-4">Your Assignments</h2>
+              <div className="space-y-3">
+                {assignments.map((assignment) => (
+                  <div 
+                    key={assignment.id}
+                    onClick={() => setSelectedAssignment(assignment)}
+                    className={`p-4 bg-[#151515] border rounded-[14px] cursor-pointer hover:border-[#bfff00] transition-colors ${
+                      selectedAssignment?.id === assignment.id ? 'border-[#bfff00]' : 'border-[#2a2a2a]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{assignment.assignment_type === 'speaking' ? '🎤' : '✏️'}</span>
+                      <span className={`px-2 py-0.5 rounded-[4px] text-xs ${
+                        assignment.assignment_type === 'speaking' 
+                          ? 'bg-[rgba(0,191,255,0.1)] text-[#00bfff]' 
+                          : 'bg-[rgba(191,255,0,0.1)] text-[#bfff00]'
+                      }`}>
+                        {assignment.assignment_type}
+                      </span>
+                    </div>
+                    <h3 className="text-white font-medium">{assignment.title}</h3>
+                    <p className="text-[#555] text-sm mt-1">{assignment.course_title}</p>
+                    {assignment.due_date && (
+                      <p className="text-[#888] text-xs mt-2">Due: {new Date(assignment.due_date).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Submissions Panel */}
+            <div className="col-span-2">
+              {selectedAssignment ? (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-white font-bold">
+                      Submissions ({submissions.length})
+                    </h2>
+                    {pendingGrading > 0 && (
+                      <span className="px-3 py-1 rounded-[99px] text-xs bg-orange-500/10 text-orange-400">
+                        {pendingGrading} pending grading
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {submissions.map((submission) => (
+                      <div 
+                        key={submission.id}
+                        className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-white font-medium">{submission.student_name}</h3>
+                            <p className="text-[#555] text-sm">{submission.student_email}</p>
+                            <p className="text-[#888] text-xs mt-1">
+                              Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                            </p>
+                          </div>
+                          <div>
+                            {submission.grade !== null ? (
+                              <div className="text-right">
+                                <div className="text-2xl font-bold text-[#bfff00]">{submission.grade}</div>
+                                <div className="text-[#555] text-xs">/ 100</div>
+                              </div>
+                            ) : (
+                              <span className="px-3 py-1 rounded-[99px] text-xs bg-orange-500/10 text-orange-400">
+                                Pending
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {submission.audio_url && (
+                          <div className="mb-4">
+                            <audio controls className="w-full">
+                              <source src={submission.audio_url} type="audio/mpeg" />
+                            </audio>
+                          </div>
+                        )}
+                        
+                        <div className="bg-[#1f1f1f] rounded-[8px] p-4 mb-4">
+                          <p className="text-white text-sm">{submission.content}</p>
+                        </div>
+                        
+                        {submission.graded_at ? (
+                          <div className="bg-[rgba(0,255,127,0.05)] border border-[#00ff7f]/20 rounded-[8px] p-4">
+                            <p className="text-[#00ff7f] text-xs font-bold mb-1">Feedback</p>
+                            <p className="text-[#888] text-sm">{submission.feedback}</p>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setGradingMode(true)}
+                            className="w-full bg-[#bfff00] text-black py-2 rounded-[8px] font-semibold"
+                          >
+                            Grade Submission
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-8 text-center">
+                  <div className="text-[48px] mb-4">📝</div>
+                  <p className="text-[#888]">Select an assignment to view submissions</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Create Assignment Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100]" onClick={() => setShowCreateModal(false)}>
+          <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 w-[600px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-white text-[20px] font-bold mb-4">Create New Assignment</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Assignment Title *</label>
+                <input
+                  type="text"
+                  value={newAssignment.title}
+                  onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
+                  placeholder="e.g., Introduction Speech"
+                  className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a]"
+                />
+              </div>
+              
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Assignment Type</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setNewAssignment({ ...newAssignment, assignment_type: 'writing' })}
+                    className={`flex-1 py-3 rounded-[8px] border ${
+                      newAssignment.assignment_type === 'writing'
+                        ? 'bg-[#bfff00] text-black border-[#bfff00]'
+                        : 'bg-[#1f1f1f] text-[#888] border-[#2a2a2a]'
+                    }`}
+                  >
+                    ✏️ Writing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewAssignment({ ...newAssignment, assignment_type: 'speaking' })}
+                    className={`flex-1 py-3 rounded-[8px] border ${
+                      newAssignment.assignment_type === 'speaking'
+                        ? 'bg-[#00bfff] text-black border-[#00bfff]'
+                        : 'bg-[#1f1f1f] text-[#888] border-[#2a2a2a]'
+                    }`}
+                  >
+                    🎤 Speaking
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Prompt/Instructions *</label>
+                <textarea
+                  value={newAssignment.prompt}
+                  onChange={(e) => setNewAssignment({ ...newAssignment, prompt: e.target.value })}
+                  placeholder="Describe what students should do..."
+                  rows={4}
+                  className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] resize-none"
+                />
+              </div>
+              
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Grading Rubric</label>
+                <textarea
+                  value={newAssignment.rubric}
+                  onChange={(e) => setNewAssignment({ ...newAssignment, rubric: e.target.value })}
+                  placeholder="Describe how to grade (e.g., 1. Content 25pts, 2. Grammar 25pts...)"
+                  rows={4}
+                  className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] resize-none"
+                />
+              </div>
+              
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Due Date</label>
+                <input
+                  type="datetime-local"
+                  value={newAssignment.due_date}
+                  onChange={(e) => setNewAssignment({ ...newAssignment, due_date: e.target.value })}
+                  className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a]"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 bg-[#1f1f1f] text-[#888] py-3 rounded-[8px]"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleCreateAssignment}
+                  disabled={saving || !newAssignment.title || !newAssignment.prompt}
+                  className="flex-1 bg-[#bfff00] text-black py-3 rounded-[8px] font-semibold disabled:opacity-50"
+                >
+                  {saving ? 'Creating...' : 'Create Assignment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Grading Modal */}
+      {gradingMode && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100]" onClick={() => setGradingMode(false)}>
+          <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 w-[500px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-white text-[20px] font-bold mb-4">Grade Submission</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Score (0-100)</label>
+                <input
+                  type="number"
+                  value={gradeData.grade}
+                  onChange={(e) => setGradeData({ ...gradeData, grade: Number(e.target.value) })}
+                  min={0}
+                  max={100}
+                  className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a]"
+                />
+              </div>
+              
+              <div>
+                <label className="text-[#888] text-xs uppercase block mb-2">Feedback</label>
+                <textarea
+                  value={gradeData.feedback}
+                  onChange={(e) => setGradeData({ ...gradeData, feedback: e.target.value })}
+                  placeholder="Provide feedback to the student..."
+                  rows={4}
+                  className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] resize-none"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => setGradingMode(false)}
+                  className="flex-1 bg-[#1f1f1f] text-[#888] py-3 rounded-[8px]"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleGrade(1)}
+                  disabled={gradeData.grade < 0 || gradeData.grade > 100}
+                  className="flex-1 bg-[#bfff00] text-black py-3 rounded-[8px] font-semibold disabled:opacity-50"
+                >
+                  Submit Grade
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

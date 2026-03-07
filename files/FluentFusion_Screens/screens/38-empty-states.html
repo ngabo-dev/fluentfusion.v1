@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>13.3 Empty States — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.empty-box{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 40px;background:var(--card);border:1px dashed var(--border);border-radius:var(--radius-xl);}
+.empty-icon{font-size:52px;margin-bottom:16px;opacity:.5;}
+.empty-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;text-transform:uppercase;margin-bottom:8px;}
+.empty-sub{font-size:14px;color:var(--muted);max-width:300px;line-height:1.6;margin-bottom:24px;}
+.states-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+</nav>
+<main style="padding:40px;">
+  <div class="page-hdr"><div class="h2">Empty <span class="neon">States</span></div><p>Designs for when there's no content to show</p></div>
+  <div class="states-grid">
+    <div class="empty-box"><div class="empty-icon">📚</div><div class="empty-title">No Courses Yet</div><div class="empty-sub">You haven't enrolled in any courses. Explore our catalog to get started!</div><button class="btn btn-primary btn-sm">Browse Courses →</button></div>
+    <div class="empty-box"><div class="empty-icon">🏆</div><div class="empty-title">No Badges Earned</div><div class="empty-sub">Complete your first lesson to earn your first achievement badge!</div><button class="btn btn-primary btn-sm">Start Learning →</button></div>
+    <div class="empty-box"><div class="empty-icon">💬</div><div class="empty-title">No Posts Yet</div><div class="empty-sub">Be the first to ask a question or share a tip with the community!</div><button class="btn btn-primary btn-sm">Post Something →</button></div>
+    <div class="empty-box"><div class="empty-icon">🔔</div><div class="empty-title">No Notifications</div><div class="empty-sub">You're all caught up! We'll notify you when something needs your attention.</div></div>
+    <div class="empty-box"><div class="empty-icon">🔍</div><div class="empty-title">No Search Results</div><div class="empty-sub">We couldn't find anything matching "frnch gramar". Check your spelling and try again.</div><button class="btn btn-outline btn-sm">Clear Search</button></div>
+    <div class="empty-box"><div class="empty-icon">🎥</div><div class="empty-title">No Live Sessions</div><div class="empty-sub">No sessions scheduled right now. Check back later or browse recorded lessons.</div><button class="btn btn-outline btn-sm">View Recordings</button></div>
+  </div>
+</main>
+<div class="screen-id">13.3 · Empty States</div>
+</body></html>

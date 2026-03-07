@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Environment files
+.env.local
+.env.*.local
+
+# Test
+coverage/
+.pytest_cache/
+
+# ML models (large files)
+pulse_artifacts/
+*.pkl
+*.h5
+*.pb
+
+# Uploads - Large media files
+Combined_Backend/app/uploads/

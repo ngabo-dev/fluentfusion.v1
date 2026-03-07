@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>9.1 Admin · User Management — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>table{width:100%;border-collapse:collapse;}th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-weight:500;}td{padding:13px 16px;border-bottom:1px solid rgba(42,42,42,.5);font-size:13px;vertical-align:middle;}tr:hover td{background:rgba(255,255,255,.02);}</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-12"><span class="badge badge-danger">🛡 Admin</span><div class="avatar avatar-sm">AD</div></div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-section">Admin Panel</div>
+    <a class="sidebar-item active" href="#"><span>👥</span> Users</a>
+    <a class="sidebar-item" href="#"><span>📚</span> Course Approval</a>
+    <a class="sidebar-item" href="#"><span>📊</span> Analytics</a>
+    <a class="sidebar-item" href="#"><span>📋</span> Reports</a>
+    <a class="sidebar-item" href="#"><span>🚩</span> Moderation</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> System Settings</a>
+  </aside>
+  <main class="main">
+    <div class="flex items-center justify-between mb-24">
+      <div class="page-hdr" style="margin:0;"><div class="h2">User <span class="neon">Management</span></div><p>2,000,000+ registered users</p></div>
+      <button class="btn btn-primary btn-sm">+ Invite User</button>
+    </div>
+    <div class="grid-4 mb-24">
+      <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" style="font-size:26px;">2.1M</div><div class="stat-sub">+12K this week</div></div>
+      <div class="stat-card"><div class="stat-label">Active Today</div><div class="stat-value" style="font-size:26px;">84K</div><div class="stat-sub">4% of total</div></div>
+      <div class="stat-card"><div class="stat-label">Instructors</div><div class="stat-value" style="font-size:26px;">1,240</div><div class="stat-sub">Verified</div></div>
+      <div class="stat-card"><div class="stat-label">Banned</div><div class="stat-value" style="font-size:26px;color:var(--danger);">342</div><div class="stat-sub">Under review</div></div>
+    </div>
+    <div class="flex items-center gap-12 mb-16">
+      <div class="input-icon-wrap" style="flex:1;max-width:380px;"><span class="input-icon">🔍</span><input class="input" placeholder="Search users by name, email..."></div>
+      <select class="select" style="width:auto;min-width:140px;"><option>All Roles</option><option>Student</option><option>Instructor</option><option>Admin</option></select>
+      <select class="select" style="width:auto;min-width:140px;"><option>All Status</option><option>Active</option><option>Suspended</option><option>Banned</option></select>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table>
+        <thead><tr><th>User</th><th>Role</th><th>Joined</th><th>Status</th><th>Courses</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm">JP</div><div><div style="font-weight:600;">Jean Pierre H.</div><div style="font-size:11px;color:var(--muted);">jp@example.com</div></div></div></td><td><span class="badge badge-muted">Student</span></td><td style="color:var(--muted);">Jan 10, 2026</td><td><span class="badge badge-success">Active</span></td><td style="color:var(--muted);">3 enrolled</td><td><div class="flex gap-6"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm" style="color:var(--warning);">Suspend</button></div></td></tr>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm">MK</div><div><div style="font-weight:600;">Dr. Mary K.</div><div style="font-size:11px;color:var(--muted);">mary@example.com</div></div></div></td><td><span class="badge badge-neon">Instructor</span></td><td style="color:var(--muted);">Oct 5, 2025</td><td><span class="badge badge-success">Active</span></td><td style="color:var(--muted);">5 teaching</td><td><div class="flex gap-6"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm" style="color:var(--warning);">Suspend</button></div></td></tr>
+          <tr><td><div class="flex items-center gap-10"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#ff4444,#ff8800);">XX</div><div><div style="font-weight:600;">Banned User</div><div style="font-size:11px;color:var(--muted);">spam@example.com</div></div></div></td><td><span class="badge badge-muted">Student</span></td><td style="color:var(--muted);">Feb 1, 2026</td><td><span class="badge badge-danger">Banned</span></td><td style="color:var(--muted);">0</td><td><div class="flex gap-6"><button class="btn btn-ghost btn-sm">View</button><button class="btn btn-ghost btn-sm" style="color:var(--success);">Unban</button></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<div class="screen-id">9.1 · Admin · User Management</div>
+</body></html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>4.3 Lesson View — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.lesson-layout { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - var(--nav-h)); }
+.video-area { background: #000; display: flex; flex-direction: column; overflow-y: auto; }
+.video-player { background: #000; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; flex-shrink: 0; }
+.play-btn { width: 72px; height: 72px; background: rgba(191,255,0,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform 0.15s; }
+.play-btn:hover { transform: scale(1.1); }
+.video-controls { background: #0d0d0d; padding: 12px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.vol-bar { height: 4px; width: 80px; background: var(--border); border-radius: 99px; position: relative; cursor: pointer; }
+.vol-fill { height: 100%; width: 70%; background: var(--neon); border-radius: 99px; }
+.timeline { flex: 1; height: 4px; background: var(--border); border-radius: 99px; cursor: pointer; }
+.timeline-fill { height: 100%; width: 38%; background: var(--neon); border-radius: 99px; }
+.lesson-body { padding: 28px 32px; background: var(--bg); }
+.vocab-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+.vocab-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.vocab-chip:hover { border-color: var(--neon); color: var(--neon); }
+.sidebar-panel { background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.panel-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.panel-tab { flex: 1; padding: 14px; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+.panel-tab.active { color: var(--neon); border-bottom-color: var(--neon); }
+.panel-content { flex: 1; overflow-y: auto; padding: 20px; }
+.transcript-line { padding: 8px 10px; border-radius: 6px; font-size: 13px; line-height: 1.6; color: var(--muted); cursor: pointer; margin-bottom: 2px; }
+.transcript-line:hover { background: rgba(255,255,255,0.04); color: var(--fg); }
+.transcript-line.active { background: var(--neon-dim); color: var(--fg); border-left: 2px solid var(--neon); }
+.transcript-ts { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--neon); margin-right: 8px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <span style="font-size:13px;color:var(--muted);">English for Tourism · Unit 3 · Lesson 5</span>
+    <div class="flex items-center gap-8">
+      <span style="font-size:12px;color:var(--muted);">Progress:</span>
+      <div style="width:100px;"><div class="progress-track"><div class="progress-fill" style="width:62%;"></div></div></div>
+      <span style="font-size:12px;color:var(--neon);">62%</span>
+    </div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+
+<div class="lesson-layout">
+  <!-- Main Content -->
+  <div class="video-area">
+    <!-- Video Player -->
+    <div class="video-player">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0a1a0a,#000);"></div>
+      <div style="position:relative;z-index:1;text-align:center;">
+        <div class="play-btn">▶</div>
+        <div style="margin-top:12px;font-size:13px;color:rgba(255,255,255,0.6);">Lesson 5 · Check-in Conversation</div>
+      </div>
+      <div style="position:absolute;top:16px;left:16px;background:rgba(0,0,0,0.7);padding:5px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--neon);">04:32 / 12:15</div>
+    </div>
+
+    <!-- Video Controls -->
+    <div class="video-controls">
+      <button class="btn btn-ghost btn-icon" style="font-size:18px;">⏮</button>
+      <button class="btn btn-ghost btn-icon" style="font-size:18px;color:var(--neon);">⏸</button>
+      <button class="btn btn-ghost btn-icon" style="font-size:18px;">⏭</button>
+      <div class="timeline"><div class="timeline-fill"></div></div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);">04:32 / 12:15</span>
+      <div class="vol-bar"><div class="vol-fill"></div></div>
+      <button class="btn btn-ghost btn-icon" style="font-size:16px;">🔊</button>
+      <button class="btn btn-ghost btn-icon" style="font-size:14px;">⚙️</button>
+      <button class="btn btn-ghost btn-icon" style="font-size:14px;">⛶</button>
+    </div>
+
+    <!-- Lesson Body -->
+    <div class="lesson-body">
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Lesson 5 · Check-in Conversation</div>
+        <div style="font-size:14px;color:var(--muted);">Learn the essential phrases for welcoming and checking in hotel guests professionally.</div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Key Vocabulary</div>
+        <div class="vocab-row">
+          <div class="vocab-chip">Check-in</div>
+          <div class="vocab-chip">Reservation</div>
+          <div class="vocab-chip">Welcome</div>
+          <div class="vocab-chip">Room key</div>
+          <div class="vocab-chip">ID document</div>
+          <div class="vocab-chip">Luggage</div>
+          <div class="vocab-chip">Bellboy</div>
+          <div class="vocab-chip">Suite</div>
+        </div>
+      </div>
+
+      <div class="flex gap-12 flex-wrap">
+        <button class="btn btn-primary">Practice Exercise →</button>
+        <button class="btn btn-outline">Download Notes</button>
+        <button class="btn btn-outline" style="margin-left:auto;border-color:rgba(0,255,127,0.3);color:var(--success);">✓ Mark as Completed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="sidebar-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active">Transcript</div>
+      <div class="panel-tab">Vocabulary</div>
+      <div class="panel-tab">Notes</div>
+    </div>
+    <div class="panel-content">
+      <div class="transcript-line active"><span class="transcript-ts">02:14</span> "Good evening, welcome to Kigali Heights Hotel. How may I assist you?"</div>
+      <div class="transcript-line"><span class="transcript-ts">02:22</span> "I have a reservation under the name Johnson."</div>
+      <div class="transcript-line"><span class="transcript-ts">02:28</span> "Of course, Mr. Johnson. Could I see your ID and the card you used to book?"</div>
+      <div class="transcript-line"><span class="transcript-ts">02:38</span> "Here you are. Is my room ready?"</div>
+      <div class="transcript-line"><span class="transcript-ts">02:44</span> "Absolutely. You're in Room 412, a superior king suite on the fourth floor."</div>
+      <div class="transcript-line"><span class="transcript-ts">02:52</span> "Shall I arrange assistance with your luggage, sir?"</div>
+      <div class="transcript-line"><span class="transcript-ts">03:00</span> "That would be wonderful, thank you."</div>
+      <div class="transcript-line"><span class="transcript-ts">03:06</span> "Our bellboy will be right with you. Here is your room key card."</div>
+    </div>
+  </div>
+</div>
+<div class="screen-id">4.3 · Lesson View</div>
+</body></html>

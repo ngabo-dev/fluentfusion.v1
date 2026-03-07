@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>8.2 Create Course — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.steps-panel { width:280px; background:var(--bg2); border-right:1px solid var(--border); padding:24px 0; flex-shrink:0; }
+.step-item { display:flex; align-items:flex-start; gap:12px; padding:13px 24px; cursor:pointer; transition:background .15s; }
+.step-item:hover { background:rgba(255,255,255,.03); }
+.step-item.active { background:var(--neon-dim); }
+.step-num { width:28px; height:28px; border-radius:50%; border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono',monospace; font-size:11px; flex-shrink:0; color:var(--muted); }
+.step-item.active .step-num { background:var(--neon); border-color:var(--neon); color:#000; font-weight:700; }
+.step-item.done .step-num { background:rgba(0,255,127,.1); border-color:var(--success); color:var(--success); }
+.upload-zone { border:2px dashed var(--border); border-radius:var(--radius-lg); padding:40px; text-align:center; cursor:pointer; transition:all .15s; }
+.upload-zone:hover { border-color:var(--neon); background:var(--neon-dim); }
+.lesson-li { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--card2); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-12">
+    <button class="btn btn-ghost btn-sm">Save Draft</button>
+    <button class="btn btn-outline btn-sm">Preview</button>
+    <button class="btn btn-primary btn-sm">Publish →</button>
+  </div>
+</nav>
+<div style="display:flex; min-height:calc(100vh - var(--nav-h));">
+  <div class="steps-panel">
+    <div style="padding:0 24px 14px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase;">Setup Steps</div>
+    <div class="step-item done"><div class="step-num">✓</div><div><div style="font-size:13px;font-weight:600;">Basic Info</div><div style="font-size:11px;color:var(--muted);">Title, language, level</div></div></div>
+    <div class="step-item active"><div class="step-num">2</div><div><div style="font-size:13px;font-weight:600;">Add Lessons</div><div style="font-size:11px;color:var(--muted);">Upload videos & content</div></div></div>
+    <div class="step-item"><div class="step-num">3</div><div><div style="font-size:13px;font-weight:600;">Add Quizzes</div><div style="font-size:11px;color:var(--muted);">Create practice tests</div></div></div>
+    <div class="step-item"><div class="step-num">4</div><div><div style="font-size:13px;font-weight:600;">Pricing</div><div style="font-size:11px;color:var(--muted);">Free or paid</div></div></div>
+    <div class="step-item"><div class="step-num">5</div><div><div style="font-size:13px;font-weight:600;">Publish</div><div style="font-size:11px;color:var(--muted);">Go live</div></div></div>
+  </div>
+  <main class="main" style="flex:1; padding:36px 40px;">
+    <div class="page-hdr"><div class="h2">Add <span class="neon">Lessons</span></div><p>Build your curriculum — upload videos and add content</p></div>
+    <div class="grid-2 gap-24">
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Upload Video Lesson</div>
+        <div class="upload-zone">
+          <div style="font-size:40px;margin-bottom:10px;">📹</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Drop video here or click to browse</div>
+          <div style="font-size:13px;color:var(--muted);">MP4, MOV · Max 2GB per video</div>
+        </div>
+        <div class="form-group mt-16"><label class="label">Lesson Title</label><input class="input" placeholder="e.g. Lesson 1 · Welcome & Greetings"></div>
+        <div class="form-group"><label class="label">Description</label><textarea class="input" style="min-height:70px;resize:none;" placeholder="What will students learn?"></textarea></div>
+        <button class="btn btn-primary btn-full">+ Add Lesson</button>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Curriculum · 4 Lessons</div>
+        <div class="lesson-li"><span style="color:var(--muted2);cursor:grab;">⠿</span><span style="font-size:18px;">📹</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Welcome & Introduction</div><div style="font-size:12px;color:var(--muted);">8:24</div></div><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);">🗑</button></div>
+        <div class="lesson-li"><span style="color:var(--muted2);cursor:grab;">⠿</span><span style="font-size:18px;">📹</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Basic Greetings</div><div style="font-size:12px;color:var(--muted);">12:10</div></div><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);">🗑</button></div>
+        <div class="lesson-li"><span style="color:var(--muted2);cursor:grab;">⠿</span><span style="font-size:18px;">📹</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Formal vs Informal</div><div style="font-size:12px;color:var(--muted);">15:02</div></div><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);">🗑</button></div>
+        <div class="lesson-li"><span style="color:var(--muted2);cursor:grab;">⠿</span><span style="font-size:18px;">📝</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Unit 1 Quiz</div><div style="font-size:12px;color:var(--muted);">5 questions</div></div><button class="btn btn-ghost btn-sm">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger);">🗑</button></div>
+        <div class="flex items-center justify-between mt-24">
+          <button class="btn btn-ghost">← Back</button>
+          <button class="btn btn-primary">Next: Add Quizzes →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">8.2 · Create Course</div>
+</body></html>

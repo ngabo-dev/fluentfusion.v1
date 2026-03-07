@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>10.1 Profile — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16"><div style="font-size:20px;cursor:pointer;">🔔</div><div class="avatar avatar-sm">JP</div></div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item active" href="#"><span>👤</span> Profile</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> Settings</a>
+  </aside>
+  <main class="main">
+    <div class="page-hdr"><div class="h2">My <span class="neon">Profile</span></div><p>Manage your public profile and learning identity</p></div>
+    <div class="grid-2 gap-24" style="align-items:start;">
+      <div>
+        <!-- Profile Card -->
+        <div class="card mb-20">
+          <div style="text-align:center;padding:12px 0 24px;">
+            <div style="position:relative;display:inline-block;margin-bottom:16px;">
+              <div class="avatar avatar-xl" style="margin:0 auto;">JP</div>
+              <div style="position:absolute;bottom:2px;right:2px;width:28px;height:28px;background:var(--neon);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border:2px solid var(--bg);">✏️</div>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;text-transform:uppercase;">Jean Pierre H.</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;">Kigali, Rwanda · Learning English & French</div>
+            <div class="flex gap-8 justify-content:center; flex-wrap:wrap; margin-top:12px; justify-content:center;">
+              <span class="badge badge-muted">🎓 Student</span>
+              <span class="badge badge-neon">Level 6</span>
+              <span class="badge badge-warning">🔥 7-Day Streak</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="form-group"><label class="label">Full Name</label><input class="input" value="Jean Pierre Habimana"></div>
+          <div class="form-group"><label class="label">Bio</label><textarea class="input" style="min-height:72px;resize:none;">Tourism worker based in Kigali, learning English to better serve international guests at my hotel.</textarea></div>
+          <div class="form-group"><label class="label">Location</label><input class="input" value="Kigali, Rwanda"></div>
+          <div class="grid-2 gap-12">
+            <div class="form-group"><label class="label">Native Language</label><select class="select"><option>🇷🇼 Kinyarwanda</option></select></div>
+            <div class="form-group"><label class="label">Learning</label><select class="select"><option>🇬🇧 English</option></select></div>
+          </div>
+          <button class="btn btn-primary btn-full">Save Profile</button>
+        </div>
+      </div>
+      <div>
+        <!-- Stats -->
+        <div class="card mb-16">
+          <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px;">Learning Stats</div>
+          <div class="grid-2 gap-12">
+            <div style="text-align:center;padding:16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--neon);">1,240</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">XP Points</div></div>
+            <div style="text-align:center;padding:16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--neon);">24</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Lessons Done</div></div>
+            <div style="text-align:center;padding:16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--neon);">87%</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Avg Score</div></div>
+            <div style="text-align:center;padding:16px;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);"><div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--neon);">8</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">Badges Earned</div></div>
+          </div>
+          <div style="margin-top:16px;"><div class="flex items-center justify-between mb-6"><span style="font-size:12px;color:var(--muted);">Level 6 → Level 7</span><span style="font-size:12px;color:var(--neon);">1,240 / 2,000 XP</span></div><div class="progress-track"><div class="progress-fill" style="width:62%;"></div></div></div>
+        </div>
+        <!-- Languages -->
+        <div class="card mb-16">
+          <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Languages</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:12px;background:var(--card2);border-radius:var(--radius);border:1px solid var(--border);"><span style="font-size:24px;">🇷🇼</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">Kinyarwanda</div><div style="font-size:12px;color:var(--neon);">Native</div></div></div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:12px;background:var(--card2);border-radius:var(--radius);border:1px solid var(--border);"><span style="font-size:24px;">🇬🇧</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">English</div><div style="font-size:12px;color:var(--muted);">Learning · Intermediate</div></div><div style="width:80px;"><div class="progress-track"><div class="progress-fill" style="width:62%;"></div></div></div></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--card2);border-radius:var(--radius);border:1px solid var(--border);"><span style="font-size:24px;">🇫🇷</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">French</div><div style="font-size:12px;color:var(--muted);">Learning · Beginner</div></div><div style="width:80px;"><div class="progress-track"><div class="progress-fill" style="width:15%;"></div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">10.1 · Profile</div>
+</body></html>

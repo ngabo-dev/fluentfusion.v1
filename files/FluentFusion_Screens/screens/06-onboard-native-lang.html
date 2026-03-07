@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2.1 Select Native Language — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.onboard-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; overflow: hidden; }
+.ob-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 50% 40%, rgba(191,255,0,0.055) 0%, transparent 70%); pointer-events: none; }
+.ob-card { width: 100%; max-width: 640px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 48px; position: relative; z-index: 2; }
+.ob-step-dots { display: flex; gap: 8px; margin-bottom: 36px; }
+.ob-dot { height: 4px; border-radius: 99px; background: var(--border); transition: all 0.3s; }
+.ob-dot.active { background: var(--neon); box-shadow: 0 0 8px rgba(191,255,0,0.4); }
+.ob-dot.done { background: rgba(191,255,0,0.4); }
+.lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+.lang-option { background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; text-align: center; cursor: pointer; transition: all 0.15s; }
+.lang-option:hover { border-color: var(--border2); }
+.lang-option.selected { border-color: var(--neon); background: var(--neon-dim); }
+.lang-option .lf { font-size: 28px; margin-bottom: 6px; }
+.lang-option .ln { font-size: 13px; font-weight: 600; }
+.lang-option .lc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ob-nav { display: flex; align-items: center; justify-content: space-between; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div style="font-size:13px;color:var(--muted);">Step 1 of 4 — Setting up your profile</div>
+</nav>
+
+<div class="onboard-wrap">
+  <div class="ob-bg"></div>
+  <div class="ob-card">
+    <div class="ob-step-dots">
+      <div class="ob-dot active" style="width:32px;"></div>
+      <div class="ob-dot" style="width:20px;"></div>
+      <div class="ob-dot" style="width:20px;"></div>
+      <div class="ob-dot" style="width:20px;"></div>
+    </div>
+
+    <div style="margin-bottom:28px;">
+      <div class="badge badge-neon mb-12">Step 1 of 4</div>
+      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:-0.02em;margin-bottom:8px;">What's your<br><span class="neon">Native Language?</span></div>
+      <div style="font-size:14px;color:var(--muted);">We'll use this to translate and personalize your experience.</div>
+    </div>
+
+    <div class="lang-grid">
+      <div class="lang-option selected"><div class="lf">🇷🇼</div><div class="ln">Kinyarwanda</div><div class="lc">Rwanda</div></div>
+      <div class="lang-option"><div class="lf">🇬🇧</div><div class="ln">English</div><div class="lc">Global</div></div>
+      <div class="lang-option"><div class="lf">🇫🇷</div><div class="ln">French</div><div class="lc">France</div></div>
+      <div class="lang-option"><div class="lf">🇪🇸</div><div class="ln">Spanish</div><div class="lc">Spain</div></div>
+      <div class="lang-option"><div class="lf">🇵🇹</div><div class="ln">Portuguese</div><div class="lc">Portugal</div></div>
+      <div class="lang-option"><div class="lf">🇨🇳</div><div class="ln">Mandarin</div><div class="lc">China</div></div>
+      <div class="lang-option"><div class="lf">🇩🇪</div><div class="ln">German</div><div class="lc">Germany</div></div>
+      <div class="lang-option"><div class="lf">🇯🇵</div><div class="ln">Japanese</div><div class="lc">Japan</div></div>
+      <div class="lang-option"><div class="lf">🇦🇪</div><div class="ln">Arabic</div><div class="lc">Arabic World</div></div>
+    </div>
+
+    <div class="ob-nav">
+      <button class="btn btn-ghost">Skip</button>
+      <button class="btn btn-primary">Continue →</button>
+    </div>
+  </div>
+</div>
+<div class="screen-id">2.1 · Select Native Language</div>
+</body></html>

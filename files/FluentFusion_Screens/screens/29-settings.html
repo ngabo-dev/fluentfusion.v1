@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>10.2 Settings — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.settings-layout{display:grid;grid-template-columns:220px 1fr;gap:0;min-height:calc(100vh - var(--nav-h));}
+.settings-nav{background:var(--bg2);border-right:1px solid var(--border);padding:24px 0;}
+.s-item{display:flex;align-items:center;gap:10px;padding:11px 24px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.s-item:hover{color:var(--fg);background:rgba(255,255,255,.03);}
+.s-item.active{color:var(--neon);border-left-color:var(--neon);background:var(--neon-dim);}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--neon);}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;}
+.toggle.on::after{transform:translateX(20px);background:#000;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid rgba(42,42,42,.5);}
+.setting-row:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16"><div style="font-size:20px;">🔔</div><div class="avatar avatar-sm">JP</div></div>
+</nav>
+<div class="app-wrap" style="padding-left:0;">
+  <div class="settings-layout">
+    <div class="settings-nav">
+      <div style="padding:0 24px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;">Settings</div>
+      <div class="s-item active"><span>🔔</span> Notifications</div>
+      <div class="s-item"><span>🔒</span> Privacy</div>
+      <div class="s-item"><span>🔑</span> Password</div>
+      <div class="s-item"><span>🎨</span> Appearance</div>
+      <div class="s-item"><span>🌍</span> Language</div>
+      <div class="s-item"><span>💳</span> Billing</div>
+      <div class="s-item" style="margin-top:auto;color:var(--danger);margin-top:24px;border-top:1px solid var(--border);padding-top:16px;"><span>🗑</span> Delete Account</div>
+    </div>
+    <main style="padding:36px 40px;overflow-y:auto;">
+      <div class="page-hdr"><div class="h2">Notification <span class="neon">Settings</span></div><p>Choose what updates you want to receive</p></div>
+
+      <div class="card mb-20">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Push Notifications</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Manage in-app notification preferences</div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Daily Streak Reminder</div><div style="font-size:12px;color:var(--muted);">Get reminded to keep your streak alive</div></div><div class="toggle on"></div></div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">New Lesson Available</div><div style="font-size:12px;color:var(--muted);">When new content is added to your courses</div></div><div class="toggle on"></div></div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Live Session Starting</div><div style="font-size:12px;color:var(--muted);">15 minutes before a session begins</div></div><div class="toggle on"></div></div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Community Replies</div><div style="font-size:12px;color:var(--muted);">When someone replies to your posts</div></div><div class="toggle"></div></div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Achievement Unlocked</div><div style="font-size:12px;color:var(--muted);">Celebrate your milestones</div></div><div class="toggle on"></div></div>
+      </div>
+
+      <div class="card mb-20">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Email Notifications</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Control what arrives in your inbox</div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Weekly Progress Report</div><div style="font-size:12px;color:var(--muted);">Summary of your weekly learning activity</div></div><div class="toggle on"></div></div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Promotional Emails</div><div style="font-size:12px;color:var(--muted);">Discounts, new courses, special offers</div></div><div class="toggle"></div></div>
+        <div class="setting-row"><div><div style="font-size:14px;font-weight:600;">Instructor Messages</div><div style="font-size:12px;color:var(--muted);">Direct messages from your instructors</div></div><div class="toggle on"></div></div>
+      </div>
+
+      <div class="card" style="border-color:rgba(255,68,68,.2);">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--danger);margin-bottom:8px;">Danger Zone</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">These actions are irreversible. Please be certain.</div>
+        <div class="flex gap-12">
+          <button class="btn btn-danger btn-sm">Reset All Progress</button>
+          <button class="btn btn-danger btn-sm">Delete My Account</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="screen-id">10.2 · Settings</div>
+</body></html>

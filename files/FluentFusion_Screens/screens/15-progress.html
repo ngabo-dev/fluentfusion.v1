@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>4.5 Progress Page — FluentFusion</title>
+<link rel="stylesheet" href="../shared.css">
+<style>
+.skill-bar-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.skill-name { font-size: 13px; width: 120px; flex-shrink: 0; }
+.skill-track { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.skill-fill { height: 100%; border-radius: 99px; }
+.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.achievement-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; text-align: center; transition: all 0.2s; }
+.achievement-card:hover { border-color: rgba(191,255,0,0.25); }
+.achievement-card.locked { opacity: 0.4; filter: grayscale(1); }
+.ach-icon { font-size: 32px; margin-bottom: 8px; }
+.ach-name { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.ach-desc { font-size: 11px; color: var(--muted); }
+.bar-chart-row { display: flex; align-items: flex-end; gap: 10px; height: 100px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar-body { width: 100%; background: linear-gradient(180deg, var(--neon), var(--neon2)); border-radius: 4px 4px 0 0; box-shadow: 0 0 6px rgba(191,255,0,0.3); }
+.bar-lbl { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="logo" href="#"><div class="logo-mark">🧠</div><div class="logo-name">FLUENT<span>FUSION</span></div></a>
+  <div class="flex items-center gap-16">
+    <div style="font-size:20px;cursor:pointer;">🔔</div>
+    <div class="avatar avatar-sm">JP</div>
+  </div>
+</nav>
+<div class="app-wrap">
+  <aside class="sidebar">
+    <a class="sidebar-item" href="#"><span>⚡</span> Dashboard</a>
+    <a class="sidebar-item active" href="#"><span>📊</span> Progress</a>
+    <a class="sidebar-item" href="#"><span>📚</span> My Courses</a>
+    <a class="sidebar-item" href="#"><span>🎯</span> Practice</a>
+    <a class="sidebar-item" href="#"><span>🎥</span> Live Sessions</a>
+    <a class="sidebar-item" href="#"><span>🌍</span> Community</a>
+    <a class="sidebar-item" href="#"><span>👤</span> Profile</a>
+    <a class="sidebar-item" href="#"><span>⚙️</span> Settings</a>
+  </aside>
+  <main class="main">
+    <div class="page-hdr">
+      <div class="h2">Your <span class="neon">Progress</span></div>
+      <p>Track your language learning journey in detail</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-4 mb-28">
+      <div class="stat-card"><div class="stat-label">Courses Completed</div><div class="stat-value">3</div><div class="stat-sub">of 5 enrolled</div></div>
+      <div class="stat-card"><div class="stat-label">Total XP</div><div class="stat-value">4,820</div><div class="stat-sub">Level 6 · Gold</div></div>
+      <div class="stat-card"><div class="stat-label">Best Streak</div><div class="stat-value">14🔥</div><div class="stat-sub">Current: 7 days</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Quiz Score</div><div class="stat-value">87%</div><div class="progress-track mt-8"><div class="progress-fill" style="width:87%;"></div></div></div>
+    </div>
+
+    <div class="grid-2 gap-24 mb-28">
+      <!-- Course Completion -->
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:20px;">Course Completion</div>
+        <div style="margin-bottom:16px;">
+          <div class="flex items-center justify-between mb-6"><span style="font-size:13px;">English for Tourism</span><span style="font-size:13px;font-weight:700;color:var(--neon);">62%</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:62%;"></div></div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div class="flex items-center justify-between mb-6"><span style="font-size:13px;">French Essentials</span><span style="font-size:13px;font-weight:700;color:var(--neon);">15%</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:15%;"></div></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-6"><span style="font-size:13px;">Spanish Survival</span><span style="font-size:13px;font-weight:700;color:var(--success);">100%</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:100%;background:var(--success);"></div></div>
+        </div>
+      </div>
+
+      <!-- Weekly Activity -->
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:20px;">Weekly Activity (XP)</div>
+        <div class="bar-chart-row">
+          <div class="bar-col"><div class="bar-body" style="height:35%;"></div><div class="bar-lbl">Mon</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:70%;"></div><div class="bar-lbl">Tue</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:50%;"></div><div class="bar-lbl">Wed</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:90%;"></div><div class="bar-lbl">Thu</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:65%;"></div><div class="bar-lbl">Fri</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:40%;"></div><div class="bar-lbl">Sat</div></div>
+          <div class="bar-col"><div class="bar-body" style="height:80%;"></div><div class="bar-lbl">Sun</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Breakdown -->
+    <div class="card mb-28">
+      <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:20px;">Skill Breakdown · English</div>
+      <div class="grid-2 gap-24">
+        <div>
+          <div class="skill-bar-row"><span class="skill-name">Vocabulary</span><div class="skill-track"><div class="skill-fill" style="width:78%;background:linear-gradient(90deg,var(--neon2),var(--neon));"></div></div><span style="font-size:12px;color:var(--neon);font-weight:600;min-width:36px;text-align:right;">78%</span></div>
+          <div class="skill-bar-row"><span class="skill-name">Grammar</span><div class="skill-track"><div class="skill-fill" style="width:65%;background:linear-gradient(90deg,#00CFFF,#0080FF);"></div></div><span style="font-size:12px;color:#00CFFF;font-weight:600;min-width:36px;text-align:right;">65%</span></div>
+          <div class="skill-bar-row"><span class="skill-name">Speaking</span><div class="skill-track"><div class="skill-fill" style="width:54%;background:linear-gradient(90deg,var(--warning),#FF8800);"></div></div><span style="font-size:12px;color:var(--warning);font-weight:600;min-width:36px;text-align:right;">54%</span></div>
+        </div>
+        <div>
+          <div class="skill-bar-row"><span class="skill-name">Listening</span><div class="skill-track"><div class="skill-fill" style="width:82%;background:linear-gradient(90deg,var(--neon2),var(--neon));"></div></div><span style="font-size:12px;color:var(--neon);font-weight:600;min-width:36px;text-align:right;">82%</span></div>
+          <div class="skill-bar-row"><span class="skill-name">Reading</span><div class="skill-track"><div class="skill-fill" style="width:71%;background:linear-gradient(90deg,#00CFFF,#0080FF);"></div></div><span style="font-size:12px;color:#00CFFF;font-weight:600;min-width:36px;text-align:right;">71%</span></div>
+          <div class="skill-bar-row"><span class="skill-name">Writing</span><div class="skill-track"><div class="skill-fill" style="width:48%;background:linear-gradient(90deg,var(--warning),#FF8800);"></div></div><span style="font-size:12px;color:var(--warning);font-weight:600;min-width:36px;text-align:right;">48%</span></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:14px 18px;background:rgba(191,255,0,0.05);border:1px solid rgba(191,255,0,0.12);border-radius:var(--radius-lg);">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px;color:var(--neon);">💡 AI Suggestion</div>
+        <div style="font-size:13px;color:var(--muted);">Your Speaking score is the weakest area. Try 3 speaking practice sessions this week to boost it above 70%.</div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div>
+      <div style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px;">Achievements · 8 of 24 Earned</div>
+      <div class="badge-grid">
+        <div class="achievement-card"><div class="ach-icon">🎯</div><div class="ach-name">First Lesson</div><div class="ach-desc">Completed your first lesson</div></div>
+        <div class="achievement-card"><div class="ach-icon">🔥</div><div class="ach-name">7-Day Streak</div><div class="ach-desc">7 days in a row</div></div>
+        <div class="achievement-card"><div class="ach-icon">⚡</div><div class="ach-name">Speed Learner</div><div class="ach-desc">5 lessons in one day</div></div>
+        <div class="achievement-card"><div class="ach-icon">🏆</div><div class="ach-name">Perfect Score</div><div class="ach-desc">100% on any quiz</div></div>
+        <div class="achievement-card locked"><div class="ach-icon">💎</div><div class="ach-name">Diamond</div><div class="ach-desc">30-day streak</div></div>
+        <div class="achievement-card locked"><div class="ach-icon">🌍</div><div class="ach-name">Polyglot</div><div class="ach-desc">Learn 3 languages</div></div>
+        <div class="achievement-card locked"><div class="ach-icon">👑</div><div class="ach-name">Top Learner</div><div class="ach-desc">Rank #1 on leaderboard</div></div>
+        <div class="achievement-card locked"><div class="ach-icon">🎓</div><div class="ach-name">Graduate</div><div class="ach-desc">Complete any full course</div></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="screen-id">4.5 · Progress</div>
+</body></html>

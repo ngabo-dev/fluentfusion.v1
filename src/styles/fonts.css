@@ -1,0 +1,13 @@
+/* FluentFusion Typography Fonts */
+
+/* Syne - For headings (H1, H2, H3) */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap');
+
+/* DM Sans - For body text */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
+/* JetBrains Mono - For labels and monospace text */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* Noto Color Emoji - For emoji support */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap');

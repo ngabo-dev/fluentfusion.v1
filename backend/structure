@@ -1,0 +1,61 @@
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── config.py
+│   ├── database.py
+│   ├── dependencies.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── language.py
+│   │   ├── course.py
+│   │   ├── lesson.py
+│   │   ├── progress.py
+│   │   ├── quiz.py
+│   │   ├── practice.py
+│   │   ├── live_session.py
+│   │   ├── community.py
+│   │   ├── gamification.py
+│   │   └── payment.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── user.py
+│   │   ├── course.py
+│   │   ├── lesson.py
+│   │   └── ...
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── users.py
+│   │   │   ├── courses.py
+│   │   │   ├── lessons.py
+│   │   │   ├── practice.py
+│   │   │   ├── live.py
+│   │   │   ├── community.py
+│   │   │   ├── gamification.py
+│   │   │   ├── payments.py
+│   │   │   └── admin.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── auth_service.py
+│   │   ├── user_service.py
+│   │   ├── course_service.py
+│   │   ├── ai_service.py
+│   │   ├── payment_service.py
+│   │   └── notification_service.py
+│   ├── utils/
+│   │   ├── security.py
+│   │   ├── email.py
+│   │   ├── storage.py
+│   │   └── constants.py
+│   └── websocket/
+│       ├── __init__.py
+│       └── live_session.py
+├── alembic/
+├── tests/
+├── requirements.txt
+├── .env.example
+└── docker-compose.yml
