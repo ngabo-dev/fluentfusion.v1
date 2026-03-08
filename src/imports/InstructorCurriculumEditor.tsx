@@ -49,8 +49,8 @@ export default function InstructorCurriculumEditor() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
@@ -234,9 +234,9 @@ export default function InstructorCurriculumEditor() {
               </div>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
-                  localStorage.removeItem('user');
+                  localStorage.removeItem('ff_access_token');
+                  localStorage.removeItem('ff_refresh_token');
+                  localStorage.removeItem('ff_user');
                   navigate('/login');
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"

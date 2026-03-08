@@ -19,7 +19,7 @@ async function apiCall<T>(
   };
 
   // Add auth token if available
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('ff_access_token');
   if (token) {
     config.headers = {
       ...config.headers,
@@ -99,23 +99,23 @@ export const authApi = {
     });
     
     // Store tokens
-    localStorage.setItem('access_token', response.access_token);
-    localStorage.setItem('refresh_token', response.refresh_token);
-    localStorage.setItem('user', JSON.stringify(response.user));
+    localStorage.setItem('ff_access_token', response.access_token);
+    localStorage.setItem('ff_refresh_token', response.refresh_token);
+    localStorage.setItem('ff_user', JSON.stringify(response.user));
     
     return response;
   },
 
   // Logout user
   logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('ff_access_token');
+    localStorage.removeItem('ff_refresh_token');
+    localStorage.removeItem('ff_user');
   },
 
   // Get current user
   getCurrentUser: () => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('ff_user');
     return userStr ? JSON.parse(userStr) : null;
   },
 
@@ -131,10 +131,28 @@ export const authApi = {
     return role === 'admin';
   },
 
+  // Check if user is super_admin
+  isSuperAdmin: () => {
+    const role = authApi.getUserRole();
+    return role === 'super_admin';
+  },
+
+  // Check if user is admin or super_admin
+  isAdminOrSuperAdmin: () => {
+    const role = authApi.getUserRole();
+    return role === 'admin' || role === 'super_admin';
+  },
+
   // Check if user is instructor
   isInstructor: () => {
     const role = authApi.getUserRole();
     return role === 'instructor';
+  },
+
+  // Check if user can create courses (instructor, admin, or super_admin)
+  canCreateCourse: () => {
+    const role = authApi.getUserRole();
+    return role === 'instructor' || role === 'admin' || role === 'super_admin';
   },
 
   // Verify email
@@ -216,6 +234,11 @@ export const coursesApi = {
     return apiCall<{ message: string; enrollment_id: number }>(`/courses/${courseId}/enroll`, {
       method: 'POST',
     });
+  },
+
+  // Get enrolled courses for the current user
+  getEnrolledCourses: async () => {
+    return apiCall<{ courses: any[]; total: number }>('/courses/enrolled');
   },
 };
 
@@ -699,6 +722,46 @@ export const adminApi = {
       method: 'POST',
     });
   },
+
+  // === Course Approval Workflow ===
+  
+  // Get all course edit/delete requests
+  getCourseRequests: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    request_type?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.request_type) queryParams.set('request_type', params.request_type);
+    
+    const query = queryParams.toString();
+    return apiCall<{ requests: any[]; total: number; page: number; total_pages: number }>(
+      `/admin/course-requests${query ? `?${query}` : ''}`
+    );
+  },
+
+  // Get course request details
+  getCourseRequestDetails: async (requestId: number) => {
+    return apiCall<{ request: any }>(`/admin/course-requests/${requestId}`);
+  },
+
+  // Approve course request
+  approveCourseRequest: async (requestId: number, comment?: string) => {
+    return apiCall<{ message: string }>(`/admin/course-requests/${requestId}/approve${comment ? `?comment=${encodeURIComponent(comment)}` : ''}`, {
+      method: 'POST',
+    });
+  },
+
+  // Reject course request
+  rejectCourseRequest: async (requestId: number, reason: string) => {
+    return apiCall<{ message: string }>(`/admin/course-requests/${requestId}/reject?reason=${encodeURIComponent(reason)}`, {
+      method: 'POST',
+    });
+  },
 };
 
 // Instructor API
@@ -993,7 +1056,7 @@ export const instructorApi = {
     const formData = new FormData();
     formData.append('file', file);
     
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     const response = await fetch(`${API_BASE_URL}/courses/upload/video`, {
       method: 'POST',
       headers: token ? { 'Authorization': `Bearer ${token}` } : {},
@@ -1082,6 +1145,55 @@ export const instructorApi = {
   // Verify certificate
   verifyCertificate: async (code: string) => {
     return apiCall<{ valid: boolean; certificate: any }>(`/instructor/certificates/verify/${code}`);
+  },
+
+  // === Course Edit/Delete Request Workflow ===
+  
+  // Request course edit (sends to admin for approval)
+  requestCourseEdit: async (courseId: number, data: {
+    title?: string;
+    description?: string;
+    thumbnail_url?: string;
+    price_usd?: number;
+    is_free?: boolean;
+    level?: string;
+  }, reason: string) => {
+    return apiCall<{ message: string; request_id: number }>(`/instructor/courses/${courseId}/request-edit`, {
+      method: 'POST',
+      body: JSON.stringify({ ...data, reason }),
+    });
+  },
+
+  // Request course deletion (sends to admin for approval)
+  requestCourseDelete: async (courseId: number, reason: string) => {
+    return apiCall<{ message: string; request_id: number }>(`/instructor/courses/${courseId}/request-delete`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  // Get my pending requests
+  getMyRequests: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    if (params?.status) queryParams.set('status', params.status);
+    
+    const query = queryParams.toString();
+    return apiCall<{ requests: any[]; total: number; page: number; total_pages: number }>(
+      `/instructor/courses/my-requests${query ? `?${query}` : ''}`
+    );
+  },
+
+  // Cancel pending request
+  cancelRequest: async (requestId: number) => {
+    return apiCall<{ message: string }>(`/instructor/courses/requests/${requestId}/cancel`, {
+      method: 'POST',
+    });
   },
 };
 
@@ -1222,7 +1334,9 @@ export const gamificationApi = {
     return apiCall<{
       challenge: any;
       tasks: any[];
-      user_progress: any[];
+      progress: Record<number, any>;
+      completed_count: number;
+      total_tasks: number;
     }>('/gamification/daily-challenge/today');
   },
 

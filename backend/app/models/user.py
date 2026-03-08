@@ -10,13 +10,15 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
-    role = Column(String(50), nullable=False, default="student")  # student, instructor, admin
+    role = Column(String(50), nullable=False, default="student")  # student, instructor, admin, super_admin
+    username = Column(String(255), unique=True, nullable=True, index=True)
     avatar_url = Column(String(500))
     bio = Column(Text)
     location = Column(String(255))
     
     # Status
     is_email_verified = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)  # Alias for is_email_verified
     is_active = Column(Boolean, default=True)
     is_banned = Column(Boolean, default=False)
     ban_reason = Column(Text)
@@ -77,6 +79,9 @@ class User(Base):
     instructor_profile = relationship("InstructorProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     taught_courses = relationship("Course", back_populates="instructor", cascade="all, delete-orphan")
     taught_sessions = relationship("LiveSession", back_populates="instructor", cascade="all, delete-orphan")
+    certificates = relationship("Certificate", back_populates="user", foreign_keys="Certificate.user_id", cascade="all, delete-orphan")
+    conversations_as_instructor = relationship("Conversation", back_populates="instructor", foreign_keys="Conversation.instructor_id", cascade="all, delete-orphan")
+    conversations_as_student = relationship("Conversation", back_populates="student", foreign_keys="Conversation.student_id", cascade="all, delete-orphan")
     
     # Payments
     subscriptions = relationship("UserSubscription", back_populates="user", cascade="all, delete-orphan")
@@ -85,6 +90,21 @@ class User(Base):
     
     # Notifications
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    
+    # Announcements
+    announcements = relationship("Announcement", back_populates="author", cascade="all, delete-orphan")
+    announcement_views = relationship("AnnouncementView", back_populates="user", cascade="all, delete-orphan")
+    
+    # Reports
+    reports_filed = relationship("Report", back_populates="reporter", foreign_keys="Report.reporter_id", cascade="all, delete-orphan")
+    report_comments = relationship("ReportComment", back_populates="author", cascade="all, delete-orphan")
+    
+    # Messages
+    sent_messages = relationship("Message", back_populates="sender", cascade="all, delete-orphan")
+    
+    # User Activity
+    activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
 
 class UserSettings(Base):
     __tablename__ = "user_settings"

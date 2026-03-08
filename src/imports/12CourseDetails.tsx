@@ -364,39 +364,6 @@ function LoadingState() {
   );
 }
 
-// Mock course data for fallback
-const mockCourse = {
-  id: 1,
-  title: 'English for Tourism Workers',
-  language_name: 'English',
-  level: 'Beginner',
-  is_free: true,
-  is_bestseller: true,
-  description: 'Master professional hospitality English — greetings, room service, guest handling, and more.',
-  full_description: 'This comprehensive English course is designed for tourism workers in Rwanda who want to communicate professionally with international guests. You will learn real-world hospitality phrases, pronunciation tips, and cultural etiquette.',
-  instructor_name: 'Dr. Mary K.',
-  rating: 4.9,
-  review_count: 2147,
-  student_count: 12500,
-  unit_count: 8,
-  lesson_count: 48,
-  units: [
-    { id: 1, title: 'Greetings & First Impressions', lessons: 6, completed: 2 },
-    { id: 2, title: 'Hotel Check-in', lessons: 8, completed: 0 },
-    { id: 3, title: 'Room Service', lessons: 6, completed: 0 },
-    { id: 4, title: 'Handling Complaints', lessons: 7, completed: 0 },
-    { id: 5, title: 'Restaurant Vocabulary', lessons: 8, completed: 0 },
-    { id: 6, title: 'Tourism Activities', lessons: 5, completed: 0 },
-    { id: 7, title: 'Cultural Etiquette', lessons: 4, completed: 0 },
-    { id: 8, title: 'Final Assessment', lessons: 4, completed: 0 },
-  ],
-  reviews: [
-    { id: 1, name: 'Amina M.', initials: 'AM', rating: 5, date: '2 days ago', comment: 'This course completely transformed how I communicate with hotel guests. The pronunciation exercises are incredible!' },
-    { id: 2, name: 'Kagiso R.', initials: 'KR', rating: 5, date: '1 week ago', comment: 'Very practical. I use phrases from this course every single day at work. Highly recommend!' },
-  ],
-  is_enrolled: false,
-};
-
 export default function Component12CourseDetails() {
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId: string }>();
@@ -416,7 +383,7 @@ export default function Component12CourseDetails() {
 
   // Check auth on mount
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     const userData = authApi.getCurrentUser();
     
     if (!token || !userData) {
@@ -440,36 +407,11 @@ export default function Component12CourseDetails() {
       setCourseError(null);
       const id = parseInt(courseId || '1');
       const response = await coursesApi.getCourse(id);
-      console.log('Course response:', response);
-      setCourse(response.course || mockCourse);
+      setCourse(response.course || response);
       setIsEnrolled(response.is_enrolled || false);
     } catch (error: any) {
       console.error('Failed to fetch course:', error);
       setCourseError(error.message || 'Failed to load course');
-      
-      // Try to check if user is enrolled by fetching enrolled courses list
-      try {
-        const enrolledResponse = await fetch('http://localhost:8000/api/v1/courses/enrolled', {
-          headers: { 
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (enrolledResponse.ok) {
-          const enrolledCourses = await enrolledResponse.json();
-          const isUserEnrolled = Array.isArray(enrolledCourses) && enrolledCourses.some((c: any) => c.id === parseInt(courseId || '1'));
-          if (isUserEnrolled) {
-            setIsEnrolled(true);
-            setCourse(mockCourse);
-            return;
-          }
-        }
-      } catch (enrollCheckError) {
-        console.error('Error checking enrollment:', enrollCheckError);
-      }
-      
-      // Use mock data as fallback
-      setCourse(mockCourse);
     }
   };
 

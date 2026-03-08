@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+import { API_BASE_URL } from "../app/api/config";
 
 export default function Component26AdminUsers() {
   const navigate = useNavigate();
@@ -19,8 +20,8 @@ export default function Component26AdminUsers() {
   const [newUser, setNewUser] = useState({ email: "", password: "", full_name: "", role: "student" });
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
@@ -41,11 +42,11 @@ export default function Component26AdminUsers() {
   }, [navigate, searchTerm, roleFilter, statusFilter]);
 
   const fetchUsers = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     if (!token) return;
     
     try {
-      let url = 'http://localhost:8000/api/v1/admin/users?limit=50';
+      let url = `${API_BASE_URL}/admin/users?limit=50`;
       if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
       if (roleFilter) url += `&role=${roleFilter}`;
       if (statusFilter === "active") url += `&is_banned=false`;
@@ -64,11 +65,11 @@ export default function Component26AdminUsers() {
   };
 
   const fetchStats = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     if (!token) return;
     
     try {
-      const res = await fetch('http://localhost:8000/api/v1/admin/dashboard', {
+      const res = await fetch(`${API_BASE_URL}/admin/dashboard`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -88,11 +89,11 @@ export default function Component26AdminUsers() {
   };
 
   const handleCreateUser = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     if (!token) return;
     
     try {
-      const res = await fetch('http://localhost:8000/api/v1/admin/users', {
+      const res = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -112,9 +113,9 @@ export default function Component26AdminUsers() {
   };
 
   const handleActivate = async (userId: number) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/admin/users/${userId}/activate`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/activate`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -125,9 +126,9 @@ export default function Component26AdminUsers() {
   };
 
   const handleDeactivate = async (userId: number) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/admin/users/${userId}/deactivate`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/deactivate`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -139,9 +140,9 @@ export default function Component26AdminUsers() {
 
   const handleDelete = async (userId: number) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/admin/users/${userId}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -197,9 +198,9 @@ export default function Component26AdminUsers() {
               </div>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
-                  localStorage.removeItem('user');
+                  localStorage.removeItem('ff_access_token');
+                  localStorage.removeItem('ff_refresh_token');
+                  localStorage.removeItem('ff_user');
                   navigate('/login');
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer ml-2"

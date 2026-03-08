@@ -195,12 +195,6 @@ export default function Component05EmailVerify() {
 
   return (
     <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start pointer-events-auto relative size-full" data-name="05-email-verify">
-      <div className="absolute bg-[#151515] bottom-[16px] content-stretch flex flex-col items-start px-[11px] py-[6px] right-[17px] rounded-[6px] z-[3]" data-name="Background+Border">
-        <div aria-hidden="true" className="absolute border border-[#2a2a2a] border-solid inset-0 pointer-events-none rounded-[6px]" />
-        <div className="flex flex-col font-['JetBrains_Mono:Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[#555] text-[10px] tracking-[1px] whitespace-nowrap">
-          <p className="leading-[16px]">1.5 · Email Verification</p>
-        </div>
-      </div>
       <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-[2]" data-name="Nav">
         <div aria-hidden="true" className="absolute border-[#2a2a2a] border-b border-solid inset-0 pointer-events-none" />
         <div className="flex flex-row items-center size-full">

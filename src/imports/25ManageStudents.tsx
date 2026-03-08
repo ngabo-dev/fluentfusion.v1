@@ -32,15 +32,15 @@ export default function Component25ManageStudents() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
     }
     try {
       const parsed = JSON.parse(userData);
-      if (parsed.role && !['instructor', 'admin'].includes(parsed.role)) {
+      if (parsed.role && !['instructor', 'admin', 'super_admin'].includes(parsed.role)) {
         navigate('/dashboard');
         return;
       }
@@ -176,9 +176,9 @@ export default function Component25ManageStudents() {
               </div>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
-                  localStorage.removeItem('user');
+                  localStorage.removeItem('ff_access_token');
+                  localStorage.removeItem('ff_refresh_token');
+                  localStorage.removeItem('ff_user');
                   navigate('/login');
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer ml-2"

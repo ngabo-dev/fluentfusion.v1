@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 import { authApi } from "../app/api/config";
 
 interface Assignment {
@@ -30,8 +31,8 @@ export default function StudentAssignments() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
@@ -48,43 +49,8 @@ export default function StudentAssignments() {
   const fetchAssignments = async () => {
     setLoading(true);
     try {
-      // Mock data for now
-      const mockAssignments: Assignment[] = [
-        {
-          id: 1,
-          title: "Introduction Speech",
-          assignment_type: "speaking",
-          prompt: "Record a 2-minute introduction about yourself in Kinyarwanda. Include:\n\n- Your name\n- Where you're from\n- What you do\n- Why you're learning Kinyarwanda",
-          course_id: 1,
-          course_title: "Kinyarwanda for Beginners",
-          due_date: "2024-02-15T23:59:59Z",
-          status: "pending"
-        },
-        {
-          id: 2,
-          title: "Write about Your Day",
-          assignment_type: "writing",
-          prompt: "Write a paragraph (50-100 words) about your typical day. Use at least 5 vocabulary words from Unit 3.",
-          course_id: 1,
-          course_title: "Kinyarwanda for Beginners",
-          due_date: "2024-02-20T23:59:59Z",
-          status: "submitted"
-        },
-        {
-          id: 3,
-          title: "Family Members Vocabulary",
-          assignment_type: "speaking",
-          prompt: "Record yourself introducing your family members in Kinyarwanda. Name at least 5 family members.",
-          course_id: 1,
-          course_title: "Kinyarwanda for Beginners",
-          due_date: "2024-02-25T23:59:59Z",
-          status: "graded",
-          grade: 85,
-          feedback: "Great pronunciation! Keep working on the vocabulary for extended family."
-        }
-      ];
-      
-      setAssignments(mockAssignments);
+      // Assignments feature is coming soon - start with empty state
+      setAssignments([]);
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
     } finally {
@@ -94,27 +60,19 @@ export default function StudentAssignments() {
 
   const handleSubmit = async () => {
     if (!selectedAssignment || (!submission.content && !submission.audioBlob)) {
-      alert('Please provide your submission');
+      toast.error('Please provide your submission');
       return;
     }
     
     setSubmitting(true);
     try {
-      // TODO: Replace with actual API call
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setAssignments(assignments.map(a => 
-        a.id === selectedAssignment.id 
-          ? { ...a, status: "submitted" as const }
-          : a
-      ));
+      // Assignments submission API coming soon
       setShowSubmitModal(false);
       setSubmission({ content: "", audioBlob: null });
-      alert('Submission successful!');
+      toast.info('Assignments feature coming soon');
     } catch (error) {
       console.error('Failed to submit:', error);
-      alert('Failed to submit assignment');
+      toast.error('Failed to submit assignment');
     } finally {
       setSubmitting(false);
     }
@@ -161,9 +119,9 @@ export default function StudentAssignments() {
             <div className="flex items-center gap-[12px]">
               <button 
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
-                  localStorage.removeItem('user');
+                  localStorage.removeItem('ff_access_token');
+                  localStorage.removeItem('ff_refresh_token');
+                  localStorage.removeItem('ff_user');
                   navigate('/login');
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"

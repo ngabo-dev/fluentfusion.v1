@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 import { instructorApi } from "../app/api/config";
 
 interface Assignment {
@@ -48,8 +49,8 @@ export default function InstructorAssignmentBuilder() {
   const [gradeData, setGradeData] = useState({ grade: 0, feedback: "" });
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
@@ -70,63 +71,9 @@ export default function InstructorAssignmentBuilder() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Mock data for now
-      const mockAssignments: Assignment[] = [
-        {
-          id: 1,
-          title: "Introduction Speech",
-          assignment_type: "speaking",
-          prompt: "Record a 2-minute introduction about yourself in the target language.",
-          rubric: "1. Pronunciation (25 points)\n2. Grammar (25 points)\n3. Vocabulary (25 points)\n4. Fluency (25 points)",
-          due_date: "2024-02-15T23:59:59Z",
-          course_id: 1,
-          course_title: "Kinyarwanda for Beginners",
-          unit_id: null,
-          created_at: "2024-01-15T10:00:00Z"
-        },
-        {
-          id: 2,
-          title: "Write about Your Day",
-          assignment_type: "writing",
-          prompt: "Write about your typical day using at least 10 vocabulary words from this unit.",
-          rubric: "1. Content (30 points)\n2. Grammar (30 points)\n3. Vocabulary (20 points)\n4. Organization (20 points)",
-          due_date: "2024-02-20T23:59:59Z",
-          course_id: 1,
-          course_title: "Kinyarwanda for Beginners",
-          unit_id: null,
-          created_at: "2024-01-20T10:00:00Z"
-        }
-      ];
-      
-      setAssignments(mockAssignments);
-      
-      // Mock submissions for first assignment
-      const mockSubmissions: Submission[] = [
-        {
-          id: 1,
-          student_name: "John Doe",
-          student_email: "john@email.com",
-          content: "My name is John. I am a student. I wake up at 7am...",
-          audio_url: undefined,
-          submitted_at: "2024-02-10T14:30:00Z",
-          grade: null,
-          feedback: null,
-          graded_at: null
-        },
-        {
-          id: 2,
-          student_name: "Jane Smith",
-          student_email: "jane@email.com",
-          content: "Hello everyone! My name is Jane...",
-          audio_url: "https://example.com/audio/jane-intro.mp3",
-          submitted_at: "2024-02-11T09:15:00Z",
-          grade: 85,
-          feedback: "Great pronunciation! Keep working on verb conjugation.",
-          graded_at: "2024-02-12T11:00:00Z"
-        }
-      ];
-      
-      setSubmissions(mockSubmissions);
+      // Assignments feature is coming soon - start with empty state
+      setAssignments([]);
+      setSubmissions([]);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -136,21 +83,13 @@ export default function InstructorAssignmentBuilder() {
 
   const handleCreateAssignment = async () => {
     if (!newAssignment.title || !newAssignment.prompt || !courseId) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
     setSaving(true);
     try {
-      // TODO: Replace with actual API call
-      const newId = assignments.length + 1;
-      setAssignments([...assignments, {
-        id: newId,
-        ...newAssignment,
-        course_id: Number(courseId),
-        course_title: "Course",
-        unit_id: null,
-        created_at: new Date().toISOString()
-      }]);
+      // Assignments creation API coming soon
+      toast.info('Assignments feature coming soon');
       setShowCreateModal(false);
       setNewAssignment({
         title: "",
@@ -161,30 +100,21 @@ export default function InstructorAssignmentBuilder() {
       });
     } catch (error) {
       console.error('Failed to create assignment:', error);
-      alert('Failed to create assignment');
+      toast.error('Failed to create assignment');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleGrade = async (submissionId: number) => {
+  const handleGrade = async (_submissionId: number) => {
     try {
-      // TODO: Replace with actual API call
-      setSubmissions(submissions.map(s => 
-        s.id === submissionId 
-          ? { 
-              ...s, 
-              grade: gradeData.grade, 
-              feedback: gradeData.feedback,
-              graded_at: new Date().toISOString()
-            }
-          : s
-      ));
+      // Grading API coming soon
+      toast.info('Grading feature coming soon');
       setGradingMode(false);
       setGradeData({ grade: 0, feedback: "" });
     } catch (error) {
       console.error('Failed to grade:', error);
-      alert('Failed to submit grade');
+      toast.error('Failed to submit grade');
     }
   };
 
@@ -219,9 +149,9 @@ export default function InstructorAssignmentBuilder() {
               </div>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
-                  localStorage.removeItem('user');
+                  localStorage.removeItem('ff_access_token');
+                  localStorage.removeItem('ff_refresh_token');
+                  localStorage.removeItem('ff_user');
                   navigate('/login');
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"

@@ -25,6 +25,7 @@ class Enrollment(Base):
     lesson_completions = relationship("LessonCompletion", back_populates="enrollment", cascade="all, delete-orphan")
     quiz_attempts = relationship("QuizAttempt", back_populates="enrollment", cascade="all, delete-orphan")
     instructor_earnings = relationship("InstructorEarning", back_populates="enrollment")
+    certificate = relationship("Certificate", back_populates="enrollment", uselist=False)
     
     __table_args__ = (
         UniqueConstraint('user_id', 'course_id', name='uq_enrollment'),

@@ -523,7 +523,7 @@ export default function Component14Quiz() {
   // Check auth and fetch quiz on mount
   useEffect(() => {
     const fetchQuiz = async () => {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('ff_access_token');
       const userData = authApi.getCurrentUser();
       
       if (!token || !userData) {
@@ -554,8 +554,9 @@ export default function Component14Quiz() {
               type: q.question_type || 'multiple_choice',
               question: q.question_text,
               options: q.options?.map((opt: any, optIdx: number) => ({
-                id: String.fromCharCode(65 + optIdx), // A, B, C, D
-                text: opt.text,
+                id: String.fromCharCode(65 + optIdx), // A, B, C, D (display letter)
+                db_id: opt.id, // actual database ID for submission
+                text: opt.option_text || opt.text,
                 is_correct: opt.is_correct,
               })),
               correctAnswer: q.correct_answer,
@@ -634,11 +635,27 @@ export default function Component14Quiz() {
     } else {
       // Quiz completed - submit to API
       try {
-        const formattedAnswers = Object.entries(answers).map(([questionIdx, answer]) => ({
-          question_id: quiz.questions[parseInt(questionIdx)].id,
-          answer: typeof answer === 'string' ? answer : undefined,
-          selected_option_id: typeof answer === 'string' ? answer : undefined,
-        }));
+        const formattedAnswers = Object.entries(answers).map(([questionIdx, answer]) => {
+          const question = quiz.questions[parseInt(questionIdx)];
+          // For multiple choice, answer is the display letter (A/B/C/D).
+          // Look up the actual integer option ID for submission.
+          let selectedOptionId: number | undefined;
+          let textAnswer: string | undefined;
+          if (typeof answer === 'string' && question?.options) {
+            const matchedOption = question.options.find((opt: any) => opt.id === answer);
+            if (matchedOption?.db_id !== undefined) {
+              selectedOptionId = matchedOption.db_id;
+            } else {
+              // Free-text answer (fill-in-blank, speaking, translation)
+              textAnswer = answer;
+            }
+          }
+          return {
+            question_id: question.id,
+            answer: textAnswer,
+            selected_option_id: selectedOptionId,
+          };
+        });
         
         const result = await quizApi.submitQuiz(parseInt(quizId || '0'), formattedAnswers);
         

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+import { instructorApi } from "../app/api/config";
 
 export default function Component23InstructorDashboard() {
   const navigate = useNavigate();
@@ -16,16 +17,16 @@ export default function Component23InstructorDashboard() {
 
   useEffect(() => {
     // Auth check - redirect to login if no token
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
     }
     try {
       const parsed = JSON.parse(userData);
-      // Check if user is instructor or admin
-      if (parsed.role && !['instructor', 'admin'].includes(parsed.role)) {
+      // Check if user is instructor, admin, or super_admin
+      if (parsed.role && !['instructor', 'admin', 'super_admin'].includes(parsed.role)) {
         navigate('/dashboard');
         return;
       }
@@ -38,19 +39,14 @@ export default function Component23InstructorDashboard() {
 
     // Fetch instructor data
     const fetchInstructorData = async () => {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('ff_access_token');
       if (!token) return;
 
       try {
         // Fetch dashboard data
-        const dashboardRes = await fetch('http://localhost:8000/api/v1/courses/instructor/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const dashboardData = await instructorApi.getDashboard();
         
-        if (dashboardRes.ok) {
-          const dashboardData = await dashboardRes.json();
+        if (dashboardData) {
           
           // Set courses from dashboard
           setCourses(dashboardData.courses || []);
@@ -69,13 +65,8 @@ export default function Component23InstructorDashboard() {
         }
         
         // Also fetch courses directly for comparison
-        const coursesRes = await fetch('http://localhost:8000/api/v1/courses/instructor/my-courses', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (coursesRes.ok) {
-          const coursesData = await coursesRes.json();
+        const coursesData = await instructorApi.getMyCourses();
+        if (coursesData) {
           // Use courses from this endpoint if dashboard doesn't have them
           if (coursesData.courses && coursesData.courses.length > 0 && courses.length === 0) {
             setCourses(coursesData.courses || []);
@@ -92,9 +83,9 @@ export default function Component23InstructorDashboard() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('ff_access_token');
+    localStorage.removeItem('ff_refresh_token');
+    localStorage.removeItem('ff_user');
     navigate('/login');
   };
 

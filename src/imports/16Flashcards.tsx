@@ -1038,8 +1038,8 @@ export default function Component16Flashcards() {
   useEffect(() => {
     const loadDecks = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const userData = localStorage.getItem('user');
+        const token = localStorage.getItem('ff_access_token');
+        const userData = localStorage.getItem('ff_user');
         if (!token || !userData) {
           navigate('/login');
           return;
@@ -1075,31 +1075,12 @@ export default function Component16Flashcards() {
           setKnownCards(known);
           setLearningCards(learning);
         } else {
-          // Fallback to mock data if no decks
-          setFlashcards([
-            { id: 1, front_text: 'Murakoze', back_text: 'Thank You', example_sentence: 'Murakoze cyane means Thank you very much' },
-            { id: 2, front_text: 'Muraho', back_text: 'Hello', example_sentence: 'Muraho neza? - How are you?' },
-            { id: 3, front_text: 'Amakuru', back_text: 'News', example_sentence: 'Amakuru meza? - Any news?' },
-            { id: 4, front_text: 'Ni meza', back_text: 'It\'s good', example_sentence: 'Ni meza - It\'s good' },
-            { id: 5, front_text: 'Mwiriwe', back_text: 'Good morning', example_sentence: 'Mwiriwe abafite ibitabo - Good morning to those with books' },
-            { id: 6, front_text: 'Bwakeye', back_text: 'Good evening', example_sentence: 'Bwakeye - Good evening' },
-            { id: 7, front_text: 'Urakomeye', back_text: 'Good job', example_sentence: 'Urakomeye - Good job/Well done' },
-            { id: 8, front_text: 'Ndagukunda', back_text: 'I love you', example_sentence: 'Ndagukunda cyane - I love you very much' },
-          ]);
+          // No decks available - show empty state
+          setFlashcards([]);
         }
       } catch (error) {
         console.error('Error loading flashcards:', error);
-        // Fallback to mock data on error
-        setFlashcards([
-          { id: 1, front_text: 'Murakoze', back_text: 'Thank You', example_sentence: 'Murakoze cyane means Thank you very much' },
-          { id: 2, front_text: 'Muraho', back_text: 'Hello', example_sentence: 'Muraho neza? - How are you?' },
-          { id: 3, front_text: 'Amakuru', back_text: 'News', example_sentence: 'Amakuru meza? - Any news?' },
-          { id: 4, front_text: 'Ni meza', back_text: 'It\'s good', example_sentence: 'Ni meza - It\'s good' },
-          { id: 5, front_text: 'Mwiriwe', back_text: 'Good morning', example_sentence: 'Mwiriwe abafite ibitabo - Good morning to those with books' },
-          { id: 6, front_text: 'Bwakeye', back_text: 'Good evening', example_sentence: 'Bwakeye - Good evening' },
-          { id: 7, front_text: 'Urakomeye', back_text: 'Good job', example_sentence: 'Urakomeye - Good job/Well done' },
-          { id: 8, front_text: 'Ndagukunda', back_text: 'I love you', example_sentence: 'Ndagukunda cyane - I love you very much' },
-        ]);
+        setFlashcards([]);
       } finally {
         setIsLoading(false);
       }

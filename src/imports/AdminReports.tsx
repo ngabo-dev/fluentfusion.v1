@@ -26,7 +26,7 @@ export default function AdminReports() {
   const [commentText, setCommentText] = useState('');
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem('ff_user');
     if (!userData) {
       navigate('/login');
       return;

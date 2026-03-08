@@ -39,7 +39,7 @@ export default function Component13LessonView() {
   // Check auth on mount and fetch lesson data
   useEffect(() => {
     const fetchLesson = async () => {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('ff_access_token');
       const userData = authApi.getCurrentUser();
       
       if (!token || !userData) {

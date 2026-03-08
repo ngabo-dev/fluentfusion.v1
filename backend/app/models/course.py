@@ -24,6 +24,7 @@ class Course(Base):
     is_published = Column(Boolean, default=False)
     approval_status = Column(String(50), default="pending")  # pending, approved, rejected
     rejection_reason = Column(Text)
+    is_deleted = Column(Boolean, default=False)  # Soft delete for course deletion requests
     
     # Features
     has_certificate = Column(Boolean, default=False)
@@ -52,6 +53,8 @@ class Course(Base):
     live_sessions = relationship("LiveSession", back_populates="course")
     purchases = relationship("CoursePurchase", back_populates="course")
     instructor_earnings = relationship("InstructorEarning", back_populates="course")
+    certificates = relationship("Certificate", back_populates="course", cascade="all, delete-orphan")
+    announcements = relationship("Announcement", back_populates="course", cascade="all, delete-orphan")
     
     __table_args__ = (
         Index('ix_courses_instructor_id', instructor_id),
@@ -161,4 +164,44 @@ class LessonVocabulary(Base):
     
     __table_args__ = (
         Index('ix_lesson_vocab_lesson_id', lesson_id),
+    )
+
+class CourseEditRequest(Base):
+    """Model for course edit/delete requests that need admin approval"""
+    __tablename__ = "course_edit_requests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    instructor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Request type: edit or delete
+    request_type = Column(String(20), nullable=False)  # "edit" or "delete"
+    
+    # Status: pending, approved, rejected
+    status = Column(String(20), default="pending")
+    
+    # Store the old and new values for edit requests
+    old_values = Column(JSON)
+    new_values = Column(JSON)
+    
+    # Reason for the request (required)
+    reason = Column(Text, nullable=False)
+    
+    # Admin response
+    admin_comment = Column(Text)
+    reviewed_by = Column(Integer, ForeignKey("users.id"))
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    reviewed_at = Column(DateTime(timezone=True))
+    
+    # Relationships
+    course = relationship("Course")
+    instructor = relationship("User", foreign_keys=[instructor_id])
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
+    
+    __table_args__ = (
+        Index('ix_course_edit_requests_course_id', course_id),
+        Index('ix_course_edit_requests_instructor_id', instructor_id),
+        Index('ix_course_edit_requests_status', status),
     )

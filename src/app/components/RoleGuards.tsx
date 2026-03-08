@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 // Get redirect path based on user role
 export const getRoleBasedRedirect = (role: string): string => {
   switch (role) {
+    case 'super_admin':
+      return '/admin/dashboard';
     case 'admin':
       return '/admin/dashboard';
     case 'instructor':
@@ -15,14 +17,17 @@ export const getRoleBasedRedirect = (role: string): string => {
 
 // Check if user has required role
 const checkRole = (userRole: string, requiredRole: string): boolean => {
+  if (requiredRole === 'super_admin') {
+    return userRole === 'super_admin';
+  }
   if (requiredRole === 'admin') {
-    return userRole === 'admin';
+    return userRole === 'admin' || userRole === 'super_admin';
   }
   if (requiredRole === 'instructor') {
-    return userRole === 'instructor' || userRole === 'admin';
+    return userRole === 'instructor' || userRole === 'admin' || userRole === 'super_admin';
   }
   if (requiredRole === 'student') {
-    return userRole === 'student' || userRole === 'instructor' || userRole === 'admin';
+    return userRole === 'student' || userRole === 'instructor' || userRole === 'admin' || userRole === 'super_admin';
   }
   return false;
 };
@@ -35,8 +40,8 @@ export function useAuth() {
 
   useEffect(() => {
     const validateAuth = () => {
-      const token = localStorage.getItem('access_token');
-      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('ff_access_token');
+      const userStr = localStorage.getItem('ff_user');
       
       if (!token || !userStr) {
         setIsAuthenticated(false);
@@ -53,9 +58,9 @@ export function useAuth() {
           setIsAuthenticated(false);
         }
       } catch {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('ff_access_token');
+        localStorage.removeItem('ff_refresh_token');
+        localStorage.removeItem('ff_user');
         setIsAuthenticated(false);
       }
       
@@ -68,7 +73,7 @@ export function useAuth() {
   return { isAuthenticated, user, loading };
 }
 
-// Admin Route Guard - Admin only
+// Admin Route Guard - Admin or Super Admin
 export function AdminRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { isAuthenticated, user, loading } = useAuth();
@@ -76,7 +81,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate('/login', { replace: true });
-    } else if (!loading && isAuthenticated && user?.role !== 'admin') {
+    } else if (!loading && isAuthenticated && !['admin', 'super_admin'].includes(user?.role)) {
       navigate(getRoleBasedRedirect(user.role), { replace: true });
     }
   }, [isAuthenticated, user, loading, navigate]);
@@ -89,14 +94,14 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || !['admin', 'super_admin'].includes(user?.role)) {
     return null;
   }
 
   return <>{children}</>;
 }
 
-// Instructor Route Guard - Instructor or Admin
+// Instructor Route Guard - Instructor, Admin, or Super Admin
 export function InstructorRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { isAuthenticated, user, loading } = useAuth();
@@ -104,7 +109,7 @@ export function InstructorRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate('/login', { replace: true });
-    } else if (!loading && isAuthenticated && !['instructor', 'admin'].includes(user?.role)) {
+    } else if (!loading && isAuthenticated && !['instructor', 'admin', 'super_admin'].includes(user?.role)) {
       navigate(getRoleBasedRedirect(user.role), { replace: true });
     }
   }, [isAuthenticated, user, loading, navigate]);
@@ -117,14 +122,14 @@ export function InstructorRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated || !['instructor', 'admin'].includes(user?.role)) {
+  if (!isAuthenticated || !['instructor', 'admin', 'super_admin'].includes(user?.role)) {
     return null;
   }
 
   return <>{children}</>;
 }
 
-// Student Route Guard - Student only (excludes instructor and admin)
+// Student Route Guard - Student only (excludes instructor, admin and super_admin)
 export function StudentRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { isAuthenticated, user, loading } = useAuth();
@@ -146,6 +151,34 @@ export function StudentRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated || user?.role !== 'student') {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+// Super Admin Route Guard - Super Admin only
+export function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+  const { isAuthenticated, user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    } else if (!loading && isAuthenticated && user?.role !== 'super_admin') {
+      navigate(getRoleBasedRedirect(user.role), { replace: true });
+    }
+  }, [isAuthenticated, user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
+        <div className="text-[#bfff00]">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || user?.role !== 'super_admin') {
     return null;
   }
 

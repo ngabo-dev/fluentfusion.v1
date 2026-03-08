@@ -32,6 +32,7 @@ build/
 *.egg-info/
 
 # Environment files
+.env
 .env.local
 .env.*.local
 
@@ -46,4 +47,4 @@ pulse_artifacts/
 *.pb
 
 # Uploads - Large media files
-Combined_Backend/app/uploads/
+backend/app/uploads/

@@ -170,7 +170,7 @@ export default function Component02Signup() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"student" | "instructor">("student");
+  const [role, setRole] = useState<"student" | "instructor" | "admin" | "super_admin">("student");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -401,6 +401,36 @@ export default function Component02Signup() {
                         <div className="text-[24px]">📋</div>
                         <div className="text-[14px] font-semibold text-white">Instructor</div>
                         <div className="text-[12px] text-[#888]">I want to teach</div>
+                      </div>
+                    </div>
+                    {/* Admin Option */}
+                    <div 
+                      className={`flex-1 h-[120px] min-h-[120px] relative rounded-[14px] cursor-pointer flex flex-col items-center justify-center ${role === 'admin' ? 'bg-[rgba(191,255,0,0.1)] border-2 border-[#bfff00]' : 'bg-[#1f1f1f] border border-[#2a2a2a]'}`}
+                      data-name="Background+Border"
+                      onClick={() => setRole("admin")}
+                    >
+                      {role === 'admin' && (
+                        <div aria-hidden="true" className="absolute border border-[#bfff00] border-solid inset-0 pointer-events-none rounded-[14px]" />
+                      )}
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="text-[24px]">⚡</div>
+                        <div className="text-[14px] font-semibold text-white">Admin</div>
+                        <div className="text-[12px] text-[#888]">Platform manager</div>
+                      </div>
+                    </div>
+                    {/* Super Admin Option */}
+                    <div 
+                      className={`flex-1 h-[120px] min-h-[120px] relative rounded-[14px] cursor-pointer flex flex-col items-center justify-center ${role === 'super_admin' ? 'bg-[rgba(191,255,0,0.1)] border-2 border-[#bfff00]' : 'bg-[#1f1f1f] border border-[#2a2a2a]'}`}
+                      data-name="Background+Border"
+                      onClick={() => setRole("super_admin")}
+                    >
+                      {role === 'super_admin' && (
+                        <div aria-hidden="true" className="absolute border border-[#bfff00] border-solid inset-0 pointer-events-none rounded-[14px]" />
+                      )}
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="text-[24px]">👑</div>
+                        <div className="text-[14px] font-semibold text-white">Super Admin</div>
+                        <div className="text-[12px] text-[#888]">Full access</div>
                       </div>
                     </div>
                   </div>

@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from .config import settings
 from .database import get_db
 from .models.user import User
+from .utils.redis_client import redis_client
 
 security = HTTPBearer()
 
@@ -19,10 +20,24 @@ async def get_current_user(
     try:
         payload = jwt.decode(
             token, 
-            settings.SECRET_KEY, 
-            algorithms=[settings.ALGORITHM]
+            settings.JWT_SECRET_KEY, 
+            algorithms=[settings.JWT_ALGORITHM]
         )
         user_id: str = payload.get("sub")
+        
+        # Check if token is blacklisted (gracefully handle Redis unavailable)
+        jti = payload.get("jti")
+        if jti:
+            try:
+                if await redis_client.is_token_blacklisted(jti):
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Token has been revoked"
+                    )
+            except Exception:
+                # Continue if Redis unavailable - token won't be blacklisted
+                pass
+        
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -62,8 +77,8 @@ async def get_current_active_user(
 async def require_admin(
     current_user: User = Depends(get_current_active_user)
 ) -> User:
-    """Require admin role"""
-    if current_user.role != "admin":
+    """Require admin or super_admin role"""
+    if current_user.role not in ["admin", "super_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"
@@ -73,8 +88,8 @@ async def require_admin(
 async def require_instructor(
     current_user: User = Depends(get_current_active_user)
 ) -> User:
-    """Require instructor or admin role"""
-    if current_user.role not in ["instructor", "admin"]:
+    """Require instructor, admin, or super_admin role"""
+    if current_user.role not in ["instructor", "admin", "super_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Instructor access required"

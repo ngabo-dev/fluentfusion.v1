@@ -1,14 +1,24 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from pydantic import BaseModel
 
 from ...database import get_db
-from ...models.course import Lesson, CourseUnit, LessonVocabulary, LessonTranscript, LessonTranscriptSegment
+from ...models.course import Course, CourseUnit, Lesson, LessonVocabulary, LessonTranscript, LessonTranscriptSegment
 from ...models.progress import Enrollment
 from ...models.user import User
 from ...dependencies import get_current_user, get_current_active_user
 
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
+
+# Pydantic models for request bodies
+class LessonCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    video_url: Optional[str] = None
+    video_duration_sec: int = 0
+    order_index: int = 0
+    is_free_preview: bool = False
 
 @router.get("/{lesson_id}")
 async def get_lesson(
@@ -21,11 +31,17 @@ async def get_lesson(
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
     
+    # Get course and unit info
+    course = db.query(Course).filter(Course.id == lesson.course_id).first()
+    unit = db.query(CourseUnit).filter(CourseUnit.id == lesson.unit_id).first()
+    
     # Check enrollment
-    enrollment = db.query(Enrollment).filter(
-        Enrollment.user_id == current_user.id,
-        Enrollment.course_id == lesson.course_id
-    ).first()
+    enrollment = None
+    if current_user:
+        enrollment = db.query(Enrollment).filter(
+            Enrollment.user_id == current_user.id,
+            Enrollment.course_id == lesson.course_id
+        ).first()
     
     if not enrollment:
         # Check if it's a free preview
@@ -49,10 +65,43 @@ async def get_lesson(
         ).order_by(LessonTranscriptSegment.order_index).all()
     
     return {
-        "lesson": lesson,
-        "vocabulary": vocabulary,
-        "transcript": transcript,
-        "transcript_segments": segments
+        "lesson": {
+            "id": lesson.id,
+            "title": lesson.title,
+            "description": lesson.description,
+            "video_url": lesson.video_url,
+            "video_duration_sec": lesson.video_duration_sec,
+            "order_index": lesson.order_index,
+            "is_free_preview": lesson.is_free_preview,
+            "xp_reward": lesson.xp_reward,
+            "course": {
+                "id": course.id,
+                "title": course.title
+            } if course else None,
+            "unit": {
+                "id": unit.id,
+                "title": unit.title
+            } if unit else None
+        },
+        "vocabulary": [{
+            "id": v.id,
+            "word": v.word,
+            "definition": v.definition,
+            "translation": v.translation,
+            "order_index": v.order_index
+        } for v in vocabulary],
+        "transcript": {
+            "id": transcript.id,
+            "title": transcript.title,
+            "content": transcript.content
+        } if transcript else None,
+        "transcript_segments": [{
+            "id": s.id,
+            "text": s.text,
+            "start_time_sec": s.start_time_sec,
+            "end_time_sec": s.end_time_sec,
+            "order_index": s.order_index
+        } for s in segments]
     }
 
 @router.get("/{lesson_id}/vocabulary")
@@ -112,12 +161,7 @@ async def get_unit(
 @router.post("/units/{unit_id}/lessons")
 async def create_lesson(
     unit_id: int,
-    title: str,
-    description: Optional[str] = None,
-    video_url: Optional[str] = None,
-    video_duration_sec: int = 0,
-    order_index: int = 0,
-    is_free_preview: bool = False,
+    lesson_data: LessonCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -133,12 +177,12 @@ async def create_lesson(
     lesson = Lesson(
         unit_id=unit_id,
         course_id=unit.course_id,
-        title=title,
-        description=description,
-        video_url=video_url,
-        video_duration_sec=video_duration_sec,
-        order_index=order_index,
-        is_free_preview=is_free_preview
+        title=lesson_data.title,
+        description=lesson_data.description,
+        video_url=lesson_data.video_url,
+        video_duration_sec=lesson_data.video_duration_sec,
+        order_index=lesson_data.order_index,
+        is_free_preview=lesson_data.is_free_preview
     )
     db.add(lesson)
     db.commit()

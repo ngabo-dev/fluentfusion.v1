@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 from datetime import datetime
 
@@ -8,7 +9,8 @@ from ...models.user import User, UserSettings
 from ...models.language import UserOnboarding
 from ...models.language import Language, UserLanguage
 from ...models.gamification import UserXP, Streak, UserAchievement, XPTransaction
-from ...models.progress import SkillScore, LessonCompletion
+from ...models.progress import SkillScore, LessonCompletion, Enrollment
+from ...models.course import Course
 from ...schemas.user import (
     UserResponse, UserProfileUpdate, UserSettingsUpdate,
     UserSettingsResponse, UserOnboardingCreate
@@ -19,6 +21,62 @@ from ...schemas.gamification import UserXPResponse, StreakResponse, UserAchievem
 from ...dependencies import get_current_user, get_current_active_user
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+# Public endpoints - no authentication required
+
+@router.get("/stats")
+async def get_platform_stats(db: Session = Depends(get_db)):
+    """Get public platform statistics for the welcome page"""
+    from datetime import timedelta
+
+    # Get total users
+    total_users = db.query(User).filter(User.is_active == True).count()
+
+    # Get total courses
+    total_courses = db.query(Course).filter(
+        Course.is_published == True,
+        Course.approval_status == "approved"
+    ).count()
+
+    # Get total languages
+    total_languages = db.query(Language).count()
+
+    # Get total instructors
+    total_instructors = db.query(User).filter(
+        User.role == "instructor",
+        User.is_active == True
+    ).count()
+
+    # Get active users (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    active_users = db.query(User).filter(
+        User.last_active_at >= thirty_days_ago
+    ).count()
+
+    # Calculate real success rate from enrollments
+    total_enrollments = db.query(Enrollment).count()
+    completed_enrollments = db.query(Enrollment).filter(
+        Enrollment.completion_pct >= 100
+    ).count()
+    success_rate = round(
+        (completed_enrollments / total_enrollments * 100) if total_enrollments > 0 else 0
+    )
+
+    return {
+        "active_learners": active_users or total_users,
+        "total_users": total_users,
+        "languages": total_languages,
+        "courses": total_courses,
+        "instructors": total_instructors,
+        "success_rate": success_rate
+    }
+
+
+@router.get("/languages")
+async def get_available_languages(db: Session = Depends(get_db)):
+    """Get available languages for learning"""
+    languages = db.query(Language).filter(Language.is_active == True).all()
+    return {"languages": languages}
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_profile(

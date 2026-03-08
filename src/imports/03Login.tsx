@@ -8,6 +8,7 @@ export default function Component03Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -74,8 +75,10 @@ export default function Component03Login() {
       const userRole = response.user?.role;
       
       // Only show onboarding for students (not instructors or admins)
-      if (userRole === 'admin') {
-        navigate('/admin/analytics');
+      if (userRole === 'super_admin') {
+        navigate('/admin/dashboard');
+      } else if (userRole === 'admin') {
+        navigate('/admin/dashboard');
       } else if (userRole === 'instructor') {
         navigate('/instructor/dashboard');
       } else if (userRole === 'student') {
@@ -93,10 +96,23 @@ export default function Component03Login() {
     } catch (err: any) {
       // Show user-friendly error message
       const errorMessage = err.message || "";
-      if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
-        setError("Invalid email or password.");
+      
+      // Provide more specific error messages
+      if (errorMessage.includes("No account found")) {
+        setError("No account found with this email. Please sign up first.");
+      } else if (errorMessage.includes("Password is incorrect")) {
+        setError("Password is incorrect. Please check your password and try again.");
       } else if (errorMessage.includes("verify your email")) {
-        setError("Please verify your email first.");
+        setError("Please verify your email first. Check your inbox for the verification link.");
+      } else if (errorMessage.includes("inactive") || errorMessage.includes("deactivated")) {
+        setError("Your account has been deactivated. Please contact support.");
+      } else if (errorMessage.includes("banned")) {
+        setError("Your account has been banned. Please contact support.");
+      } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
+        setError("Unable to connect to server. Please check your internet connection.");
+      } else if (errorMessage) {
+        // Show the actual error message for debugging
+        setError(`Error: ${errorMessage}`);
       } else {
         setError("Login failed. Please try again.");
       }
@@ -107,10 +123,26 @@ export default function Component03Login() {
 
   return (
     <div className="bg-[#0a0a0a] min-h-screen flex flex-col" data-name="03-login">
-      {/* Screen ID */}
-      <div className="absolute top-4 right-4 bg-[#151515] border border-[#2a2a2a] px-3 py-1.5 rounded-md z-10">
-        <div className="text-[10px] text-[#555] tracking-widest">1.3 · Login</div>
-      </div>
+      {/* Navigation bar - Top */}
+      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
+        <div className="flex items-center justify-between px-10 h-full max-w-[1200px] mx-auto">
+          <button onClick={() => navigate('/')} className="flex items-center gap-[11px]">
+            <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
+              <span className="text-[18px]">🧠</span>
+            </div>
+            <div className="font-['Syne:ExtraBold'] text-[18px] uppercase tracking-[-0.36px]">
+              <span className="text-white">FLUENT</span>
+              <span className="text-[#bfff00]">FUSION</span>
+            </div>
+          </button>
+          <button 
+            onClick={() => navigate('/signup')}
+            className="text-white hover:text-[#bfff00] transition-colors"
+          >
+            Sign Up
+          </button>
+        </div>
+      </nav>
 
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-[440px]">
@@ -197,14 +229,21 @@ export default function Component03Login() {
                 <div className="relative">
                   <input
                     ref={passwordInputRef}
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg py-3 pl-11 pr-4 text-white text-[15px] placeholder-[#555] outline-none focus:border-[#bfff00] transition-colors"
+                    className="w-full bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg py-3 pl-11 pr-12 text-white text-[15px] placeholder-[#555] outline-none focus:border-[#bfff00] transition-colors"
                   />
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888]">🔒</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#888] hover:text-white transition-colors"
+                  >
+                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                  </button>
                 </div>
               </div>
 
@@ -273,27 +312,6 @@ export default function Component03Login() {
           </div>
         </div>
       </div>
-
-      {/* Navigation bar */}
-      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] sticky top-0 w-full z-50 border-t border-[#2a2a2a]">
-        <div className="flex items-center justify-between px-10 h-full max-w-[1200px] mx-auto">
-          <button onClick={() => navigate('/')} className="flex items-center gap-[11px]">
-            <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
-              <span className="text-[18px]">🧠</span>
-            </div>
-            <div className="font-['Syne:ExtraBold'] text-[18px] uppercase tracking-[-0.36px]">
-              <span className="text-white">FLUENT</span>
-              <span className="text-[#bfff00]">FUSION</span>
-            </div>
-          </button>
-          <button 
-            onClick={() => navigate('/signup')}
-            className="text-white hover:text-[#bfff00] transition-colors"
-          >
-            Sign Up
-          </button>
-        </div>
-      </nav>
     </div>
   );
 }

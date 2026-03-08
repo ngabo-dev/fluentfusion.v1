@@ -528,7 +528,7 @@ export default function Component11CourseCatalog() {
 
   // Check auth on mount
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('ff_access_token');
     const userData = authApi.getCurrentUser();
     
     if (!token || !userData) {

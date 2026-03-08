@@ -11,7 +11,7 @@ export default function AdminEnrollments() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem('ff_user');
     if (!userData) {
       navigate('/login');
       return;

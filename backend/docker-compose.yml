@@ -1,69 +1,65 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: fluentfusion_db
-    environment:
-      POSTGRES_DB: fluentfusion
-      POSTGRES_USER: fluentuser
-      POSTGRES_PASSWORD: fluentpass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - fluent_network
-
-  redis:
-    image: redis:7-alpine
-    container_name: fluentfusion_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - fluent_network
-
+  # ── Unified FluentFusion + PULSE Backend
   api:
     build: .
     container_name: fluentfusion_api
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://fluentuser:fluentpass@postgres/fluentfusion
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      ENVIRONMENT: development
-      DEBUG: "true"
-    depends_on:
-      - postgres
-      - redis
+      - DATABASE_URL=postgresql://fluentfusion:secret@db:5432/fluentfusion
+      - REDIS_URL=redis://redis:6379
+      - PULSE_MODEL_PATH=/app/pulse_artifacts/pulse_model.pkl
+      - PULSE_SCALER_PATH=/app/pulse_artifacts/pulse_scaler.pkl
+      - PULSE_ENCODERS_PATH=/app/pulse_artifacts/label_encoders.pkl
+      - PULSE_METADATA_PATH=/app/pulse_artifacts/pulse_metadata.json
     volumes:
-      - ./app:/app
-    networks:
-      - fluent_network
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./pulse_artifacts:/app/pulse_artifacts:ro
+      - ./.env:/app/.env:ro
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
 
-  celery_worker:
-    build: .
-    container_name: fluentfusion_celery
+  # ── PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: fluentfusion_db
     environment:
-      DATABASE_URL: postgresql://fluentuser:fluentpass@postgres/fluentfusion
-      REDIS_URL: redis://redis:6379
-    depends_on:
-      - redis
-      - postgres
+      POSTGRES_USER: fluentfusion
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: fluentfusion
     volumes:
-      - ./app:/app
-    networks:
-      - fluent_network
-    command: celery -A app.tasks worker --loglevel=info
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
-networks:
-  fluent_network:
-    driver: bridge
+  # ── Redis (cache + Celery broker)
+  redis:
+    image: redis:7-alpine
+    container_name: fluentfusion_redis
+    ports:
+      - "6379:6379"
+
+  # ── Celery worker (handles PULSE batch predictions + async tasks)
+  worker:
+    build: .
+    container_name: fluentfusion_worker
+    command: celery -A app.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://fluentfusion:secret@db:5432/fluentfusion
+      - REDIS_URL=redis://redis:6379
+      - PULSE_MODEL_PATH=/app/pulse_artifacts/pulse_model.pkl
+      - PULSE_SCALER_PATH=/app/pulse_artifacts/pulse_scaler.pkl
+      - PULSE_ENCODERS_PATH=/app/pulse_artifacts/label_encoders.pkl
+      - PULSE_METADATA_PATH=/app/pulse_artifacts/pulse_metadata.json
+    volumes:
+      - ./pulse_artifacts:/app/pulse_artifacts:ro
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:

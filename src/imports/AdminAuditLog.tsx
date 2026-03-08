@@ -13,7 +13,7 @@ export default function AdminAuditLog() {
   const [targetTypeFilter, setTargetTypeFilter] = useState('');
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem('ff_user');
     if (!userData) { navigate('/login'); return; }
     try {
       const parsed = JSON.parse(userData);

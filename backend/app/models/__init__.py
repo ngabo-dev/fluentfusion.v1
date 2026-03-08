@@ -1,7 +1,7 @@
 # Import all models so they're registered with SQLAlchemy
 from .user import User, UserSettings, EmailVerification, PasswordReset, UserSocialLogin
 from .language import Language, UserOnboarding, UserLanguage
-from .course import Course, CourseUnit, Lesson, LessonTranscript, LessonTranscriptSegment, LessonVocabulary
+from .course import Course, CourseUnit, Lesson, LessonTranscript, LessonTranscriptSegment, LessonVocabulary, CourseEditRequest
 from .progress import Enrollment, LessonCompletion, SkillScore, WeeklyActivity
 from .quiz import Quiz, QuizQuestion, QuizQuestionOption, QuizAttempt, QuizAnswer
 from .practice import (
@@ -23,6 +23,9 @@ from .instructor import InstructorProfile, InstructorEarning, InstructorPayoutRe
 from .payment import SubscriptionPlan, UserSubscription, Payment, CoursePurchase
 from .notification import Notification
 from .admin import AdminAuditLog, ModerationReport, PlatformAnalyticsSnapshot
-
-# Add missing import for course_review if not already there
-from .course_review import CourseReview
+from .certificate import Certificate
+from .message import Conversation, Message
+from .announcement import Announcement, AnnouncementView
+from .activity import UserActivity, UserSession
+from .report import Report, ReportComment
+from .pulse_prediction import PulsePrediction

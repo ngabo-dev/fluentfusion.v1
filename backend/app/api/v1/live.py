@@ -32,8 +32,32 @@ async def get_live_sessions(
     total = query.count()
     sessions = query.order_by(LiveSession.scheduled_at).offset((page - 1) * limit).limit(limit).all()
     
+    # Serialize sessions
+    sessions_data = []
+    for s in sessions:
+        instructor = db.query(User).filter(User.id == s.instructor_id).first()
+        reg_count = db.query(LiveSessionRegistration).filter(
+            LiveSessionRegistration.session_id == s.id
+        ).count()
+        
+        sessions_data.append({
+            "id": s.id,
+            "title": s.title,
+            "description": s.description,
+            "instructor_id": s.instructor_id,
+            "instructor_name": instructor.full_name if instructor else "Instructor",
+            "instructor_avatar": instructor.avatar_url if instructor else None,
+            "language_id": s.language_id,
+            "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
+            "duration_minutes": s.duration_minutes,
+            "status": s.status,
+            "max_participants": s.max_participants,
+            "enrolled_count": reg_count,
+            "is_live": s.status == "live"
+        })
+    
     return {
-        "sessions": sessions,
+        "sessions": sessions_data,
         "total": total,
         "page": page
     }
@@ -53,7 +77,34 @@ async def get_upcoming_sessions(
         LiveSession.scheduled_at <= week_later
     ).order_by(LiveSession.scheduled_at).limit(limit).all()
     
-    return {"sessions": sessions}
+    # Serialize sessions
+    sessions_data = []
+    for s in sessions:
+        # Get instructor info
+        instructor = db.query(User).filter(User.id == s.instructor_id).first()
+        
+        # Get registration count
+        reg_count = db.query(LiveSessionRegistration).filter(
+            LiveSessionRegistration.session_id == s.id
+        ).count()
+        
+        sessions_data.append({
+            "id": s.id,
+            "title": s.title,
+            "description": s.description,
+            "instructor_id": s.instructor_id,
+            "instructor_name": instructor.full_name if instructor else "Instructor",
+            "instructor_avatar": instructor.avatar_url if instructor else None,
+            "language_id": s.language_id,
+            "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
+            "duration_minutes": s.duration_minutes,
+            "status": s.status,
+            "max_participants": s.max_participants,
+            "enrolled_count": reg_count,
+            "is_live": s.status == "live"
+        })
+    
+    return {"sessions": sessions_data}
 
 @router.get("/sessions/live")
 async def get_live_now(

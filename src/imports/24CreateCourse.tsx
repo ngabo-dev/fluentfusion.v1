@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
-import { instructorApi } from "../app/api/config";
+import { instructorApi, API_BASE_URL } from "../app/api/config";
 
 interface Unit {
   id: number;
@@ -56,15 +56,15 @@ export default function Component24CreateCourse() {
   const [languages, setLanguages] = useState<any[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('ff_access_token');
+    const userData = localStorage.getItem('ff_user');
     if (!token || !userData) {
       navigate('/login');
       return;
     }
     try {
       const parsed = JSON.parse(userData);
-      if (parsed.role && !['instructor', 'admin'].includes(parsed.role)) {
+      if (parsed.role && !['instructor', 'admin', 'super_admin'].includes(parsed.role)) {
         navigate('/dashboard');
         return;
       }
@@ -77,8 +77,8 @@ export default function Component24CreateCourse() {
 
   const fetchLanguages = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:8000/api/v1/users/languages', {
+      const token = localStorage.getItem('ff_access_token');
+      const response = await fetch(`${API_BASE_URL}/users/languages`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       const data = await response.json();
@@ -94,8 +94,8 @@ export default function Component24CreateCourse() {
   const loadCourseData = useCallback(async () => {
     if (!courseId) return;
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8000/api/v1/courses/${courseId}/units`, {
+      const token = localStorage.getItem('ff_access_token');
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/units`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       const data = await response.json();
@@ -285,8 +285,10 @@ export default function Component24CreateCourse() {
       
       setNewQuizTitle("");
       setSelectedUnitForQuiz(null);
-      setSuccess("Quiz created successfully!");
-      setTimeout(() => setSuccess(null), 3000);
+      setSuccess("Quiz created! Now add questions...");
+      
+      // Navigate to quiz builder to add questions
+      navigate(`/instructor/quiz/${result.quiz_id}`);
     } catch (e: any) {
       console.error("Failed to create quiz", e);
       setError("Failed to create quiz: " + (e.message || "Unknown error"));
@@ -320,9 +322,9 @@ export default function Component24CreateCourse() {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => {
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                localStorage.removeItem('user');
+                localStorage.removeItem('ff_access_token');
+                localStorage.removeItem('ff_refresh_token');
+                localStorage.removeItem('ff_user');
                 navigate('/login');
               }}
               className="text-[#888] hover:text-white bg-transparent border-none cursor-pointer"
@@ -751,9 +753,12 @@ export default function Component24CreateCourse() {
                             {quiz.questions_count || 0} questions
                           </div>
                         </div>
-                        <button className="text-[#bfff00] hover:text-white">
+                        <Link 
+                          to={`/instructor/quiz/${quiz.id}`}
+                          className="text-[#bfff00] hover:text-white"
+                        >
                           + Add Questions
-                        </button>
+                        </Link>
                       </div>
                     ))}
                   </div>

@@ -91,7 +91,9 @@ export default function Component10Dashboard() {
           if (coursesRes.ok) {
             const coursesData = await coursesRes.json();
             // Transform API response to match interface
-            const transformedCourses: Course[] = (Array.isArray(coursesData) ? coursesData : []).map((c: any) => ({
+            // Backend returns { courses: [...], total: int }
+            const coursesList = Array.isArray(coursesData) ? coursesData : (coursesData.courses || []);
+            const transformedCourses: Course[] = coursesList.map((c: any) => ({
               id: c.id,
               title: c.title,
               language: c.language || "English",

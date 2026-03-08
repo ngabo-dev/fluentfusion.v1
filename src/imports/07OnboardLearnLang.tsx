@@ -49,8 +49,8 @@ export default function Component07OnboardLearnLang() {
   useEffect(() => {
     const fetchLanguages = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`${API_BASE_URL}/api/v1/languages`, {
+        const token = localStorage.getItem('ff_access_token');
+        const response = await fetch(`${API_BASE_URL}/languages`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         if (response.ok) {

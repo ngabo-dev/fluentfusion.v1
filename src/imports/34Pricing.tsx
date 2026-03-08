@@ -6,7 +6,7 @@ export default function Component34Pricing() {
   const [isAnnual, setIsAnnual] = useState(true);
 
   // Check auth status
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('ff_access_token');
 
   const handlePlanClick = (plan: string) => {
     if (!token) {

@@ -15,11 +15,28 @@ class UserCreate(UserBase):
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters')
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password must not exceed 72 bytes when encoded as UTF-8')
+        return v  # Must return the value!
+    
+    @validator('role', pre=True, always=True)
+    def validate_role(cls, v):
+        if v is None:
+            return 'student'
+        valid_roles = ['student', 'instructor', 'admin']
+        if v not in valid_roles:
+            return 'student'
         return v
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password must not exceed 72 bytes when encoded as UTF-8')
+        return v
 
 class UserResponse(UserBase):
     id: int
@@ -87,6 +104,12 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str = Field(..., min_length=8)
+
+    @validator('new_password')
+    def validate_new_password(cls, v):
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password must not exceed 72 bytes when encoded as UTF-8')
+        return v
 
 # Tokens
 class TokenResponse(BaseModel):

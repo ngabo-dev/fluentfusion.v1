@@ -13,7 +13,7 @@ export default function AdminAnnouncements() {
   const [formData, setFormData] = useState({ title: '', content: '', summary: '', announcement_type: 'general', priority: 'normal', target_role: '' });
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem('ff_user');
     if (!userData) { navigate('/login'); return; }
     try {
       const parsed = JSON.parse(userData);

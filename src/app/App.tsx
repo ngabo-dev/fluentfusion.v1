@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router';
 import { useEffect, useState, useCallback, useRef, Component, ReactNode } from 'react';
+import { Toaster } from 'sonner';
 import Welcome from '../imports/01Welcome';
 import Signup from '../imports/02Signup';
 import Login from '../imports/03Login';
@@ -39,14 +40,16 @@ import Component36NotFound from '../imports/36404';
 import Component37NoInternet from '../imports/37NoInternet';
 import Component38EmptyStates from '../imports/38EmptyStates';
 import Component39LoadingPopups from '../imports/39LoadingPopups';
-import { AdminRoute, InstructorRoute, StudentRoute, GuestRoute } from './components/RoleGuards';
+import { AdminRoute, InstructorRoute, StudentRoute, GuestRoute, SuperAdminRoute } from './components/RoleGuards';
 import AdminCourses from '../imports/AdminCourses';
 import AdminEnrollments from '../imports/AdminEnrollments';
 import AdminReports from '../imports/AdminReports';
 import AdminAnnouncements from '../imports/AdminAnnouncements';
+import AdminPulse from '../imports/AdminPulse';
 import AdminAuditLog from '../imports/AdminAuditLog';
 import AdminDashboard from '../imports/AdminDashboard';
 import AdminRevenue from '../imports/AdminRevenue';
+import AdminCourseApprovals from '../imports/AdminCourseApprovals';
 import AdminInstructorApplications from '../imports/AdminInstructorApplications';
 import InstructorCertificates from '../imports/InstructorCertificates';
 import InstructorAnnouncements from '../imports/InstructorAnnouncements';
@@ -55,6 +58,7 @@ import InstructorCurriculumEditor from '../imports/InstructorCurriculumEditor';
 import InstructorQuizBuilder from '../imports/InstructorQuizBuilder';
 import InstructorAssignmentBuilder from '../imports/InstructorAssignmentBuilder';
 import StudentAssignments from '../imports/StudentAssignments';
+import InstructorMyCourses from '../imports/InstructorMyCourses';
 
 // Session configuration - 30 minutes inactive timeout (matches backend ACCESS_TOKEN_EXPIRE_MINUTES)
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -156,8 +160,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const validateToken = async () => {
-      const token = localStorage.getItem('access_token');
-      const user = localStorage.getItem('user');
+      const token = localStorage.getItem('ff_access_token');
+      const user = localStorage.getItem('ff_user');
       
       if (!token || !user) {
         setIsAuthenticated(false);
@@ -174,9 +178,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
           setIsAuthenticated(false);
         }
       } catch {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('ff_access_token');
+        localStorage.removeItem('ff_refresh_token');
+        localStorage.removeItem('ff_user');
         setIsAuthenticated(false);
       }
       
@@ -209,8 +213,8 @@ function RoleBasedRoute({
   children: React.ReactNode; 
   allowedRoles: string[] 
 }) {
-  const token = localStorage.getItem('access_token');
-  const user = localStorage.getItem('user');
+  const token = localStorage.getItem('ff_access_token');
+  const user = localStorage.getItem('ff_user');
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -223,8 +227,8 @@ function RoleBasedRoute({
       const userData = JSON.parse(user);
       if (!allowedRoles.includes(userData.role)) {
         // Redirect based on user's actual role
-        if (userData.role === 'admin') {
-          navigate('/admin/analytics', { replace: true });
+        if (userData.role === 'super_admin' || userData.role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
         } else if (userData.role === 'instructor') {
           navigate('/instructor/dashboard', { replace: true });
         } else {
@@ -259,26 +263,26 @@ function HomePage() {
   
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      const user = localStorage.getItem('user');
+      const token = localStorage.getItem('ff_access_token');
+      const user = localStorage.getItem('ff_user');
       
       if (token && user) {
         try {
           // Validate token by checking if user data is valid
           const userData = JSON.parse(user);
           
-          if (userData.role === 'instructor') {
+          if (userData.role === 'super_admin' || userData.role === 'admin') {
+            navigate('/admin/dashboard', { replace: true });
+          } else if (userData.role === 'instructor') {
             navigate('/instructor/dashboard', { replace: true });
-          } else if (userData.role === 'admin') {
-            navigate('/admin/analytics', { replace: true });
           } else {
             navigate('/dashboard', { replace: true });
           }
         } catch {
           // Invalid user data - clear and stay on welcome
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('user');
+          localStorage.removeItem('ff_access_token');
+          localStorage.removeItem('ff_refresh_token');
+          localStorage.removeItem('ff_user');
         }
       }
       setIsLoading(false);
@@ -303,6 +307,7 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <AppRoutes />
+        <Toaster richColors position="top-right" />
       </BrowserRouter>
     </ErrorBoundary>
   );
@@ -315,9 +320,9 @@ function AppRoutes() {
 
   const handleSessionTimeout = useCallback(() => {
     // Clear localStorage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('ff_access_token');
+    localStorage.removeItem('ff_refresh_token');
+    localStorage.removeItem('ff_user');
     // Redirect to login
     navigate('/login', { replace: true });
   }, [navigate]);
@@ -380,6 +385,7 @@ function AppRoutes() {
         
         {/* Instructor Routes */}
         <Route path="/instructor/dashboard" element={<InstructorRoute><Component23InstructorDashboard /></InstructorRoute>} />
+        <Route path="/instructor/my-courses" element={<InstructorRoute><InstructorMyCourses /></InstructorRoute>} />
         <Route path="/instructor/create-course" element={<InstructorRoute><Component24CreateCourse /></InstructorRoute>} />
         <Route path="/instructor/curriculum/:courseId" element={<InstructorRoute><InstructorCurriculumEditor /></InstructorRoute>} />
         <Route path="/instructor/quiz/:quizId" element={<InstructorRoute><InstructorQuizBuilder /></InstructorRoute>} />
@@ -392,15 +398,30 @@ function AppRoutes() {
         
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/course-approvals" element={<AdminRoute><AdminCourseApprovals /></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><Component26AdminUsers /></AdminRoute>} />
         <Route path="/admin/analytics" element={<AdminRoute><Component27AdminAnalytics /></AdminRoute>} />
         <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
         <Route path="/admin/enrollments" element={<AdminRoute><AdminEnrollments /></AdminRoute>} />
         <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
         <Route path="/admin/announcements" element={<AdminRoute><AdminAnnouncements /></AdminRoute>} />
+        <Route path="/admin/pulse" element={<AdminRoute><AdminPulse /></AdminRoute>} />
         <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
         <Route path="/admin/revenue" element={<AdminRoute><AdminRevenue /></AdminRoute>} />
         <Route path="/admin/instructor-applications" element={<AdminRoute><AdminInstructorApplications /></AdminRoute>} />
+        
+        {/* Super Admin Routes */}
+        <Route path="/superadmin/dashboard" element={<SuperAdminRoute><AdminDashboard /></SuperAdminRoute>} />
+        <Route path="/superadmin/users" element={<SuperAdminRoute><Component26AdminUsers /></SuperAdminRoute>} />
+        <Route path="/superadmin/analytics" element={<SuperAdminRoute><Component27AdminAnalytics /></SuperAdminRoute>} />
+        <Route path="/superadmin/courses" element={<SuperAdminRoute><AdminCourses /></SuperAdminRoute>} />
+        <Route path="/superadmin/enrollments" element={<SuperAdminRoute><AdminEnrollments /></SuperAdminRoute>} />
+        <Route path="/superadmin/reports" element={<SuperAdminRoute><AdminReports /></SuperAdminRoute>} />
+        <Route path="/superadmin/announcements" element={<SuperAdminRoute><AdminAnnouncements /></SuperAdminRoute>} />
+        <Route path="/superadmin/pulse" element={<SuperAdminRoute><AdminPulse /></SuperAdminRoute>} />
+        <Route path="/superadmin/audit-log" element={<SuperAdminRoute><AdminAuditLog /></SuperAdminRoute>} />
+        <Route path="/superadmin/revenue" element={<SuperAdminRoute><AdminRevenue /></SuperAdminRoute>} />
+        <Route path="/superadmin/instructor-applications" element={<SuperAdminRoute><AdminInstructorApplications /></SuperAdminRoute>} />
         
         {/* User Profile & Settings */}
         <Route path="/profile" element={<ProtectedRoute><Component28Profile /></ProtectedRoute>} />

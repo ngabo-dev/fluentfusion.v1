@@ -13,7 +13,7 @@ class Quiz(Base):
     
     title = Column(String(255), nullable=False)
     description = Column(Text)
-    pass_score = Column(Integer, default=70)  # Min % to pass
+    passing_score = Column(Integer, default=70)  # Min % to pass
     order_index = Column(Integer, default=0)
     xp_reward = Column(Integer, default=100)
     

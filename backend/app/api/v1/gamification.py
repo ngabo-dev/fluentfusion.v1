@@ -198,10 +198,37 @@ async def get_today_challenge(
     # Calculate completion
     completed_count = sum(1 for p in progress if p.is_completed)
     
+    # Serialize challenge
+    challenge_data = {
+        "id": challenge.id,
+        "title": challenge.title,
+        "description": challenge.description,
+        "challenge_date": challenge.challenge_date.isoformat() if challenge.challenge_date else None,
+        "xp_reward": challenge.xp_reward,
+        "total_tasks": len(tasks),
+        "completed_tasks": completed_count,
+        "progress": int((completed_count / len(tasks) * 100)) if len(tasks) > 0 else 0
+    }
+    
+    # Serialize tasks
+    tasks_data = []
+    for task in tasks:
+        task_progress = progress_dict.get(task.id)
+        tasks_data.append({
+            "id": task.id,
+            "title": task.title,
+            "description": task.description,
+            "task_type": task.task_type,
+            "target_count": task.target_count,
+            "current_count": task_progress.current_count if task_progress else 0,
+            "is_completed": task_progress.is_completed if task_progress else False,
+            "xp_reward": task.xp_reward
+        })
+    
     return {
-        "challenge": challenge,
-        "tasks": tasks,
-        "progress": progress_dict,
+        "challenge": challenge_data,
+        "tasks": tasks_data,
+        "user_progress": [{"task_id": p.task_id, "current_count": p.current_count, "is_completed": p.is_completed} for p in progress],
         "completed_count": completed_count,
         "total_tasks": len(tasks)
     }

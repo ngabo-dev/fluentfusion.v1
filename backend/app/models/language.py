@@ -28,6 +28,7 @@ class Language(Base):
     live_sessions = relationship("LiveSession", back_populates="language")
     community_posts = relationship("CommunityPost", back_populates="language")
     leaderboards = relationship("Leaderboard", back_populates="language")
+    announcements = relationship("Announcement", back_populates="language")
 
 class UserOnboarding(Base):
     __tablename__ = "user_onboarding"
