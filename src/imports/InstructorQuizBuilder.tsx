@@ -109,7 +109,13 @@ export default function InstructorQuizBuilder() {
     setSaving(true);
     try {
       if (quizId) {
-        // Update quiz - TODO: Add update quiz API
+        await instructorApi.updateQuiz(Number(quizId), {
+          title: quizSettings.title,
+          description: quizSettings.description,
+          passing_score: quizSettings.passing_score,
+          time_limit: quizSettings.time_limit_minutes ? quizSettings.time_limit_minutes * 60 : undefined,
+          allow_retakes: quizSettings.allow_retakes,
+        });
         toast.success('Quiz updated successfully');
       } else if (courseId) {
         const res = await instructorApi.createQuiz(Number(courseId), {

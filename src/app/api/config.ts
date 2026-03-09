@@ -1036,6 +1036,20 @@ export const instructorApi = {
     return apiCall<{ quiz: any; questions: any[] }>(`/courses/quizzes/${quizId}`);
   },
 
+  // Update quiz settings
+  updateQuiz: async (quizId: number, data: {
+    title?: string;
+    description?: string;
+    passing_score?: number;
+    time_limit?: number;
+    allow_retakes?: boolean;
+  }) => {
+    return apiCall<{ message: string; quiz_id: number }>(`/courses/quizzes/${quizId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
   // Submit quiz
   submitQuiz: async (quizId: number, answers: { question_id: number; answer?: string; selected_option_id?: number }[]) => {
     return apiCall<{
