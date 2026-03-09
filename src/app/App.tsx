@@ -60,6 +60,9 @@ import InstructorAssignmentBuilder from '../imports/InstructorAssignmentBuilder'
 import StudentAssignments from '../imports/StudentAssignments';
 import StudentMessages from '../imports/StudentMessages';
 import InstructorMyCourses from '../imports/InstructorMyCourses';
+import InstructorLiveSessions from '../imports/InstructorLiveSessions';
+import InstructorProfile from '../imports/InstructorProfile';
+import InstructorSettings from '../imports/InstructorSettings';
 
 // Session configuration - 30 minutes inactive timeout (matches backend ACCESS_TOKEN_EXPIRE_MINUTES)
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -397,6 +400,9 @@ function AppRoutes() {
         <Route path="/instructor/certificates" element={<InstructorRoute><InstructorCertificates /></InstructorRoute>} />
         <Route path="/instructor/announcements" element={<InstructorRoute><InstructorAnnouncements /></InstructorRoute>} />
         <Route path="/instructor/messages" element={<InstructorRoute><InstructorMessages /></InstructorRoute>} />
+        <Route path="/instructor/live-sessions" element={<InstructorRoute><InstructorLiveSessions /></InstructorRoute>} />
+        <Route path="/instructor/profile" element={<InstructorRoute><InstructorProfile /></InstructorRoute>} />
+        <Route path="/instructor/settings" element={<InstructorRoute><InstructorSettings /></InstructorRoute>} />
         
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

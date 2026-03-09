@@ -57,9 +57,9 @@ export default function InstructorLayout({ children, title, subtitle, headerActi
   ];
 
   const accountLinks = [
-    { to: '/live-sessions', icon: '🎥', label: 'Live Sessions' },
-    { to: '/profile', icon: '👤', label: 'Profile' },
-    { to: '/settings', icon: '⚙️', label: 'Settings' },
+    { to: '/instructor/live-sessions', icon: '🎥', label: 'Live Sessions' },
+    { to: '/instructor/profile', icon: '👤', label: 'Profile' },
+    { to: '/instructor/settings', icon: '⚙️', label: 'Settings' },
   ];
 
   return (
@@ -130,10 +130,16 @@ export default function InstructorLayout({ children, title, subtitle, headerActi
               <Link
                 key={link.to}
                 to={link.to}
-                className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white transition-colors no-underline border-l-2 border-transparent hover:bg-[rgba(255,255,255,0.03)]"
+                className={`w-full py-3 pl-6 pr-4 flex gap-3 items-center transition-colors no-underline ${
+                  isActive(link.to)
+                    ? 'bg-[rgba(191,255,0,0.1)] border-l-2 border-[#bfff00]'
+                    : 'border-l-2 border-transparent hover:bg-[rgba(255,255,255,0.03)]'
+                }`}
               >
                 <span className="text-[16px]">{link.icon}</span>
-                <span className="text-[14px]">{link.label}</span>
+                <span className={`text-[14px] ${isActive(link.to) ? 'text-[#bfff00]' : 'text-[#888] hover:text-white'}`}>
+                  {link.label}
+                </span>
               </Link>
             ))}
           </div>

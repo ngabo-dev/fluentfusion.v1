@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import { instructorApi, API_BASE_URL } from "../app/api/config";
+import InstructorLayout from "../app/components/InstructorLayout";
 
 interface Unit {
   id: number;
@@ -299,132 +300,51 @@ export default function Component24CreateCourse() {
 
   if (loading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
-        <div className="text-[#bfff00] text-xl">Loading...</div>
-      </div>
+      <InstructorLayout title="Create Course">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-[#bfff00] text-xl">Loading...</div>
+        </div>
+      </InstructorLayout>
     );
   }
 
+  const steps = [
+    { num: 1, label: 'Basic Info', desc: 'Title, language, level' },
+    { num: 2, label: 'Add Lessons', desc: 'Upload videos & content' },
+    { num: 3, label: 'Add Quizzes', desc: 'Create practice tests' },
+    { num: 4, label: 'Pricing', desc: 'Free or paid' },
+  ];
+
   return (
-    <div className="bg-[#0a0a0a] min-h-screen">
-      {/* Navigation */}
-      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
-        <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
-        <div className="flex items-center justify-between px-10 h-full">
-          <Link to="/instructor/dashboard" className="flex gap-3 items-center no-underline">
-            <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
-              <span className="text-[18px]">🧠</span>
+    <InstructorLayout title="Create Course" subtitle="Set up your new course step by step">
+      {/* Step Progress Indicator */}
+      <div className="flex gap-2 mb-8">
+        {steps.map((step) => (
+          <button
+            key={step.num}
+            type="button"
+            disabled={step.num > 1 && !courseId}
+            onClick={() => { if (step.num === 1 || courseId) setCurrentStep(step.num); }}
+            className={`flex-1 px-4 py-3 rounded-[8px] text-left transition-colors cursor-pointer ${
+              currentStep >= step.num ? 'bg-[rgba(191,255,0,0.1)] border border-[#bfff00]' : 'bg-[#1a1a1a] border border-[#2a2a2a]'
+            } ${step.num > 1 && !courseId ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <div className="flex items-center gap-3">
+              <span className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs font-bold ${
+                currentStep > step.num ? 'bg-[#bfff00] text-black' : currentStep === step.num ? 'bg-[#bfff00] text-black' : 'bg-[#2a2a2a] text-[#888]'
+              }`}>
+                {currentStep > step.num ? '✓' : step.num}
+              </span>
+              <div>
+                <div className={`text-[13px] font-medium ${currentStep >= step.num ? 'text-white' : 'text-[#555]'}`}>{step.label}</div>
+                <div className="text-[#555] text-[11px] hidden sm:block">{step.desc}</div>
+              </div>
             </div>
-            <span className="text-[18px] font-bold text-white">
-              FLUENT<span className="text-[#bfff00]">FUSION</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => {
-                localStorage.removeItem('ff_access_token');
-                localStorage.removeItem('ff_refresh_token');
-                localStorage.removeItem('ff_user');
-                navigate('/login');
-              }}
-              className="text-[#888] hover:text-white bg-transparent border-none cursor-pointer"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
+          </button>
+        ))}
       </div>
 
-      <div className="flex">
-        {/* Sidebar - Clickable Steps */}
-        <div className="fixed left-0 top-[66px] w-[280px] h-[calc(100vh-66px)] bg-[#0f0f0f] border-r border-[#2a2a2a] overflow-y-auto">
-          <div className="py-6">
-            <div className="text-[#555] text-[10px] uppercase tracking-[1.2px] px-6 mb-4">Setup Steps</div>
-            
-            {/* Step 1 - Basic Info */}
-            <button 
-              type="button"
-              className={`w-full text-left px-4 py-3 mx-2 rounded-[8px] cursor-pointer ${currentStep >= 1 ? 'bg-[rgba(0,255,127,0.1)]' : ''} hover:bg-[rgba(0,255,127,0.05)]`} 
-              onClick={() => { console.log('Step 1 clicked'); setCurrentStep(1); }}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs ${
-                  currentStep >= 1 ? 'bg-[#00ff7f] text-black' : 'bg-[#2a2a2a] text-[#888]'
-                }`}>
-                  {currentStep > 1 ? '✓' : '1'}
-                </span>
-                <div>
-                  <div className="text-white text-[13px] font-medium">Basic Info</div>
-                  <div className="text-[#555] text-[11px]">Title, language, level</div>
-                </div>
-              </div>
-            </button>
-            
-            {/* Step 2 - Add Lessons */}
-            <button 
-              type="button"
-              className={`w-full text-left px-4 py-3 mx-2 rounded-[8px] mt-2 cursor-pointer ${currentStep >= 2 ? 'bg-[rgba(191,255,0,0.1)]' : ''} ${!courseId ? 'opacity-50' : 'hover:bg-[rgba(191,255,0,0.05)]'}`}
-              onClick={() => { console.log('Step 2 clicked, courseId:', courseId); if (courseId) setCurrentStep(2); }}
-              disabled={!courseId}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs ${
-                  currentStep >= 2 ? 'bg-[#bfff00] text-black' : 'bg-[#2a2a2a] text-[#888]'
-                }`}>
-                  {currentStep > 2 ? '✓' : '2'}
-                </span>
-                <div>
-                  <div className="text-white text-[13px] font-medium">Add Lessons</div>
-                  <div className="text-[#555] text-[11px]">Upload videos & content</div>
-                </div>
-              </div>
-            </button>
-            
-            {/* Step 3 - Add Quizzes */}
-            <button 
-              type="button"
-              className={`w-full text-left px-4 py-3 mx-2 rounded-[8px] mt-2 cursor-pointer ${currentStep >= 3 ? 'bg-[rgba(191,255,0,0.1)]' : ''} ${!courseId ? 'opacity-50' : 'hover:bg-[rgba(191,255,0,0.05)]'}`}
-              onClick={() => { console.log('Step 3 clicked'); if (courseId) setCurrentStep(3); }}
-              disabled={!courseId}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs ${
-                  currentStep >= 3 ? 'bg-[#bfff00] text-black' : 'bg-[#2a2a2a] text-[#888]'
-                }`}>
-                  {currentStep > 3 ? '✓' : '3'}
-                </span>
-                <div>
-                  <div className="text-white text-[13px] font-medium">Add Quizzes</div>
-                  <div className="text-[#555] text-[11px]">Create practice tests</div>
-                </div>
-              </div>
-            </button>
-            
-            {/* Step 4 - Pricing */}
-            <button 
-              type="button"
-              className={`w-full text-left px-4 py-3 mx-2 rounded-[8px] mt-2 cursor-pointer ${currentStep >= 4 ? 'bg-[rgba(191,255,0,0.1)]' : ''} ${!courseId ? 'opacity-50' : 'hover:bg-[rgba(191,255,0,0.05)]'}`}
-              onClick={() => { console.log('Step 4 clicked'); if (courseId) setCurrentStep(4); }}
-              disabled={!courseId}
-            >
-              <div className="flex items-center gap-3">
-                <span className={`w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs ${
-                  currentStep >= 4 ? 'bg-[#bfff00] text-black' : 'bg-[#2a2a2a] text-[#888]'
-                }`}>
-                  4
-                </span>
-                <div>
-                  <div className="text-white text-[13px] font-medium">Pricing</div>
-                  <div className="text-[#555] text-[11px]">Free or paid</div>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="ml-[280px] flex-1 p-9">
-          
+      <div>
           {/* Step 1: Create Course */}
           {currentStep === 1 && (
             <div>
@@ -852,7 +772,6 @@ export default function Component24CreateCourse() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </InstructorLayout>
   );
 }
