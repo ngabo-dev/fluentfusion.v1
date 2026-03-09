@@ -55,6 +55,7 @@ class Course(Base):
     instructor_earnings = relationship("InstructorEarning", back_populates="course")
     certificates = relationship("Certificate", back_populates="course", cascade="all, delete-orphan")
     announcements = relationship("Announcement", back_populates="course", cascade="all, delete-orphan")
+    assignments = relationship("Assignment", back_populates="course", cascade="all, delete-orphan")
     
     __table_args__ = (
         Index('ix_courses_instructor_id', instructor_id),
@@ -78,6 +79,7 @@ class CourseUnit(Base):
     course = relationship("Course", back_populates="units")
     lessons = relationship("Lesson", back_populates="unit", cascade="all, delete-orphan", order_by="Lesson.order_index")
     quizzes = relationship("Quiz", back_populates="unit", cascade="all, delete-orphan")
+    assignments = relationship("Assignment", back_populates="unit", cascade="all, delete-orphan")
     
     __table_args__ = (
         Index('ix_course_units_course_id', course_id),

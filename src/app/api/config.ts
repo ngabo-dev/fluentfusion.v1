@@ -1036,6 +1036,20 @@ export const instructorApi = {
     return apiCall<{ quiz: any; questions: any[] }>(`/courses/quizzes/${quizId}`);
   },
 
+  // Update quiz settings
+  updateQuiz: async (quizId: number, data: {
+    title?: string;
+    description?: string;
+    passing_score?: number;
+    time_limit?: number;
+    allow_retakes?: boolean;
+  }) => {
+    return apiCall<{ message: string; quiz_id: number }>(`/courses/quizzes/${quizId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
   // Submit quiz
   submitQuiz: async (quizId: number, answers: { question_id: number; answer?: string; selected_option_id?: number }[]) => {
     return apiCall<{
@@ -1195,6 +1209,57 @@ export const instructorApi = {
       method: 'POST',
     });
   },
+
+  // === Assignments ===
+
+  // Get assignments
+  getAssignments: async (courseId?: number, params?: { page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (courseId) queryParams.set('course_id', courseId.toString());
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{ assignments: any[]; total: number; page: number; total_pages: number }>(
+      `/instructor/assignments${query ? `?${query}` : ''}`
+    );
+  },
+
+  // Create assignment
+  createAssignment: async (courseId: number, data: {
+    title: string;
+    assignment_type?: string;
+    prompt: string;
+    rubric?: string;
+    due_date?: string;
+    unit_id?: number;
+  }) => {
+    return apiCall<{ message: string; assignment_id: number }>(
+      `/instructor/assignments?course_id=${courseId}`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+
+  // Delete assignment
+  deleteAssignment: async (assignmentId: number) => {
+    return apiCall<{ message: string }>(`/instructor/assignments/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Get submissions for an assignment
+  getAssignmentSubmissions: async (assignmentId: number) => {
+    return apiCall<{ submissions: any[]; total: number }>(
+      `/instructor/assignments/${assignmentId}/submissions`
+    );
+  },
+
+  // Grade a submission
+  gradeSubmission: async (assignmentId: number, submissionId: number, data: { grade: number; feedback?: string }) => {
+    return apiCall<{ message: string }>(
+      `/instructor/assignments/${assignmentId}/submissions/${submissionId}/grade`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
 };
 
 // Practice/Flashcards API
@@ -1345,5 +1410,93 @@ export const gamificationApi = {
     return apiCall<{ message: string; xp_earned: number }>(`/gamification/daily-challenge/${taskId}/complete`, {
       method: 'POST',
     });
+  },
+};
+
+// Student API (assignments + messaging for enrolled students)
+export const studentApi = {
+  // ── Assignments ──────────────────────────────────────────────────────────
+  getAssignments: async (courseId?: number, params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (courseId) query.set('course_id', String(courseId));
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      assignments: Array<{
+        id: number;
+        title: string;
+        assignment_type: 'speaking' | 'writing';
+        prompt: string;
+        rubric: string | null;
+        course_id: number;
+        course_title: string;
+        due_date: string | null;
+        status: 'pending' | 'submitted' | 'graded';
+        submission_id: number | null;
+        grade: number | null;
+        feedback: string | null;
+      }>;
+      total: number;
+      page: number;
+      total_pages: number;
+    }>(`/student/assignments${qs}`);
+  },
+
+  submitAssignment: async (
+    assignmentId: number,
+    data: { content?: string; audio_url?: string }
+  ) => {
+    return apiCall<{ message: string; submission_id: number }>(
+      `/student/assignments/${assignmentId}/submit`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+
+  // ── Messaging ─────────────────────────────────────────────────────────────
+  getConversations: async (params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      conversations: Array<{
+        id: number;
+        instructor_id: number;
+        instructor_name: string;
+        instructor_avatar: string | null;
+        last_message_preview: string | null;
+        last_message_at: string | null;
+        unread_count: number;
+      }>;
+      total: number;
+    }>(`/student/conversations${qs}`);
+  },
+
+  getMessages: async (conversationId: number, params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      messages: Array<{
+        id: number;
+        sender_id: number;
+        sender_name: string;
+        sender_avatar: string | null;
+        content: string;
+        message_type: string;
+        is_read: boolean;
+        created_at: string | null;
+      }>;
+      total: number;
+    }>(`/student/conversations/${conversationId}/messages${qs}`);
+  },
+
+  sendMessage: async (data: { instructor_id: number; content: string; message_type?: string }) => {
+    return apiCall<{ message: string; message_id: number; conversation_id: number }>(
+      '/student/messages',
+      { method: 'POST', body: JSON.stringify(data) }
+    );
   },
 };

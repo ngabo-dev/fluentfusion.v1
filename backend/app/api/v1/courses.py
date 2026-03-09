@@ -33,6 +33,14 @@ class QuizCreate(BaseModel):
     passing_score: int = 70
     order_index: int = 0
 
+class QuizUpdateData(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    passing_score: Optional[int] = None
+    time_limit: Optional[int] = None
+    allow_retakes: Optional[bool] = None
+    order_index: Optional[int] = None
+
 class QuizQuestionCreate(BaseModel):
     question_text: str
     question_type: str = "multiple_choice"
@@ -352,7 +360,37 @@ async def get_my_courses(
         raise HTTPException(status_code=403, detail="Only instructors can view their courses")
     
     courses = db.query(Course).filter(Course.instructor_id == current_user.id).all()
-    return {"courses": courses}
+    
+    courses_data = []
+    for course in courses:
+        # Get enrollment count
+        enrollment_count = db.query(Enrollment).filter(Enrollment.course_id == course.id).count()
+        completed_count = db.query(Enrollment).filter(
+            Enrollment.course_id == course.id,
+            Enrollment.completed_at.isnot(None)
+        ).count()
+        
+        courses_data.append({
+            "id": course.id,
+            "title": course.title,
+            "slug": course.slug,
+            "description": course.description,
+            "thumbnail_url": course.thumbnail_url,
+            "level": course.level,
+            "price_usd": float(course.price_usd) if course.price_usd else 0,
+            "is_free": course.is_free,
+            "is_published": course.is_published,
+            "approval_status": course.approval_status,
+            "total_enrollments": enrollment_count,
+            "completed_count": completed_count,
+            "avg_rating": float(course.avg_rating) if course.avg_rating else 0,
+            "rating_count": course.rating_count or 0,
+            "total_lessons": course.total_lessons or 0,
+            "created_at": course.created_at.isoformat() if course.created_at else None,
+            "updated_at": course.updated_at.isoformat() if course.updated_at else None,
+        })
+    
+    return {"courses": courses_data}
 
 @router.get("/enrolled")
 async def get_enrolled_courses(
@@ -723,8 +761,29 @@ async def get_course_units(
             "title": unit.title,
             "description": unit.description,
             "order_index": unit.order_index,
-            "lessons": lessons,
-            "quizzes": quizzes
+            "lessons": [
+                {
+                    "id": l.id,
+                    "title": l.title,
+                    "description": l.description,
+                    "video_url": l.video_url,
+                    "video_duration_sec": l.video_duration_sec,
+                    "order_index": l.order_index,
+                    "is_free_preview": l.is_free_preview,
+                    "xp_reward": l.xp_reward,
+                }
+                for l in lessons
+            ],
+            "quizzes": [
+                {
+                    "id": q.id,
+                    "title": q.title,
+                    "description": q.description,
+                    "passing_score": q.passing_score,
+                    "order_index": q.order_index,
+                }
+                for q in quizzes
+            ]
         })
     
     return {"units": units_data}
@@ -857,7 +916,9 @@ async def get_quiz(
             "unit_id": quiz.unit_id,
             "lesson_id": quiz.lesson_id,
             "passing_score": quiz.passing_score,
-            "time_limit": quiz.time_limit or 600,
+            "time_limit": quiz.time_limit,
+            "time_limit_minutes": (quiz.time_limit or 0) // 60,
+            "allow_retakes": quiz.allow_retakes,
             "course": {
                 "id": course.id,
                 "title": course.title
@@ -865,6 +926,37 @@ async def get_quiz(
         },
         "questions": questions_data
     }
+
+@router.patch("/quizzes/{quiz_id}")
+async def update_quiz(
+    quiz_id: int,
+    update_data: QuizUpdateData,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update quiz settings (instructor only)"""
+    if current_user.role not in ["instructor", "admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Only instructors can update quizzes")
+
+    quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+
+    # Verify instructor owns the course
+    course = db.query(Course).filter(Course.id == quiz.course_id).first()
+    if current_user.role == "instructor" and (not course or course.instructor_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not authorized to modify this quiz")
+
+    update_dict = update_data.model_dump(exclude_unset=True)
+    allowed_fields = {"title", "description", "passing_score", "time_limit", "allow_retakes", "order_index"}
+    for key, value in update_dict.items():
+        if key in allowed_fields and value is not None:
+            setattr(quiz, key, value)
+
+    db.commit()
+    db.refresh(quiz)
+    return {"message": "Quiz updated", "quiz_id": quiz.id}
+
 
 @router.post("/quizzes/{quiz_id}/submit")
 async def submit_quiz(
@@ -888,12 +980,15 @@ async def submit_quiz(
         raise HTTPException(status_code=403, detail="Not enrolled in this course")
     
     # Create attempt
+    from datetime import datetime, timezone as _tz
+    now = datetime.now(_tz.utc)
     attempt = QuizAttempt(
         quiz_id=quiz_id,
         user_id=current_user.id,
         enrollment_id=enrollment.id,
-        score=0,
-        passed=False
+        score_pct=0,
+        passed=False,
+        started_at=now
     )
     db.add(attempt)
     db.commit()
@@ -920,7 +1015,9 @@ async def submit_quiz(
                 if selected_option and selected_option.is_correct:
                     is_correct = True
             elif question.question_type in ["true_false", "fill_blank"]:
-                if answer.get("answer", "").lower() == question.correct_answer.lower():
+                expected = (question.correct_answer or "").strip()
+                given = answer.get("answer", "").strip()
+                if expected and given and given.lower() == expected.lower():
                     is_correct = True
             
             if is_correct:
@@ -931,20 +1028,22 @@ async def submit_quiz(
                 attempt_id=attempt.id,
                 question_id=question.id,
                 selected_option_id=answer.get("selected_option_id"),
-                answer_text=answer.get("answer"),
-                is_correct=is_correct,
-                points_earned=question.points if is_correct else 0
+                text_answer=answer.get("answer"),
+                is_correct=is_correct
             )
             db.add(quiz_answer)
     
     # Update attempt
-    attempt.score = int((earned_points / total_points * 100) if total_points > 0 else 0)
-    attempt.passed = attempt.score >= quiz.passing_score
+    score = int((earned_points / total_points * 100) if total_points > 0 else 0)
+    attempt.score_pct = score
+    attempt.points_earned = earned_points
+    attempt.passed = score >= quiz.passing_score
+    attempt.completed_at = datetime.now(_tz.utc)
     db.commit()
     
     return {
         "message": "Quiz submitted",
-        "score": attempt.score,
+        "score": score,
         "passed": attempt.passed,
         "passing_score": quiz.passing_score,
         "total_points": total_points,

@@ -68,12 +68,27 @@ export default function InstructorAssignmentBuilder() {
     fetchData();
   }, [navigate, courseId]);
 
+  // Load submissions when an assignment is selected
+  useEffect(() => {
+    if (selectedAssignment) {
+      instructorApi.getAssignmentSubmissions(selectedAssignment.id)
+        .then(res => setSubmissions(res.submissions || []))
+        .catch(err => console.error('Failed to load submissions:', err));
+    } else {
+      setSubmissions([]);
+    }
+  }, [selectedAssignment]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Assignments feature is coming soon - start with empty state
-      setAssignments([]);
-      setSubmissions([]);
+      const assignmentsRes = await instructorApi.getAssignments(courseId ? parseInt(courseId) : undefined);
+      setAssignments(assignmentsRes.assignments || []);
+      // If a specific assignment is selected, load its submissions
+      if (selectedAssignment) {
+        const subsRes = await instructorApi.getAssignmentSubmissions(selectedAssignment.id);
+        setSubmissions(subsRes.submissions || []);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -88,8 +103,14 @@ export default function InstructorAssignmentBuilder() {
     }
     setSaving(true);
     try {
-      // Assignments creation API coming soon
-      toast.info('Assignments feature coming soon');
+      await instructorApi.createAssignment(parseInt(courseId), {
+        title: newAssignment.title,
+        assignment_type: newAssignment.assignment_type,
+        prompt: newAssignment.prompt,
+        rubric: newAssignment.rubric || undefined,
+        due_date: newAssignment.due_date || undefined,
+      });
+      toast.success('Assignment created successfully');
       setShowCreateModal(false);
       setNewAssignment({
         title: "",
@@ -98,27 +119,50 @@ export default function InstructorAssignmentBuilder() {
         rubric: "",
         due_date: ""
       });
-    } catch (error) {
+      fetchData();
+    } catch (error: any) {
       console.error('Failed to create assignment:', error);
-      toast.error('Failed to create assignment');
+      toast.error(error.message || 'Failed to create assignment');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleGrade = async (_submissionId: number) => {
+  const handleGrade = async (submissionId: number) => {
+    if (!selectedAssignment) return;
     try {
-      // Grading API coming soon
-      toast.info('Grading feature coming soon');
+      await instructorApi.gradeSubmission(selectedAssignment.id, submissionId, {
+        grade: gradeData.grade,
+        feedback: gradeData.feedback || undefined,
+      });
+      toast.success('Submission graded successfully');
       setGradingMode(false);
       setGradeData({ grade: 0, feedback: "" });
-    } catch (error) {
+      // Reload submissions
+      const subsRes = await instructorApi.getAssignmentSubmissions(selectedAssignment.id);
+      setSubmissions(subsRes.submissions || []);
+    } catch (error: any) {
       console.error('Failed to grade:', error);
-      toast.error('Failed to submit grade');
+      toast.error(error.message || 'Failed to submit grade');
     }
   };
 
   const pendingGrading = submissions.filter(s => s.grade === null).length;
+
+  const handleDeleteAssignment = async (assignmentId: number) => {
+    if (!window.confirm('Delete this assignment? This cannot be undone.')) return;
+    try {
+      await instructorApi.deleteAssignment(assignmentId);
+      toast.success('Assignment deleted');
+      if (selectedAssignment?.id === assignmentId) {
+        setSelectedAssignment(null);
+        setSubmissions([]);
+      }
+      setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete assignment');
+    }
+  };
 
   if (loading) {
     return (
@@ -226,15 +270,23 @@ export default function InstructorAssignmentBuilder() {
                       selectedAssignment?.id === assignment.id ? 'border-[#bfff00]' : 'border-[#2a2a2a]'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">{assignment.assignment_type === 'speaking' ? '🎤' : '✏️'}</span>
-                      <span className={`px-2 py-0.5 rounded-[4px] text-xs ${
-                        assignment.assignment_type === 'speaking' 
-                          ? 'bg-[rgba(0,191,255,0.1)] text-[#00bfff]' 
-                          : 'bg-[rgba(191,255,0,0.1)] text-[#bfff00]'
-                      }`}>
-                        {assignment.assignment_type}
-                      </span>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{assignment.assignment_type === 'speaking' ? '🎤' : '✏️'}</span>
+                        <span className={`px-2 py-0.5 rounded-[4px] text-xs ${
+                          assignment.assignment_type === 'speaking' 
+                            ? 'bg-[rgba(0,191,255,0.1)] text-[#00bfff]' 
+                            : 'bg-[rgba(191,255,0,0.1)] text-[#bfff00]'
+                        }`}>
+                          {assignment.assignment_type}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteAssignment(assignment.id); }}
+                        className="text-[#555] hover:text-red-400 text-[11px] transition-colors"
+                      >
+                        Delete
+                      </button>
                     </div>
                     <h3 className="text-white font-medium">{assignment.title}</h3>
                     <p className="text-[#555] text-sm mt-1">{assignment.course_title}</p>

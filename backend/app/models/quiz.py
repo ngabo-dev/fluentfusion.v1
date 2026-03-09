@@ -16,6 +16,8 @@ class Quiz(Base):
     passing_score = Column(Integer, default=70)  # Min % to pass
     order_index = Column(Integer, default=0)
     xp_reward = Column(Integer, default=100)
+    time_limit = Column(Integer, default=600)  # Seconds; 0 = no limit
+    allow_retakes = Column(Boolean, default=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -43,6 +45,7 @@ class QuizQuestion(Base):
     image_url = Column(String(500))
     order_index = Column(Integer, default=0)
     points = Column(Integer, default=10)
+    correct_answer = Column(Text)  # For fill_blank / true_false questions
     
     # Relationships
     quiz = relationship("Quiz", back_populates="questions")

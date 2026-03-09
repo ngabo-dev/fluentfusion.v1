@@ -29,3 +29,4 @@ from .announcement import Announcement, AnnouncementView
 from .activity import UserActivity, UserSession
 from .report import Report, ReportComment
 from .pulse_prediction import PulsePrediction
+from .assignment import Assignment, AssignmentSubmission

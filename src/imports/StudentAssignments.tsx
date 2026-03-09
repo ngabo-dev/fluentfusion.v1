@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { authApi } from "../app/api/config";
+import { studentApi } from "../app/api/config";
 
 interface Assignment {
   id: number;
@@ -49,10 +49,11 @@ export default function StudentAssignments() {
   const fetchAssignments = async () => {
     setLoading(true);
     try {
-      // Assignments feature is coming soon - start with empty state
-      setAssignments([]);
+      const res = await studentApi.getAssignments();
+      setAssignments(res.assignments || []);
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
+      toast.error('Failed to load assignments');
     } finally {
       setLoading(false);
     }
@@ -66,13 +67,16 @@ export default function StudentAssignments() {
     
     setSubmitting(true);
     try {
-      // Assignments submission API coming soon
+      await studentApi.submitAssignment(selectedAssignment.id, {
+        content: submission.content || undefined,
+      });
       setShowSubmitModal(false);
       setSubmission({ content: "", audioBlob: null });
-      toast.info('Assignments feature coming soon');
-    } catch (error) {
+      toast.success('Assignment submitted successfully!');
+      fetchAssignments(); // refetch to get accurate server state
+    } catch (error: any) {
       console.error('Failed to submit:', error);
-      toast.error('Failed to submit assignment');
+      toast.error(error.message || 'Failed to submit assignment');
     } finally {
       setSubmitting(false);
     }
@@ -155,6 +159,11 @@ export default function StudentAssignments() {
               {pendingCount > 0 && (
                 <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingCount}</span>
               )}
+            </Link>
+            
+            <Link to="/messages" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+              <span>💬</span>
+              <span className="text-[14px]">Messages</span>
             </Link>
             
             <Link to="/live-sessions" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { instructorApi } from "../app/api/config";
+import InstructorLayout from "../app/components/InstructorLayout";
+import { toast } from "sonner";
 
 interface Certificate {
   id: number;
@@ -70,10 +72,11 @@ export default function InstructorCertificates() {
       await instructorApi.revokeCertificate(revokeModal.cert.id, revokeReason);
       setRevokeModal({ cert: null!, show: false });
       setRevokeReason("");
+      toast.success('Certificate revoked successfully');
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to revoke:', error);
-      alert('Failed to revoke certificate');
+      toast.error(error.message || 'Failed to revoke certificate');
     } finally {
       setRevoking(false);
     }
@@ -97,226 +100,111 @@ export default function InstructorCertificates() {
   };
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen">
-      {/* Navigation */}
-      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
-        <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
-        <div className="flex flex-row items-center size-full">
-          <div className="flex items-center justify-between px-[40px] w-full">
-            <Link to="/instructor/dashboard" className="flex gap-[11px] items-center no-underline">
-              <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
-                <span className="text-[18px]">🧠</span>
-              </div>
-              <span className="text-[18px] text-white font-bold">
-                FLUENT<span className="text-[#bfff00]">FUSION</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-[12px]">
-              <div className="bg-[rgba(191,255,0,0.1)] px-[13px] py-[5px] rounded-[99px]">
-                <span className="text-[#bfff00] text-[11px] font-semibold">📋 Instructor</span>
-              </div>
-              <button 
-                onClick={() => {
-                  localStorage.removeItem('ff_access_token');
-                  localStorage.removeItem('ff_refresh_token');
-                  localStorage.removeItem('ff_user');
-                  navigate('/login');
-                }}
-                className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
+    <InstructorLayout title="Certificates" subtitle={`${certificates.length} certificate${certificates.length !== 1 ? 's' : ''} issued to students`}>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <input
+          type="text"
+          placeholder="Search students..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-[#151515] border border-[#2a2a2a] text-white rounded-lg px-4 py-2 text-[13px] outline-none focus:border-[#bfff00] transition-colors flex-1"
+        />
+        <select
+          value={selectedCourse}
+          onChange={(e) => setSelectedCourse(e.target.value)}
+          className="bg-[#151515] border border-[#2a2a2a] text-[#888] rounded-lg px-3 py-2 text-[13px] outline-none"
+        >
+          <option value="">All Courses</option>
+          {courses.map((course) => (
+            <option key={course.id} value={course.title}>{course.title}</option>
+          ))}
+        </select>
       </div>
 
-      <div className="flex min-h-[calc(100vh-66px)]">
-        {/* Sidebar */}
-        <div className="fixed left-0 top-[66px] w-[240px] h-[calc(100vh-66px)] bg-[#0f0f0f] border-r border-[#2a2a2a] overflow-y-auto">
-          <div className="flex flex-col py-5 px-0">
-            <div className="text-[#555] text-[9px] uppercase tracking-[1.35px] px-6 py-3">Instructor</div>
-            
-            <Link to="/instructor/dashboard" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>📊</span>
-              <span className="text-[14px]">Overview</span>
-            </Link>
-            
-            <Link to="/instructor/create-course" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>📚</span>
-              <span className="text-[14px]">Create Course</span>
-            </Link>
-            
-            <Link to="/instructor/students" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>👥</span>
-              <span className="text-[14px]">Students</span>
-            </Link>
-            
-            <Link to="/instructor/certificates" className="w-full bg-[rgba(191,255,0,0.1)] border-l-2 border-[#bfff00] py-3 pl-6 pr-4 flex gap-3 items-center">
-              <span className="text-[#bfff00]">🎓</span>
-              <span className="text-[#bfff00] text-[14px]">Certificates</span>
-            </Link>
-            
-            <Link to="/instructor/announcements" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>📢</span>
-              <span className="text-[14px]">Announcements</span>
-            </Link>
-            
-            <Link to="/instructor/messages" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>💬</span>
-              <span className="text-[14px]">Messages</span>
-            </Link>
-            
-            <Link to="/live-sessions" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>🎥</span>
-              <span className="text-[14px]">Live Sessions</span>
-            </Link>
-            
-            <div className="text-[#555] text-[9px] uppercase tracking-[1.35px] px-6 py-3 mt-4">Account</div>
-            
-            <Link to="/profile" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>👤</span>
-              <span className="text-[14px]">Profile</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="ml-[240px] flex-1 p-9">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-[32px] text-white font-bold">
-                <span className="text-[#bfff00]">Certificates</span> Management
-              </h1>
-              <p className="text-[#888] text-[14px] mt-1">
-                {certificates.length} certificates issued
-              </p>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex gap-4 mb-6">
-            <input
-              type="text"
-              placeholder="Search students..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] flex-1"
-            />
-            <select 
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] min-w-[180px]"
-            >
-              <option value="">All Courses</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.title}>{course.title}</option>
+      {/* Certificates Table */}
+      <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#2a2a2a]">
+              {['Student', 'Course', 'Certificate #', 'Grade', 'Issued', 'Status', ''].map(h => (
+                <th key={h} className="text-left text-[#555] text-[11px] uppercase tracking-widest px-5 py-3 font-normal">{h}</th>
               ))}
-            </select>
-          </div>
-
-          {/* Certificates Table */}
-          <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#2a2a2a]">
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Student</th>
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Course</th>
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Certificate #</th>
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Grade</th>
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Issued</th>
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Status</th>
-                  <th className="text-left text-[#888] text-[10px] uppercase tracking-[1px] px-6 py-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="text-center text-[#888] py-8">Loading...</td>
-                  </tr>
-                ) : filteredCerts.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center text-[#888] py-8">No certificates found</td>
-                  </tr>
-                ) : (
-                  filteredCerts.map((cert) => (
-                    <tr key={cert.id} className="border-b border-[#2a2a2a] hover:bg-[#1a1a1a]">
-                      <td className="px-6 py-4">
-                        <div className="text-white font-medium">{cert.student_name}</div>
-                        <div className="text-[#555] text-[12px]">{cert.student_email}</div>
-                      </td>
-                      <td className="px-6 py-4 text-[#888]">{cert.course_title}</td>
-                      <td className="px-6 py-4">
-                        <span className="text-[#bfff00] font-mono text-[12px]">{cert.certificate_number}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`font-bold ${getGradeColor(cert.grade)}`}>{cert.grade || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4 text-[#888] text-[12px]">
-                        {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        {cert.is_revoked ? (
-                          <span className="px-3 py-1 rounded-[99px] text-[12px] bg-[rgba(255,68,68,0.1)] text-[#f44]">Revoked</span>
-                        ) : (
-                          <span className="px-3 py-1 rounded-[99px] text-[12px] bg-[rgba(0,255,127,0.1)] text-[#00ff7f]">Active</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {!cert.is_revoked && (
-                          <button 
-                            onClick={() => setRevokeModal({ cert, show: true })}
-                            className="px-4 py-1.5 rounded-[8px] text-[#888] hover:text-red-500 bg-transparent border border-[#2a2a2a] text-[12px]"
-                          >
-                            Revoke
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={7} className="text-center text-[#888] py-10">Loading certificates...</td></tr>
+            ) : filteredCerts.length === 0 ? (
+              <tr>
+                <td colSpan={7}>
+                  <div className="text-center py-12">
+                    <div className="text-[40px] mb-3">🏆</div>
+                    <p className="text-[#888] text-[14px]">No certificates found</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredCerts.map((cert) => (
+              <tr key={cert.id} className="border-b border-[#1a1a1a] last:border-0 hover:bg-[#1a1a1a] transition-colors">
+                <td className="px-5 py-4">
+                  <div className="text-white text-[13px] font-semibold">{cert.student_name}</div>
+                  <div className="text-[#555] text-[11px]">{cert.student_email}</div>
+                </td>
+                <td className="px-5 py-4 text-[#888] text-[13px] max-w-[160px] truncate">{cert.course_title}</td>
+                <td className="px-5 py-4">
+                  <span className="text-[#bfff00] font-mono text-[11px]">{cert.certificate_number}</span>
+                </td>
+                <td className="px-5 py-4">
+                  <span className={`font-bold text-[14px] ${getGradeColor(cert.grade)}`}>{cert.grade || '—'}</span>
+                </td>
+                <td className="px-5 py-4 text-[#888] text-[12px]">
+                  {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : '—'}
+                </td>
+                <td className="px-5 py-4">
+                  {cert.is_revoked ? (
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400">Revoked</span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-[rgba(0,255,127,0.1)] text-[#00ff7f]">Active</span>
+                  )}
+                </td>
+                <td className="px-5 py-4">
+                  {!cert.is_revoked && (
+                    <button onClick={() => setRevokeModal({ cert, show: true })} className="text-[#555] hover:text-red-400 text-[12px] transition-colors">Revoke</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Revoke Modal */}
       {revokeModal.show && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100]" onClick={() => setRevokeModal({ cert: null!, show: false })}>
-          <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 w-[500px]" onClick={e => e.stopPropagation()}>
-            <h2 className="text-white text-[20px] font-bold mb-4">Revoke Certificate</h2>
-            <p className="text-[#888] mb-4">
-              Are you sure you want to revoke the certificate for <span className="text-white">{revokeModal.cert?.student_name}</span>?
+          <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-[480px] mx-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-white text-[18px] font-bold mb-2">Revoke Certificate</h2>
+            <p className="text-[#888] text-[13px] mb-5">
+              Revoke certificate for <span className="text-white font-medium">{revokeModal.cert?.student_name}</span>?
             </p>
-            <div className="mb-4">
-              <label className="text-[#888] text-[12px] uppercase block mb-2">Reason for revocation</label>
+            <div className="mb-5">
+              <label className="text-[#888] text-[11px] uppercase tracking-widest block mb-2">Reason for revocation *</label>
               <textarea
                 value={revokeReason}
                 onChange={(e) => setRevokeReason(e.target.value)}
-                placeholder="Enter reason..."
+                placeholder="Explain why this certificate is being revoked..."
                 rows={3}
-                className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] resize-none"
+                className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-2.5 outline-none border border-[#2a2a2a] focus:border-red-500 transition-colors resize-none text-[13px]"
               />
             </div>
             <div className="flex gap-3">
-              <button 
-                onClick={() => setRevokeModal({ cert: null!, show: false })}
-                className="flex-1 bg-[#1f1f1f] text-[#888] py-3 rounded-[8px]"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleRevoke}
-                disabled={!revokeReason || revoking}
-                className="flex-1 bg-red-500 text-white py-3 rounded-[8px] disabled:opacity-50"
-              >
+              <button onClick={() => setRevokeModal({ cert: null!, show: false })} className="flex-1 bg-[#0f0f0f] text-[#888] py-2.5 rounded-lg text-[13px] hover:text-white transition-colors">Cancel</button>
+              <button onClick={handleRevoke} disabled={!revokeReason || revoking} className="flex-1 bg-red-600 text-white py-2.5 rounded-lg text-[13px] font-semibold disabled:opacity-50 hover:bg-red-500 transition-colors">
                 {revoking ? 'Revoking...' : 'Revoke Certificate'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </InstructorLayout>
   );
 }
