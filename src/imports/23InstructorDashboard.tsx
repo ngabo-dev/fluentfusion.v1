@@ -169,7 +169,10 @@ export default function Component23InstructorDashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 bg-[#151515] border border-[#2a2a2a] rounded-xl p-6">
-          <h2 className="text-white text-[14px] font-semibold mb-4">Enrollment Trend</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-white text-[14px] font-semibold">Enrollment Trend</h2>
+            <span className="text-[#555] text-[10px]">Estimated distribution</span>
+          </div>
           {loading ? (
             <div className="h-[180px] flex items-center justify-center text-[#555]">Loading chart...</div>
           ) : (

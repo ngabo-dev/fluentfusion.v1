@@ -67,12 +67,13 @@ export default function InstructorCurriculumEditor() {
       const [courseRes, unitsRes] = await Promise.allSettled([
         fetch(`${API_BASE_URL}/courses/${cid}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('ff_access_token')}` }
-        }).then(r => r.json()),
+        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
         instructorApi.getCourseUnits(cid)
       ]);
 
       if (courseRes.status === 'fulfilled') {
         const data = courseRes.value;
+        if (!data || data.detail) throw new Error('Course not found');
         const c = data.course || data;
         setCourse({ id: cid, title: c.title || `Course ${cid}`, description: c.description || '', language: c.language, level: c.level, is_published: c.is_published || false });
       } else {

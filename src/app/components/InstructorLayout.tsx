@@ -28,8 +28,14 @@ export default function InstructorLayout({ children, title, subtitle, headerActi
   }, [navigate]);
 
   const handleLogout = () => {
-    authApi.logout();
-    navigate('/login');
+    authApi.logout().catch(() => {
+      // Ignore logout API errors, always clear local state
+    }).finally(() => {
+      localStorage.removeItem('ff_access_token');
+      localStorage.removeItem('ff_refresh_token');
+      localStorage.removeItem('ff_user');
+      navigate('/login');
+    });
   };
 
   const getInitials = (name: string) => {
