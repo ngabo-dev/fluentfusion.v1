@@ -1172,7 +1172,7 @@ export const instructorApi = {
     is_free?: boolean;
     level?: string;
   }, reason: string) => {
-    return apiCall<{ message: string; request_id: number }>(`/instructor/courses/${courseId}/request-edit`, {
+    return apiCall<{ message: string; request_id: number }>(`/courses/${courseId}/request-edit`, {
       method: 'POST',
       body: JSON.stringify({ ...data, reason }),
     });
@@ -1180,7 +1180,7 @@ export const instructorApi = {
 
   // Request course deletion (sends to admin for approval)
   requestCourseDelete: async (courseId: number, reason: string) => {
-    return apiCall<{ message: string; request_id: number }>(`/instructor/courses/${courseId}/request-delete`, {
+    return apiCall<{ message: string; request_id: number }>(`/courses/${courseId}/request-delete`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
@@ -1199,13 +1199,13 @@ export const instructorApi = {
     
     const query = queryParams.toString();
     return apiCall<{ requests: any[]; total: number; page: number; total_pages: number }>(
-      `/instructor/courses/my-requests${query ? `?${query}` : ''}`
+      `/courses/instructor/my-requests${query ? `?${query}` : ''}`
     );
   },
 
   // Cancel pending request
   cancelRequest: async (requestId: number) => {
-    return apiCall<{ message: string }>(`/instructor/courses/requests/${requestId}/cancel`, {
+    return apiCall<{ message: string }>(`/courses/instructor/requests/${requestId}/cancel`, {
       method: 'POST',
     });
   },

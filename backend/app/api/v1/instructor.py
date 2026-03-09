@@ -75,6 +75,7 @@ async def get_instructor_dashboard(
             bio="",
             headline="",
             total_students=0,
+            total_courses=0,
             total_earnings_usd=0,
             avg_rating=0
         )
@@ -88,41 +89,143 @@ async def get_instructor_dashboard(
     published_courses = len([c for c in courses if c.is_published])
     pending_courses = len([c for c in courses if c.approval_status == "pending"])
     
-    # Student stats
-    total_students = profile.total_students or 0
-    
-    # Enrollment stats
+    # Enrollment stats — batch query for all courses at once
     course_ids = [c.id for c in courses]
     if course_ids:
-        total_enrollments = db.query(Enrollment).filter(
-            Enrollment.course_id.in_(course_ids)
-        ).count()
-        
+        from sqlalchemy import func as sql_func
+
+        # Count all enrollments per course in one query
+        enrollment_rows = (
+            db.query(Enrollment.course_id, sql_func.count(Enrollment.id))
+            .filter(Enrollment.course_id.in_(course_ids))
+            .group_by(Enrollment.course_id)
+            .all()
+        )
+        enrollment_count_map = {row[0]: row[1] for row in enrollment_rows}
+
+        # Count completed enrollments per course in one query
+        completed_rows = (
+            db.query(Enrollment.course_id, sql_func.count(Enrollment.id))
+            .filter(
+                Enrollment.course_id.in_(course_ids),
+                Enrollment.completed_at.isnot(None)
+            )
+            .group_by(Enrollment.course_id)
+            .all()
+        )
+        completed_count_map = {row[0]: row[1] for row in completed_rows}
+
+        total_enrollments = sum(enrollment_count_map.values())
         active_enrollments = db.query(Enrollment).filter(
             Enrollment.course_id.in_(course_ids),
             Enrollment.completion_pct < 100
         ).count()
+
+        # Distinct students
+        total_students = (
+            db.query(Enrollment.user_id)
+            .filter(Enrollment.course_id.in_(course_ids))
+            .distinct()
+            .count()
+        )
     else:
+        enrollment_count_map = {}
+        completed_count_map = {}
         total_enrollments = 0
         active_enrollments = 0
-    
+        total_students = 0
+
     # Revenue stats
     total_earnings = float(profile.total_earnings_usd or 0)
     
     # Rating
     avg_rating = float(profile.avg_rating or 0)
+
+    # Recent enrollments (last 10) — pre-fetch users and courses to avoid N+1
+    recent_enrollments = []
+    if course_ids:
+        recent_rows = (
+            db.query(Enrollment)
+            .filter(Enrollment.course_id.in_(course_ids))
+            .order_by(Enrollment.enrolled_at.desc())
+            .limit(10)
+            .all()
+        )
+        # Collect unique user_ids needed
+        user_ids_needed = list({e.user_id for e in recent_rows})
+        users_map = {
+            u.id: u
+            for u in db.query(User).filter(User.id.in_(user_ids_needed)).all()
+        }
+        # courses are already loaded in `courses`; build a quick lookup map
+        courses_map = {c.id: c for c in courses}
+
+        for enrollment in recent_rows:
+            student = users_map.get(enrollment.user_id)
+            course = courses_map.get(enrollment.course_id)
+            if student and course:
+                recent_enrollments.append({
+                    "student_id": student.id,
+                    "student_name": student.full_name,
+                    "student_email": student.email,
+                    "course_id": course.id,
+                    "course_title": course.title,
+                    "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None
+                })
     
+    # Build per-course statistics array expected by the frontend
+    courses_data = []
+    for course in courses:
+        enrollment_count = enrollment_count_map.get(course.id, 0)
+        completed_count = completed_count_map.get(course.id, 0)
+        language_name = ""
+        if course.language:
+            language_name = course.language.name or ""
+        approval = course.approval_status or "pending"
+        derived_status = (
+            "active" if (approval == "approved" and course.is_published)
+            else approval if approval in ("rejected", "pending")
+            else "active"
+        )
+        courses_data.append({
+            "id": course.id,
+            "title": course.title,
+            "slug": course.slug if hasattr(course, "slug") else "",
+            "description": course.description,
+            "thumbnail_url": course.thumbnail_url,
+            "level": course.level,
+            "language": language_name,
+            "is_published": course.is_published,
+            "approval_status": approval,
+            "status": derived_status,
+            "total_enrollments": enrollment_count,
+            "enrollment_count": enrollment_count,
+            "completed_count": completed_count,
+            "in_progress": enrollment_count - completed_count,
+            "avg_rating": float(course.avg_rating) if course.avg_rating else 0,
+            "average_rating": float(course.avg_rating) if course.avg_rating else 0,
+            "price_usd": float(course.price_usd) if course.price_usd else 0,
+            "created_at": course.created_at.isoformat() if course.created_at else None,
+        })
+
     return {
+        # Flat fields expected by the frontend dashboard component
+        "total_courses": total_courses,
+        "published_courses": published_courses,
+        "pending_courses": pending_courses,
+        "total_students": total_students,
+        "total_enrollments": total_enrollments,
+        "active_enrollments": active_enrollments,
+        "total_earnings": total_earnings,
+        "avg_rating": avg_rating,
+        "recent_enrollments": recent_enrollments,
+        "courses": courses_data,
+        # Keep nested keys for backwards compatibility
         "profile": {
             "total_students": total_students,
             "total_courses": total_courses,
             "avg_rating": avg_rating,
             "total_earnings": total_earnings
-        },
-        "courses": {
-            "total": total_courses,
-            "published": published_courses,
-            "pending": pending_courses
         },
         "enrollments": {
             "total": total_enrollments,

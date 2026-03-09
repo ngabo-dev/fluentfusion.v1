@@ -370,6 +370,24 @@ async def get_my_courses(
             Enrollment.completed_at.isnot(None)
         ).count()
         
+        # Derive a simple status string understood by the frontend
+        approval = course.approval_status or "pending"
+        if approval == "approved" and course.is_published:
+            derived_status = "active"
+        elif approval == "rejected":
+            derived_status = "rejected"
+        elif approval == "pending":
+            derived_status = "pending"
+        else:
+            derived_status = "active"
+
+        # Language name
+        language_name = ""
+        if course.language:
+            language_name = course.language.name or ""
+
+        avg_rating_val = float(course.avg_rating) if course.avg_rating else 0
+
         courses_data.append({
             "id": course.id,
             "title": course.title,
@@ -377,13 +395,19 @@ async def get_my_courses(
             "description": course.description,
             "thumbnail_url": course.thumbnail_url,
             "level": course.level,
+            "language": language_name,
+            "language_id": course.language_id,
             "price_usd": float(course.price_usd) if course.price_usd else 0,
             "is_free": course.is_free,
             "is_published": course.is_published,
-            "approval_status": course.approval_status,
+            "approval_status": approval,
+            "status": derived_status,
+            # Both naming conventions so frontend components work regardless
             "total_enrollments": enrollment_count,
+            "enrollment_count": enrollment_count,
             "completed_count": completed_count,
-            "avg_rating": float(course.avg_rating) if course.avg_rating else 0,
+            "avg_rating": avg_rating_val,
+            "average_rating": avg_rating_val,
             "rating_count": course.rating_count or 0,
             "total_lessons": course.total_lessons or 0,
             "created_at": course.created_at.isoformat() if course.created_at else None,
