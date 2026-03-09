@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { instructorApi } from "../app/api/config";
+import InstructorLayout from "../app/components/InstructorLayout";
 
 interface Assignment {
   id: number;
@@ -166,97 +167,28 @@ export default function InstructorAssignmentBuilder() {
 
   if (loading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
-        <div className="text-[#bfff00]">Loading...</div>
-      </div>
+      <InstructorLayout title="Assignments &amp; Grading">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-[#bfff00]">Loading...</div>
+        </div>
+      </InstructorLayout>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen">
-      {/* Navigation */}
-      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
-        <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
-        <div className="flex flex-row items-center size-full">
-          <div className="flex items-center justify-between px-[40px] w-full">
-            <Link to="/instructor/dashboard" className="flex gap-[11px] items-center no-underline">
-              <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
-                <span className="text-[18px]">🧠</span>
-              </div>
-              <span className="text-[18px] text-white font-bold">
-                FLUENT<span className="text-[#bfff00]">FUSION</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-[12px]">
-              <div className="bg-[rgba(191,255,0,0.1)] px-[13px] py-[5px] rounded-[99px]">
-                <span className="text-[#bfff00] text-[11px] font-semibold">📋 Instructor</span>
-              </div>
-              <button 
-                onClick={() => {
-                  localStorage.removeItem('ff_access_token');
-                  localStorage.removeItem('ff_refresh_token');
-                  localStorage.removeItem('ff_user');
-                  navigate('/login');
-                }}
-                className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex min-h-[calc(100vh-66px)]">
-        {/* Sidebar */}
-        <div className="fixed left-0 top-[66px] w-[240px] h-[calc(100vh-66px)] bg-[#0f0f0f] border-r border-[#2a2a2a] overflow-y-auto">
-          <div className="flex flex-col py-5 px-0">
-            <div className="text-[#555] text-[9px] uppercase tracking-[1.35px] px-6 py-3">Instructor</div>
-            
-            <Link to="/instructor/dashboard" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>📊</span>
-              <span className="text-[14px]">Overview</span>
-            </Link>
-            
-            <Link to="/instructor/create-course" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>📚</span>
-              <span className="text-[14px]">Create Course</span>
-            </Link>
-            
-            <Link to="/instructor/students" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
-              <span>👥</span>
-              <span className="text-[14px]">Students</span>
-            </Link>
-            
-            <Link to="/instructor/assignments" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center bg-[rgba(191,255,0,0.1)] border-l-2 border-[#bfff00]">
-              <span className="text-[#bfff00]">📝</span>
-              <span className="text-[#bfff00] text-[14px]">Assignments</span>
-              {pendingGrading > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingGrading}</span>
-              )}
-            </Link>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="ml-[240px] flex-1 p-9">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-[32px] text-white font-bold">
-                <span className="text-[#bfff00]">Assignments</span> & Grading
-              </h1>
-              <p className="text-[#888] text-[14px] mt-1">
-                Create assignments and grade student submissions
-              </p>
-            </div>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              className="bg-[#bfff00] text-black px-6 py-3 rounded-[8px] font-semibold"
-            >
-              + Create Assignment
-            </button>
-          </div>
-
+    <InstructorLayout
+      title="Assignments & Grading"
+      subtitle="Create assignments and grade student submissions"
+      headerAction={
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-[#bfff00] text-black px-6 py-3 rounded-[8px] font-semibold"
+        >
+          + Create Assignment
+        </button>
+      }
+    >
+      <div>
           <div className="grid grid-cols-3 gap-6">
             {/* Assignments List */}
             <div className="col-span-1">
@@ -379,7 +311,6 @@ export default function InstructorAssignmentBuilder() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Create Assignment Modal */}
       {showCreateModal && (
@@ -528,6 +459,6 @@ export default function InstructorAssignmentBuilder() {
           </div>
         </div>
       )}
-    </div>
+    </InstructorLayout>
   );
 }
