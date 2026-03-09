@@ -352,7 +352,37 @@ async def get_my_courses(
         raise HTTPException(status_code=403, detail="Only instructors can view their courses")
     
     courses = db.query(Course).filter(Course.instructor_id == current_user.id).all()
-    return {"courses": courses}
+    
+    courses_data = []
+    for course in courses:
+        # Get enrollment count
+        enrollment_count = db.query(Enrollment).filter(Enrollment.course_id == course.id).count()
+        completed_count = db.query(Enrollment).filter(
+            Enrollment.course_id == course.id,
+            Enrollment.completed_at.isnot(None)
+        ).count()
+        
+        courses_data.append({
+            "id": course.id,
+            "title": course.title,
+            "slug": course.slug,
+            "description": course.description,
+            "thumbnail_url": course.thumbnail_url,
+            "level": course.level,
+            "price_usd": float(course.price_usd) if course.price_usd else 0,
+            "is_free": course.is_free,
+            "is_published": course.is_published,
+            "approval_status": course.approval_status,
+            "total_enrollments": enrollment_count,
+            "completed_count": completed_count,
+            "avg_rating": float(course.avg_rating) if course.avg_rating else 0,
+            "rating_count": course.rating_count or 0,
+            "total_lessons": course.total_lessons or 0,
+            "created_at": course.created_at.isoformat() if course.created_at else None,
+            "updated_at": course.updated_at.isoformat() if course.updated_at else None,
+        })
+    
+    return {"courses": courses_data}
 
 @router.get("/enrolled")
 async def get_enrolled_courses(
@@ -723,8 +753,29 @@ async def get_course_units(
             "title": unit.title,
             "description": unit.description,
             "order_index": unit.order_index,
-            "lessons": lessons,
-            "quizzes": quizzes
+            "lessons": [
+                {
+                    "id": l.id,
+                    "title": l.title,
+                    "description": l.description,
+                    "video_url": l.video_url,
+                    "video_duration_sec": l.video_duration_sec,
+                    "order_index": l.order_index,
+                    "is_free_preview": l.is_free_preview,
+                    "xp_reward": l.xp_reward,
+                }
+                for l in lessons
+            ],
+            "quizzes": [
+                {
+                    "id": q.id,
+                    "title": q.title,
+                    "description": q.description,
+                    "passing_score": q.passing_score,
+                    "order_index": q.order_index,
+                }
+                for q in quizzes
+            ]
         })
     
     return {"units": units_data}

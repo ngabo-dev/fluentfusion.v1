@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 import re
 
@@ -499,7 +499,7 @@ async def issue_certificate(
     # Update enrollment
     enrollment.certificate_url = f"/certificates/{cert_number}"
     enrollment.completion_pct = 100
-    enrollment.completed_at = datetime.utcnow()
+    enrollment.completed_at = datetime.now(timezone.utc)
     
     # Create notification for student
     notification = Notification(
@@ -723,7 +723,7 @@ async def get_conversation_messages(
     for msg in messages:
         if msg.sender_id != instructor_id and not msg.is_read:
             msg.is_read = True
-            msg.read_at = datetime.utcnow()
+            msg.read_at = datetime.now(timezone.utc)
     db.commit()
     
     results = []
@@ -802,7 +802,7 @@ async def send_message(
     
     # Update conversation
     conversation.last_message_preview = message.content[:100]
-    conversation.last_message_at = datetime.utcnow()
+    conversation.last_message_at = datetime.now(timezone.utc)
     
     # Create notification for student
     student = db.query(User).filter(User.id == message.student_id).first()
@@ -960,22 +960,22 @@ async def get_announcements(
     if not course_ids:
         return {"announcements": [], "total": 0, "page": page}
     
-    query = db.query(Announcement).filter(Announcement.course_id.in_(course_ids))
+    query = db.query(Announcement).filter(Announcement.target_course_id.in_(course_ids))
     
     if course_id:
-        query = query.filter(Announcement.course_id == course_id)
+        query = query.filter(Announcement.target_course_id == course_id)
     
     total = query.count()
     announcements = query.order_by(Announcement.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
     
     results = []
     for a in announcements:
-        course = db.query(Course).filter(Course.id == a.course_id).first()
+        course = db.query(Course).filter(Course.id == a.target_course_id).first()
         results.append({
             "id": a.id,
             "title": a.title,
             "content": a.content,
-            "course_id": a.course_id,
+            "course_id": a.target_course_id,
             "course_title": course.title if course else "Unknown",
             "is_published": a.is_published,
             "created_at": a.created_at.isoformat() if a.created_at else None,
@@ -1013,11 +1013,14 @@ async def create_announcement(
         scheduled = datetime.fromisoformat(scheduled_for.replace('Z', '+00:00'))
     
     announcement = Announcement(
+        author_id=current_user.id,
         title=title,
         content=content,
-        course_id=course_id,
+        target_course_id=course_id,
         is_published=is_published,
-        scheduled_for=scheduled
+        scheduled_for=scheduled,
+        announcement_type="course",
+        target_role="student"
     )
     db.add(announcement)
     db.commit()
@@ -1042,7 +1045,7 @@ async def delete_announcement(
         raise HTTPException(status_code=404, detail="Announcement not found")
     
     # Verify course belongs to instructor
-    course = db.query(Course).filter(Course.id == announcement.course_id, Course.instructor_id == instructor_id).first()
+    course = db.query(Course).filter(Course.id == announcement.target_course_id, Course.instructor_id == instructor_id).first()
     if not course:
         raise HTTPException(status_code=403, detail="Not authorized")
     
@@ -1152,3 +1155,186 @@ async def get_struggling_students(
         "students": results,
         "total": len(results)
     }
+
+# ==================== ASSIGNMENTS ====================
+
+from ...models.assignment import Assignment, AssignmentSubmission
+from pydantic import BaseModel as _BaseModel
+from typing import Optional as _Optional
+
+class AssignmentCreate(_BaseModel):
+    title: str
+    assignment_type: str = "writing"
+    prompt: str
+    rubric: _Optional[str] = None
+    due_date: _Optional[str] = None
+    unit_id: _Optional[int] = None
+
+class GradeSubmission(_BaseModel):
+    grade: float
+    feedback: _Optional[str] = None
+
+@router.get("/assignments")
+async def get_assignments(
+    course_id: _Optional[int] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get all assignments created by this instructor"""
+    query = db.query(Assignment).filter(Assignment.instructor_id == current_user.id)
+    if course_id:
+        query = query.filter(Assignment.course_id == course_id)
+
+    total = query.count()
+    assignments = query.order_by(Assignment.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
+
+    results = []
+    for a in assignments:
+        course = db.query(Course).filter(Course.id == a.course_id).first()
+        results.append({
+            "id": a.id,
+            "title": a.title,
+            "assignment_type": a.assignment_type,
+            "prompt": a.prompt,
+            "rubric": a.rubric,
+            "due_date": a.due_date.isoformat() if a.due_date else None,
+            "course_id": a.course_id,
+            "course_title": course.title if course else "Unknown",
+            "unit_id": a.unit_id,
+            "is_active": a.is_active,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+        })
+
+    return {"assignments": results, "total": total, "page": page, "total_pages": (total + limit - 1) // limit}
+
+@router.post("/assignments")
+async def create_assignment(
+    data: AssignmentCreate,
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Create an assignment for a course"""
+    # Verify course belongs to instructor
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found or not authorized")
+
+    due = None
+    if data.due_date:
+        due = datetime.fromisoformat(data.due_date.replace("Z", "+00:00"))
+
+    assignment = Assignment(
+        course_id=course_id,
+        instructor_id=current_user.id,
+        unit_id=data.unit_id,
+        title=data.title,
+        assignment_type=data.assignment_type,
+        prompt=data.prompt,
+        rubric=data.rubric,
+        due_date=due,
+    )
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+
+    return {"message": "Assignment created", "assignment_id": assignment.id}
+
+@router.delete("/assignments/{assignment_id}")
+async def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Delete an assignment"""
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    if assignment.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    db.delete(assignment)
+    db.commit()
+    return {"message": "Assignment deleted"}
+
+@router.get("/assignments/{assignment_id}/submissions")
+async def get_assignment_submissions(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get all student submissions for an assignment"""
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    if assignment.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    submissions = db.query(AssignmentSubmission).filter(
+        AssignmentSubmission.assignment_id == assignment_id
+    ).order_by(AssignmentSubmission.submitted_at.desc()).all()
+
+    results = []
+    for sub in submissions:
+        student = db.query(User).filter(User.id == sub.student_id).first()
+        results.append({
+            "id": sub.id,
+            "student_name": student.full_name if student else "Unknown",
+            "student_email": student.email if student else "Unknown",
+            "content": sub.content,
+            "audio_url": sub.audio_url,
+            "submitted_at": sub.submitted_at.isoformat() if sub.submitted_at else None,
+            "grade": float(sub.grade) if sub.grade is not None else None,
+            "feedback": sub.feedback,
+            "graded_at": sub.graded_at.isoformat() if sub.graded_at else None,
+        })
+
+    return {"submissions": results, "total": len(results)}
+
+@router.post("/assignments/{assignment_id}/submissions/{submission_id}/grade")
+async def grade_submission(
+    assignment_id: int,
+    submission_id: int,
+    grade_data: GradeSubmission,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Grade a student submission"""
+    assignment = db.query(Assignment).filter(Assignment.id == assignment_id).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    if assignment.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if not (0 <= grade_data.grade <= 100):
+        raise HTTPException(status_code=400, detail="Grade must be between 0 and 100")
+
+    submission = db.query(AssignmentSubmission).filter(
+        AssignmentSubmission.id == submission_id,
+        AssignmentSubmission.assignment_id == assignment_id
+    ).first()
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    submission.grade = grade_data.grade
+    submission.feedback = grade_data.feedback
+    submission.graded_at = datetime.now(timezone.utc)
+    submission.graded_by = current_user.id
+    db.commit()
+
+    # Notify student
+    notification = Notification(
+        user_id=submission.student_id,
+        type="assignment_graded",
+        title="Assignment Graded",
+        body=f"Your submission for '{assignment.title}' has been graded: {grade_data.grade:.0f}/100",
+        action_url=f"/courses/{assignment.course_id}",
+        source_type="assignment",
+        source_id=assignment_id
+    )
+    db.add(notification)
+    db.commit()
+
+    return {"message": "Submission graded successfully"}

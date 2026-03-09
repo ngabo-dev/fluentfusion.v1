@@ -1195,6 +1195,57 @@ export const instructorApi = {
       method: 'POST',
     });
   },
+
+  // === Assignments ===
+
+  // Get assignments
+  getAssignments: async (courseId?: number, params?: { page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (courseId) queryParams.set('course_id', courseId.toString());
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{ assignments: any[]; total: number; page: number; total_pages: number }>(
+      `/instructor/assignments${query ? `?${query}` : ''}`
+    );
+  },
+
+  // Create assignment
+  createAssignment: async (courseId: number, data: {
+    title: string;
+    assignment_type?: string;
+    prompt: string;
+    rubric?: string;
+    due_date?: string;
+    unit_id?: number;
+  }) => {
+    return apiCall<{ message: string; assignment_id: number }>(
+      `/instructor/assignments?course_id=${courseId}`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+
+  // Delete assignment
+  deleteAssignment: async (assignmentId: number) => {
+    return apiCall<{ message: string }>(`/instructor/assignments/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Get submissions for an assignment
+  getAssignmentSubmissions: async (assignmentId: number) => {
+    return apiCall<{ submissions: any[]; total: number }>(
+      `/instructor/assignments/${assignmentId}/submissions`
+    );
+  },
+
+  // Grade a submission
+  gradeSubmission: async (assignmentId: number, submissionId: number, data: { grade: number; feedback?: string }) => {
+    return apiCall<{ message: string }>(
+      `/instructor/assignments/${assignmentId}/submissions/${submissionId}/grade`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
 };
 
 // Practice/Flashcards API
