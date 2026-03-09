@@ -58,6 +58,7 @@ import InstructorCurriculumEditor from '../imports/InstructorCurriculumEditor';
 import InstructorQuizBuilder from '../imports/InstructorQuizBuilder';
 import InstructorAssignmentBuilder from '../imports/InstructorAssignmentBuilder';
 import StudentAssignments from '../imports/StudentAssignments';
+import StudentMessages from '../imports/StudentMessages';
 import InstructorMyCourses from '../imports/InstructorMyCourses';
 
 // Session configuration - 30 minutes inactive timeout (matches backend ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -369,6 +370,7 @@ function AppRoutes() {
         <Route path="/quiz/:id" element={<ProtectedRoute><Component14Quiz /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><Component15Progress /></ProtectedRoute>} />
         <Route path="/assignments" element={<ProtectedRoute><StudentAssignments /></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><StudentMessages /></ProtectedRoute>} />
         
         {/* Practice */}
         <Route path="/practice/flashcards" element={<ProtectedRoute><Component16Flashcards /></ProtectedRoute>} />

@@ -1412,3 +1412,91 @@ export const gamificationApi = {
     });
   },
 };
+
+// Student API (assignments + messaging for enrolled students)
+export const studentApi = {
+  // ── Assignments ──────────────────────────────────────────────────────────
+  getAssignments: async (courseId?: number, params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (courseId) query.set('course_id', String(courseId));
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      assignments: Array<{
+        id: number;
+        title: string;
+        assignment_type: 'speaking' | 'writing';
+        prompt: string;
+        rubric: string | null;
+        course_id: number;
+        course_title: string;
+        due_date: string | null;
+        status: 'pending' | 'submitted' | 'graded';
+        submission_id: number | null;
+        grade: number | null;
+        feedback: string | null;
+      }>;
+      total: number;
+      page: number;
+      total_pages: number;
+    }>(`/student/assignments${qs}`);
+  },
+
+  submitAssignment: async (
+    assignmentId: number,
+    data: { content?: string; audio_url?: string }
+  ) => {
+    return apiCall<{ message: string; submission_id: number }>(
+      `/student/assignments/${assignmentId}/submit`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+
+  // ── Messaging ─────────────────────────────────────────────────────────────
+  getConversations: async (params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      conversations: Array<{
+        id: number;
+        instructor_id: number;
+        instructor_name: string;
+        instructor_avatar: string | null;
+        last_message_preview: string | null;
+        last_message_at: string | null;
+        unread_count: number;
+      }>;
+      total: number;
+    }>(`/student/conversations${qs}`);
+  },
+
+  getMessages: async (conversationId: number, params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      messages: Array<{
+        id: number;
+        sender_id: number;
+        sender_name: string;
+        sender_avatar: string | null;
+        content: string;
+        message_type: string;
+        is_read: boolean;
+        created_at: string | null;
+      }>;
+      total: number;
+    }>(`/student/conversations/${conversationId}/messages${qs}`);
+  },
+
+  sendMessage: async (data: { instructor_id: number; content: string; message_type?: string }) => {
+    return apiCall<{ message: string; message_id: number; conversation_id: number }>(
+      '/student/messages',
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+};

@@ -31,6 +31,7 @@ from .api.v1 import (
     auth, users, courses, lessons, practice,
     live, community, gamification, payments, admin, instructor,
     pulse as pulse_router,
+    student as student_router,
 )
 from .pulse.core.model_loader import ModelLoader
 from .middleware.rate_limiter import RateLimitMiddleware
@@ -474,6 +475,7 @@ app.include_router(gamification.router, prefix="/api/v1")
 app.include_router(payments.router,     prefix="/api/v1")
 app.include_router(admin.router,        prefix="/api/v1")
 app.include_router(instructor.router,   prefix="/api/v1")
+app.include_router(student_router.router, prefix="/api/v1")
 
 # ── PULSE ML router
 app.include_router(pulse_router.router, prefix="/api/v1")
