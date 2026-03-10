@@ -35,6 +35,180 @@ class ReportResponseCreate(BaseModel):
     related_type: Optional[str] = None
     related_id: Optional[int] = None
 
+# ==================== INSTRUCTOR PROFILE ====================
+
+class InstructorProfileUpdate(BaseModel):
+    headline: Optional[str] = None
+    bio: Optional[str] = None
+    website_url: Optional[str] = None
+
+class InstructorPayoutRequest(BaseModel):
+    amount: float
+    method: str  # bank, mobile_money, paypal
+    account_details: str
+
+@router.get("/profile")
+async def get_instructor_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor profile"""
+    profile = db.query(InstructorProfile).filter(
+        InstructorProfile.user_id == current_user.id
+    ).first()
+    
+    if not profile:
+        profile = InstructorProfile(
+            user_id=current_user.id,
+            bio="",
+            headline="",
+            total_students=0,
+            total_courses=0,
+            total_earnings_usd=0,
+            avg_rating=0
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    
+    return {
+        "id": profile.id,
+        "user_id": profile.user_id,
+        "headline": profile.headline,
+        "bio": profile.bio,
+        "website_url": profile.website_url,
+        "total_students": profile.total_students,
+        "total_courses": profile.total_courses,
+        "avg_rating": float(profile.avg_rating) if profile.avg_rating else 0,
+        "total_earnings_usd": float(profile.total_earnings_usd) if profile.total_earnings_usd else 0,
+        "is_verified": profile.is_verified,
+        "created_at": profile.created_at.isoformat() if profile.created_at else None
+    }
+
+@router.put("/profile")
+async def update_instructor_profile(
+    profile_data: InstructorProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Update instructor profile"""
+    profile = db.query(InstructorProfile).filter(
+        InstructorProfile.user_id == current_user.id
+    ).first()
+    
+    if not profile:
+        profile = InstructorProfile(
+            user_id=current_user.id,
+            headline=profile_data.headline or "",
+            bio=profile_data.bio or "",
+            website_url=profile_data.website_url
+        )
+        db.add(profile)
+    else:
+        if profile_data.headline is not None:
+            profile.headline = profile_data.headline
+        if profile_data.bio is not None:
+            profile.bio = profile_data.bio
+        if profile_data.website_url is not None:
+            profile.website_url = profile_data.website_url
+    
+    db.commit()
+    db.refresh(profile)
+    
+    return {
+        "message": "Profile updated successfully",
+        "profile": {
+            "headline": profile.headline,
+            "bio": profile.bio,
+            "website_url": profile.website_url
+        }
+    }
+
+@router.get("/earnings")
+async def get_instructor_earnings(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor earnings history"""
+    from ...models.instructor import InstructorPayoutRequest as PayoutReq
+    
+    profile = db.query(InstructorProfile).filter(
+        InstructorProfile.user_id == current_user.id
+    ).first()
+    
+    if not profile:
+        return {"earnings": [], "total": 0, "page": page, "total_earnings": 0}
+    
+    query = db.query(InstructorEarning).filter(
+        InstructorEarning.instructor_id == current_user.id
+    )
+    
+    total = query.count()
+    earnings = query.order_by(InstructorEarning.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
+    
+    results = []
+    for e in earnings:
+        course = db.query(Course).filter(Course.id == e.course_id).first()
+        results.append({
+            "id": e.id,
+            "course_id": e.course_id,
+            "course_title": course.title if course else "Unknown",
+            "gross_amount": float(e.gross_amount),
+            "platform_fee_pct": float(e.platform_fee_pct),
+            "net_amount": float(e.net_amount),
+            "currency": e.currency,
+            "status": e.status,
+            "paid_at": e.paid_at.isoformat() if e.paid_at else None,
+            "created_at": e.created_at.isoformat() if e.created_at else None
+        })
+    
+    return {
+        "earnings": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit,
+        "total_earnings": float(profile.total_earnings_usd or 0)
+    }
+
+@router.post("/payout/request")
+async def request_payout(
+    payout_data: InstructorPayoutRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Request a payout"""
+    from ...models.instructor import InstructorPayoutRequest as PayoutReq
+    
+    profile = db.query(InstructorProfile).filter(
+        InstructorProfile.user_id == current_user.id
+    ).first()
+    
+    if not profile:
+        raise HTTPException(status_code=404, detail="Instructor profile not found")
+    
+    available_balance = float(profile.total_earnings_usd or 0)
+    if available_balance < payout_data.amount:
+        raise HTTPException(status_code=400, detail="Insufficient balance")
+    
+    payout_request = PayoutReq(
+        instructor_id=current_user.id,
+        amount=payout_data.amount,
+        method=payout_data.method,
+        account_details=payout_data.account_details
+    )
+    db.add(payout_request)
+    db.commit()
+    db.refresh(payout_request)
+    
+    return {
+        "message": "Payout request submitted",
+        "payout_id": payout_request.id,
+        "amount": float(payout_request.amount),
+        "status": payout_request.status
+    }
+
 # ==================== HELPER FUNCTIONS ====================
 
 def extract_mentions(text: str, db: Session) -> List[dict]:
@@ -749,6 +923,17 @@ async def verify_certificate(
 
 # ==================== MESSAGING ====================
 
+@router.get("/messages")
+async def get_instructor_messages(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor's conversations with students (alias for /conversations)"""
+    return await get_conversations(page=page, limit=limit, db=db, current_user=current_user)
+
+
 @router.get("/conversations")
 async def get_conversations(
     page: int = Query(1, ge=1),
@@ -1041,6 +1226,13 @@ async def respond_to_report(
     
     return {"message": "Response added"}
 
+class AnnouncementCreate(BaseModel):
+    title: str
+    content: str
+    course_id: int
+    is_published: bool = True
+    scheduled_for: Optional[str] = None
+
 # ==================== ANNOUNCEMENTS ====================
 
 from ...models.announcement import Announcement
@@ -1092,13 +1284,9 @@ async def get_announcements(
         "total_pages": (total + limit - 1) // limit
     }
 
-@router.post("/announcements")
+@router.post("/announcements", status_code=status.HTTP_201_CREATED)
 async def create_announcement(
-    title: str,
-    content: str,
-    course_id: int,
-    is_published: bool = True,
-    scheduled_for: Optional[str] = None,
+    announcement_data: AnnouncementCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_instructor)
 ):
@@ -1106,21 +1294,21 @@ async def create_announcement(
     instructor_id = current_user.id
     
     # Verify course belongs to instructor
-    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == instructor_id).first()
+    course = db.query(Course).filter(Course.id == announcement_data.course_id, Course.instructor_id == instructor_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found or not authorized")
     
     from datetime import datetime
     scheduled = None
-    if scheduled_for:
-        scheduled = datetime.fromisoformat(scheduled_for.replace('Z', '+00:00'))
+    if announcement_data.scheduled_for:
+        scheduled = datetime.fromisoformat(announcement_data.scheduled_for.replace('Z', '+00:00'))
     
     announcement = Announcement(
         author_id=current_user.id,
-        title=title,
-        content=content,
-        target_course_id=course_id,
-        is_published=is_published,
+        title=announcement_data.title,
+        content=announcement_data.content,
+        target_course_id=announcement_data.course_id,
+        is_published=announcement_data.is_published,
         scheduled_for=scheduled,
         announcement_type="course",
         target_role="student"
@@ -1131,7 +1319,8 @@ async def create_announcement(
     
     return {
         "message": "Announcement created",
-        "announcement_id": announcement.id
+        "announcement_id": announcement.id,
+        "title": announcement.title
     }
 
 @router.delete("/announcements/{announcement_id}")
@@ -1265,13 +1454,38 @@ from ...models.assignment import Assignment, AssignmentSubmission
 from pydantic import BaseModel as _BaseModel
 from typing import Optional as _Optional
 
-class AssignmentCreate(_BaseModel):
+class InstructorSettingsResponse(BaseModel):
+    email_notifications: bool = True
+    sms_notifications: bool = False
+    course_updates: bool = True
+    student_messages: bool = True
+    weekly_digest: bool = True
+    marketing_emails: bool = False
+    payout_method: Optional[str] = None
+    bank_account_last4: Optional[str] = None
+    paypal_email: Optional[str] = None
+    mobile_money_number: Optional[str] = None
+
+class InstructorSettingsUpdate(BaseModel):
+    email_notifications: Optional[bool] = None
+    sms_notifications: Optional[bool] = None
+    course_updates: Optional[bool] = None
+    student_messages: Optional[bool] = None
+    weekly_digest: Optional[bool] = None
+    marketing_emails: Optional[bool] = None
+    payout_method: Optional[str] = None
+    bank_account_last4: Optional[str] = None
+    paypal_email: Optional[str] = None
+    mobile_money_number: Optional[str] = None
+
+class AssignmentCreatePayload(BaseModel):
     title: str
     assignment_type: str = "writing"
     prompt: str
     rubric: _Optional[str] = None
     due_date: _Optional[str] = None
     unit_id: _Optional[int] = None
+    course_id: int
 
 class GradeSubmission(_BaseModel):
     grade: float
@@ -1312,16 +1526,15 @@ async def get_assignments(
 
     return {"assignments": results, "total": total, "page": page, "total_pages": (total + limit - 1) // limit}
 
-@router.post("/assignments")
+@router.post("/assignments", status_code=status.HTTP_201_CREATED)
 async def create_assignment(
-    data: AssignmentCreate,
-    course_id: int,
+    data: AssignmentCreatePayload,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_instructor)
 ):
     """Create an assignment for a course"""
     # Verify course belongs to instructor
-    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    course = db.query(Course).filter(Course.id == data.course_id, Course.instructor_id == current_user.id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found or not authorized")
 
@@ -1330,7 +1543,7 @@ async def create_assignment(
         due = datetime.fromisoformat(data.due_date.replace("Z", "+00:00"))
 
     assignment = Assignment(
-        course_id=course_id,
+        course_id=data.course_id,
         instructor_id=current_user.id,
         unit_id=data.unit_id,
         title=data.title,
@@ -1343,7 +1556,7 @@ async def create_assignment(
     db.commit()
     db.refresh(assignment)
 
-    return {"message": "Assignment created", "assignment_id": assignment.id}
+    return {"message": "Assignment created", "assignment_id": assignment.id, "title": assignment.title}
 
 @router.delete("/assignments/{assignment_id}")
 async def delete_assignment(
@@ -1441,3 +1654,676 @@ async def grade_submission(
     db.commit()
 
     return {"message": "Submission graded successfully"}
+
+# ==================== INSTRUCTOR SETTINGS ====================
+
+class InstructorSettingsResponse(BaseModel):
+    email_notifications: bool = True
+    sms_notifications: bool = False
+    course_updates: bool = True
+    student_messages: bool = True
+    weekly_digest: bool = True
+    marketing_emails: bool = False
+    payout_method: Optional[str] = None
+    bank_account_last4: Optional[str] = None
+    paypal_email: Optional[str] = None
+    mobile_money_number: Optional[str] = None
+
+class InstructorSettingsUpdate(BaseModel):
+    email_notifications: Optional[bool] = None
+    sms_notifications: Optional[bool] = None
+    course_updates: Optional[bool] = None
+    student_messages: Optional[bool] = None
+    weekly_digest: Optional[bool] = None
+    marketing_emails: Optional[bool] = None
+    payout_method: Optional[str] = None
+    bank_account_last4: Optional[str] = None
+    paypal_email: Optional[str] = None
+    mobile_money_number: Optional[str] = None
+
+# In-memory store for instructor settings (in production, use database)
+_instructor_settings = {}
+
+@router.get("/settings", response_model=InstructorSettingsResponse)
+async def get_instructor_settings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor settings"""
+    user_id = current_user.id
+    if user_id not in _instructor_settings:
+        _instructor_settings[user_id] = {
+            "email_notifications": True,
+            "sms_notifications": False,
+            "course_updates": True,
+            "student_messages": True,
+            "weekly_digest": True,
+            "marketing_emails": False,
+            "payout_method": None,
+            "bank_account_last4": None,
+            "paypal_email": None,
+            "mobile_money_number": None
+        }
+    return _instructor_settings[user_id]
+
+@router.put("/settings", response_model=InstructorSettingsResponse)
+async def update_instructor_settings(
+    settings_data: InstructorSettingsUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Update instructor settings"""
+    user_id = current_user.id
+    if user_id not in _instructor_settings:
+        _instructor_settings[user_id] = {
+            "email_notifications": True,
+            "sms_notifications": False,
+            "course_updates": True,
+            "student_messages": True,
+            "weekly_digest": True,
+            "marketing_emails": False,
+            "payout_method": None,
+            "bank_account_last4": None,
+            "paypal_email": None,
+            "mobile_money_number": None
+        }
+    
+    settings = _instructor_settings[user_id]
+    for key, value in settings_data.dict(exclude_unset=True).items():
+        if value is not None:
+            settings[key] = value
+    
+    _instructor_settings[user_id] = settings
+    return settings
+
+
+# ==================== NEW: MESSAGING TO ANY USER, BULK MESSAGING, AND MEETINGS ====================
+
+from ...models.meeting import Meeting
+from ...utils.email import send_message_notification_email, send_meeting_invitation_email, send_bulk_message_notification_email
+
+# Pydantic schemas for new endpoints
+
+class MessageToUserPayload(BaseModel):
+    """Send message to any user on the platform"""
+    recipient_id: int
+    content: str
+    message_type: str = "text"
+    attachment_url: Optional[str] = None
+
+
+class BulkMessagePayload(BaseModel):
+    """Send bulk messages to groups"""
+    target_group: str  # all_students, all_instructors, all_admins, all_students_enrolled
+    content: str
+    message_type: str = "text"
+    attachment_url: Optional[str] = None
+
+
+class MeetingCreatePayload(BaseModel):
+    """Schedule a meeting"""
+    title: str
+    description: Optional[str] = None
+    meeting_type: str  # individual, group, all_students, all_instructors, all_admins
+    scheduled_at: str  # ISO format datetime
+    duration_minutes: int = 60
+    timezone: str = "UTC"
+    meeting_link: Optional[str] = None
+    meeting_platform: Optional[str] = None
+    reason: Optional[str] = None
+    invitee_ids: Optional[List[int]] = None  # For individual/group meetings
+
+
+class MeetingResponsePayload(BaseModel):
+    """Respond to a meeting invitation"""
+    response: str  # accepted, declined
+    response_note: Optional[str] = None
+
+
+@router.get("/users")
+async def get_all_users(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    role: Optional[str] = None,  # student, instructor, admin
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """
+    Get list of all users on the platform (students, instructors, admins).
+    Instructors can see all users to send messages or schedule meetings.
+    """
+    query = db.query(User).filter(User.is_banned == False)
+    
+    if role:
+        query = query.filter(User.role == role)
+    
+    if search:
+        query = query.filter(
+            (User.full_name.ilike(f"%{search}%")) | 
+            (User.email.ilike(f"%{search}%"))
+        )
+    
+    total = query.count()
+    users = query.order_by(User.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
+    
+    results = []
+    for user in users:
+        # Get additional info based on role
+        extra_info = {}
+        
+        if user.role == "instructor":
+            profile = db.query(InstructorProfile).filter(InstructorProfile.user_id == user.id).first()
+            if profile:
+                extra_info = {
+                    "total_courses": profile.total_courses,
+                    "total_students": profile.total_students,
+                    "headline": profile.headline
+                }
+        elif user.role == "student":
+            # Get enrollment count
+            enrollment_count = db.query(Enrollment).filter(Enrollment.user_id == user.id).count()
+            extra_info = {"enrollment_count": enrollment_count}
+        
+        results.append({
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+            "avatar_url": user.avatar_url,
+            "is_active": user.is_active,
+            "is_email_verified": user.is_email_verified,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "last_active": user.last_active_at.isoformat() if user.last_active_at else None,
+            **extra_info
+        })
+    
+    return {
+        "users": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit
+    }
+
+
+@router.post("/messages/to-user", status_code=status.HTTP_201_CREATED)
+async def send_message_to_any_user(
+    payload: MessageToUserPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """
+    Send a message to ANY user on the platform (student, instructor, or admin).
+    The recipient doesn't need to be enrolled in any of instructor's courses.
+    """
+    instructor_id = current_user.id
+    
+    # Verify recipient exists
+    recipient = db.query(User).filter(User.id == payload.recipient_id).first()
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+    
+    # Can't message yourself
+    if payload.recipient_id == instructor_id:
+        raise HTTPException(status_code=400, detail="Cannot send message to yourself")
+    
+    # Get or create conversation
+    # For cross-role messages, we use different conversation types
+    if recipient.role == "student":
+        # Use the existing conversation model for instructor-student
+        conversation = db.query(Conversation).filter(
+            Conversation.instructor_id == instructor_id,
+            Conversation.student_id == payload.recipient_id,
+            Conversation.is_group == False
+        ).first()
+        
+        if not conversation:
+            conversation = Conversation(
+                instructor_id=instructor_id,
+                student_id=payload.recipient_id
+            )
+            db.add(conversation)
+            db.commit()
+            db.refresh(conversation)
+    else:
+        # For instructor-to-instructor or instructor-to-admin, create a simple conversation
+        # We'll create a generic conversation with the recipient
+        conversation = db.query(Conversation).filter(
+            Conversation.instructor_id == instructor_id,
+            Conversation.student_id == payload.recipient_id,
+            Conversation.is_group == False
+        ).first()
+        
+        if not conversation:
+            conversation = Conversation(
+                instructor_id=instructor_id,
+                student_id=payload.recipient_id
+            )
+            db.add(conversation)
+            db.commit()
+            db.refresh(conversation)
+    
+    # Extract mentions
+    mentions = extract_mentions(payload.content, db)
+    
+    # Create message
+    msg = Message(
+        conversation_id=conversation.id,
+        sender_id=instructor_id,
+        content=payload.content,
+        message_type=payload.message_type,
+        attachment_url=payload.attachment_url,
+        mentions=mentions
+    )
+    db.add(msg)
+    
+    # Update conversation
+    conversation.last_message_preview = payload.content[:100]
+    conversation.last_message_at = datetime.now(timezone.utc)
+    
+    # Create in-app notification
+    notification = Notification(
+        user_id=payload.recipient_id,
+        type="message",
+        title=f"New message from {current_user.full_name}",
+        body=payload.content[:100],
+        action_url=f"/messages/{conversation.id}",
+        source_type="conversation",
+        source_id=conversation.id
+    )
+    db.add(notification)
+    
+    db.commit()
+    db.refresh(msg)
+    
+    # Send email notification (async - won't block response)
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
+            send_message_notification_email(
+                to_email=recipient.email,
+                recipient_name=recipient.full_name,
+                sender_name=current_user.full_name,
+                message_preview=payload.content
+            )
+        )
+    except Exception as e:
+        print(f"Failed to send email notification: {e}")
+    
+    return {
+        "message": "Message sent successfully",
+        "message_id": msg.id,
+        "conversation_id": conversation.id,
+        "recipient": {
+            "id": recipient.id,
+            "name": recipient.full_name,
+            "role": recipient.role
+        }
+    }
+
+
+@router.post("/messages/bulk", status_code=status.HTTP_201_CREATED)
+async def send_bulk_message(
+    payload: BulkMessagePayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """
+    Send bulk messages to groups:
+    - all_students: All students on the platform
+    - all_instructors: All instructors on the platform
+    - all_admins: All admins on the platform
+    - all_students_enrolled: All students enrolled in instructor's courses
+    """
+    instructor_id = current_user.id
+    
+    # Determine target users based on group
+    target_user_ids = []
+    group_name = ""
+    
+    if payload.target_group == "all_students":
+        students = db.query(User).filter(User.role == "student", User.is_banned == False).all()
+        target_user_ids = [s.id for s in students]
+        group_name = "All Students"
+    
+    elif payload.target_group == "all_instructors":
+        instructors = db.query(User).filter(User.role == "instructor", User.is_banned == False).all()
+        target_user_ids = [i.id for i in instructors if i.id != instructor_id]  # Exclude self
+        group_name = "All Instructors"
+    
+    elif payload.target_group == "all_admins":
+        admins = db.query(User).filter(User.role.in_(["admin", "super_admin"]), User.is_banned == False).all()
+        target_user_ids = [a.id for a in admins]
+        group_name = "All Admins"
+    
+    elif payload.target_group == "all_students_enrolled":
+        # Get students enrolled in instructor's courses
+        courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+        course_ids = [c.id for c in courses]
+        if course_ids:
+            enrollments = db.query(Enrollment).filter(Enrollment.course_id.in_(course_ids)).all()
+            target_user_ids = list(set([e.user_id for e in enrollments]))
+        group_name = "My Students"
+    
+    else:
+        raise HTTPException(status_code=400, detail="Invalid target group")
+    
+    if not target_user_ids:
+        return {
+            "message": "No recipients found",
+            "recipients_count": 0
+        }
+    
+    # Create a group conversation for bulk messages
+    conversation = Conversation(
+        instructor_id=instructor_id,
+        student_id=0,  # Placeholder for group
+        is_group=True,
+        group_name=group_name
+    )
+    db.add(conversation)
+    db.commit()
+    db.refresh(conversation)
+    
+    # Extract mentions
+    mentions = extract_mentions(payload.content, db)
+    
+    # Create message
+    msg = Message(
+        conversation_id=conversation.id,
+        sender_id=instructor_id,
+        content=payload.content,
+        message_type=payload.message_type,
+        attachment_url=payload.attachment_url,
+        mentions=mentions
+    )
+    db.add(msg)
+    
+    # Update conversation
+    conversation.last_message_preview = payload.content[:100]
+    conversation.last_message_at = datetime.now(timezone.utc)
+    
+    # Create notifications and send emails
+    notifications_created = 0
+    for user_id in target_user_ids:
+        # Create in-app notification
+        notification = Notification(
+            user_id=user_id,
+            type="group_message",
+            title=f"New message from {current_user.full_name} - {group_name}",
+            body=payload.content[:100],
+            action_url=f"/messages/{conversation.id}",
+            source_type="conversation",
+            source_id=conversation.id
+        )
+        db.add(notification)
+        notifications_created += 1
+    
+    db.commit()
+    
+    # Send email notifications in background
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        for recipient in recipients[:10]:  # Limit emails
+            try:
+                loop.run_until_complete(
+                    send_bulk_message_notification_email(
+                        to_email=recipient.email,
+                        recipient_name=recipient.full_name,
+                        sender_name=current_user.full_name,
+                        group_name=group_name,
+                        message_preview=payload.content
+                    )
+                )
+            except Exception as email_err:
+                print(f"Failed to send bulk email: {email_err}")
+    except Exception as e:
+        print(f"Failed to send bulk email notifications: {e}")
+    
+    return {
+        "message": f"Bulk message sent to {len(target_user_ids)} users",
+        "recipients_count": len(target_user_ids),
+        "group_name": group_name,
+        "message_id": msg.id,
+        "conversation_id": conversation.id
+    }
+
+
+@router.get("/meetings")
+async def get_meetings(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = None,  # scheduled, confirmed, declined, cancelled, completed
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get meetings scheduled by this instructor"""
+    query = db.query(Meeting).filter(Meeting.organizer_id == current_user.id)
+    
+    if status:
+        query = query.filter(Meeting.status == status)
+    
+    total = query.count()
+    meetings = query.order_by(Meeting.scheduled_at.desc()).offset((page - 1) * limit).limit(limit).all()
+    
+    results = []
+    for meeting in meetings:
+        # Get invitee details if any
+        invitee_details = []
+        if meeting.invitee_ids:
+            invitees = db.query(User).filter(User.id.in_(meeting.invitee_ids)).all()
+            invitee_details = [{"id": i.id, "name": i.full_name, "email": i.email} for i in invitees]
+        
+        results.append({
+            "id": meeting.id,
+            "title": meeting.title,
+            "description": meeting.description,
+            "meeting_type": meeting.meeting_type,
+            "scheduled_at": meeting.scheduled_at.isoformat() if meeting.scheduled_at else None,
+            "duration_minutes": meeting.duration_minutes,
+            "timezone": meeting.timezone,
+            "meeting_link": meeting.meeting_link,
+            "meeting_platform": meeting.meeting_platform,
+            "status": meeting.status,
+            "invitee_count": meeting.invitee_count,
+            "invitees": invitee_details,
+            "group_name": meeting.group_name,
+            "reason": meeting.reason,
+            "created_at": meeting.created_at.isoformat() if meeting.created_at else None
+        })
+    
+    return {
+        "meetings": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit
+    }
+
+
+@router.post("/meetings", status_code=status.HTTP_201_CREATED)
+async def create_meeting(
+    payload: MeetingCreatePayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """
+    Schedule a meeting with users.
+    
+    meeting_type options:
+    - individual: Schedule with specific user(s) - provide invitee_ids
+    - group: Schedule with a specific group - provide invitee_ids
+    - all_students: Schedule with all students on platform
+    - all_instructors: Schedule with all instructors
+    - all_admins: Schedule with all admins
+    """
+    instructor_id = current_user.id
+    
+    # Parse scheduled time
+    try:
+        scheduled_at = datetime.fromisoformat(payload.scheduled_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid datetime format. Use ISO format.")
+    
+    # Verify scheduled time is in the future
+    # Handle both naive and timezone-aware datetimes
+    now = datetime.now(timezone.utc)
+    if scheduled_at.tzinfo is None:
+        scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+    if scheduled_at <= now:
+        raise HTTPException(status_code=400, detail="Meeting must be scheduled in the future")
+    
+    # Determine invitees based on meeting type
+    invitee_ids = []
+    group_name = ""
+    
+    if payload.meeting_type == "individual" or payload.meeting_type == "group":
+        if not payload.invitee_ids:
+            raise HTTPException(status_code=400, detail="invitee_ids required for individual/group meetings")
+        # Verify all invitees exist
+        invitees = db.query(User).filter(User.id.in_(payload.invitee_ids)).all()
+        if len(invitees) != len(payload.invitee_ids):
+            raise HTTPException(status_code=404, detail="One or more invitees not found")
+        invitee_ids = payload.invitee_ids
+        group_name = f"Meeting with {current_user.full_name}"
+    
+    elif payload.meeting_type == "all_students":
+        students = db.query(User).filter(User.role == "student", User.is_banned == False).all()
+        invitee_ids = [s.id for s in students]
+        group_name = "All Students"
+    
+    elif payload.meeting_type == "all_instructors":
+        instructors = db.query(User).filter(User.role == "instructor", User.is_banned == False).all()
+        invitee_ids = [i.id for i in instructors if i.id != instructor_id]
+        group_name = "All Instructors"
+    
+    elif payload.meeting_type == "all_admins":
+        admins = db.query(User).filter(User.role.in_(["admin", "super_admin"]), User.is_banned == False).all()
+        invitee_ids = [a.id for a in admins]
+        group_name = "All Admins"
+    
+    else:
+        raise HTTPException(status_code=400, detail="Invalid meeting type")
+    
+    # Create meeting
+    meeting = Meeting(
+        organizer_id=instructor_id,
+        title=payload.title,
+        description=payload.description,
+        meeting_type=payload.meeting_type,
+        scheduled_at=scheduled_at,
+        duration_minutes=payload.duration_minutes,
+        timezone=payload.timezone,
+        meeting_link=payload.meeting_link,
+        meeting_platform=payload.meeting_platform,
+        reason=payload.reason,
+        status="scheduled",
+        invitee_ids=invitee_ids,
+        invitee_count=len(invitee_ids),
+        group_name=group_name
+    )
+    db.add(meeting)
+    db.commit()
+    db.refresh(meeting)
+    
+    # Create notifications and send emails for each invitee
+    scheduled_at_str = scheduled_at.strftime("%Y-%m-%d at %H:%M %Z")
+    
+    for invitee_id in invitee_ids:
+        invitee = db.query(User).filter(User.id == invitee_id).first()
+        if not invitee:
+            continue
+        
+        # Create in-app notification
+        notification = Notification(
+            user_id=invitee_id,
+            type="meeting_invitation",
+            title=f"Meeting Invitation: {payload.title}",
+            body=f"{current_user.full_name} scheduled a meeting with you on {scheduled_at_str}",
+            action_url=f"/meetings/{meeting.id}",
+            source_type="meeting",
+            source_id=meeting.id
+        )
+        db.add(notification)
+    
+    db.commit()
+    
+    # Send email notifications
+    try:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        for invitee_id in invitee_ids[:10]:  # Limit emails
+            invitee = db.query(User).filter(User.id == invitee_id).first()
+            if not invitee:
+                continue
+            
+            try:
+                loop.run_until_complete(
+                    send_meeting_invitation_email(
+                        to_email=invitee.email,
+                        recipient_name=invitee.full_name,
+                        organizer_name=current_user.full_name,
+                        meeting_title=payload.title,
+                        meeting_description=payload.description or "",
+                        scheduled_at=scheduled_at_str,
+                        duration_minutes=payload.duration_minutes,
+                        reason=payload.reason or "",
+                        meeting_link=payload.meeting_link or ""
+                    )
+                )
+            except Exception as email_err:
+                print(f"Failed to send meeting email: {email_err}")
+    except Exception as e:
+        print(f"Failed to send meeting email notifications: {e}")
+    
+    return {
+        "message": "Meeting scheduled successfully",
+        "meeting_id": meeting.id,
+        "title": meeting.title,
+        "scheduled_at": meeting.scheduled_at.isoformat(),
+        "invitee_count": meeting.invitee_count,
+        "status": meeting.status
+    }
+
+
+@router.delete("/meetings/{meeting_id}")
+async def cancel_meeting(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Cancel a meeting"""
+    meeting = db.query(Meeting).filter(
+        Meeting.id == meeting_id,
+        Meeting.organizer_id == current_user.id
+    ).first()
+    
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    if meeting.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Meeting already cancelled")
+    
+    if meeting.status == "completed":
+        raise HTTPException(status_code=400, detail="Cannot cancel completed meeting")
+    
+    meeting.status = "cancelled"
+    
+    # Notify invitees
+    if meeting.invitee_ids:
+        for invitee_id in meeting.invitee_ids:
+            notification = Notification(
+                user_id=invitee_id,
+                type="meeting_cancelled",
+                title=f"Meeting Cancelled: {meeting.title}",
+                body=f"The meeting scheduled by {current_user.full_name} has been cancelled",
+                action_url=f"/meetings/{meeting.id}",
+                source_type="meeting",
+                source_id=meeting.id
+            )
+            db.add(notification)
+    
+    db.commit()
+    
+    return {"message": "Meeting cancelled successfully"}

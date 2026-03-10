@@ -2,13 +2,242 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 
 from ...database import get_db
 from ...models.live_session import LiveSession, LiveSessionRegistration, LiveSessionMessage
 from ...models.user import User
-from ...dependencies import get_current_user, get_current_active_user
+from ...models.language import Language
+from ...dependencies import get_current_user, get_current_active_user, require_instructor
 
 router = APIRouter(prefix="/live", tags=["Live Sessions"])
+
+# ==================== PYDANTIC SCHEMAS ====================
+
+class LiveSessionCreate(BaseModel):
+    title: str
+    description: str
+    language_id: int
+    scheduled_at: str  # ISO format
+    duration_minutes: int = 60
+    max_participants: int = 100
+    stream_url: Optional[str] = None
+
+class LiveSessionUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    max_participants: Optional[int] = None
+    stream_url: Optional[str] = None
+
+# ==================== INSTRUCTOR: CREATE LIVE SESSIONS ====================
+
+@router.post("/sessions")
+async def create_live_session(
+    session_data: LiveSessionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Create a new live session (instructor only)"""
+    # Verify language exists
+    language = db.query(Language).filter(Language.id == session_data.language_id).first()
+    if not language:
+        raise HTTPException(status_code=404, detail="Language not found")
+    
+    # Parse scheduled time
+    scheduled = datetime.fromisoformat(session_data.scheduled_at.replace('Z', '+00:00'))
+    
+    # Create session
+    session = LiveSession(
+        instructor_id=current_user.id,
+        language_id=session_data.language_id,
+        title=session_data.title,
+        description=session_data.description,
+        scheduled_at=scheduled,
+        duration_minutes=session_data.duration_minutes,
+        max_participants=session_data.max_participants,
+        stream_url=session_data.stream_url,
+        status="scheduled"
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    
+    return {
+        "message": "Live session created",
+        "session": {
+            "id": session.id,
+            "title": session.title,
+            "scheduled_at": session.scheduled_at.isoformat() if session.scheduled_at else None,
+            "status": session.status
+        }
+    }
+
+@router.patch("/sessions/{session_id}")
+async def update_live_session(
+    session_id: int,
+    update_data: LiveSessionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Update a live session (instructor only)"""
+    session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Verify ownership
+    if session.instructor_id != current_user.id and current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to modify this session")
+    
+    # Update fields
+    if update_data.title is not None:
+        session.title = update_data.title
+    if update_data.description is not None:
+        session.description = update_data.description
+    if update_data.scheduled_at is not None:
+        session.scheduled_at = datetime.fromisoformat(update_data.scheduled_at.replace('Z', '+00:00'))
+    if update_data.duration_minutes is not None:
+        session.duration_minutes = update_data.duration_minutes
+    if update_data.max_participants is not None:
+        session.max_participants = update_data.max_participants
+    if update_data.stream_url is not None:
+        session.stream_url = update_data.stream_url
+    
+    db.commit()
+    db.refresh(session)
+    
+    return {
+        "message": "Session updated",
+        "session": {
+            "id": session.id,
+            "title": session.title,
+            "status": session.status
+        }
+    }
+
+@router.delete("/sessions/{session_id}")
+async def delete_live_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Delete/cancel a live session (instructor only)"""
+    session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Verify ownership
+    if session.instructor_id != current_user.id and current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this session")
+    
+    # Only allow deletion of scheduled sessions
+    if session.status not in ["scheduled", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Cannot delete active or completed sessions")
+    
+    session.status = "cancelled"
+    db.commit()
+    
+    return {"message": "Session cancelled"}
+
+@router.post("/sessions/{session_id}/start")
+async def start_live_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Start a live session (instructor only)"""
+    session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Verify ownership
+    if session.instructor_id != current_user.id and current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if session.status != "scheduled":
+        raise HTTPException(status_code=400, detail="Session cannot be started")
+    
+    session.status = "live"
+    session.started_at = datetime.utcnow()
+    db.commit()
+    
+    return {
+        "message": "Session is now live",
+        "stream_url": session.stream_url
+    }
+
+@router.post("/sessions/{session_id}/end")
+async def end_live_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """End a live session (instructor only)"""
+    session = db.query(LiveSession).filter(LiveSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Verify ownership
+    if session.instructor_id != current_user.id and current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    if session.status != "live":
+        raise HTTPException(status_code=400, detail="Session is not currently live")
+    
+    session.status = "ended"
+    session.ended_at = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Session ended"}
+
+@router.get("/instructor/sessions")
+async def get_my_live_sessions(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor's own live sessions"""
+    query = db.query(LiveSession).filter(LiveSession.instructor_id == current_user.id)
+    
+    if status:
+        query = query.filter(LiveSession.status == status)
+    
+    total = query.count()
+    sessions = query.order_by(LiveSession.scheduled_at.desc()).offset((page - 1) * limit).limit(limit).all()
+    
+    results = []
+    for s in sessions:
+        reg_count = db.query(LiveSessionRegistration).filter(
+            LiveSessionRegistration.session_id == s.id
+        ).count()
+        
+        language = db.query(Language).filter(Language.id == s.language_id).first()
+        
+        results.append({
+            "id": s.id,
+            "title": s.title,
+            "description": s.description,
+            "language_id": s.language_id,
+            "language_name": language.name if language else "Unknown",
+            "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
+            "duration_minutes": s.duration_minutes,
+            "status": s.status,
+            "max_participants": s.max_participants,
+            "enrolled_count": reg_count,
+            "is_live": s.status == "live"
+        })
+    
+    return {
+        "sessions": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit
+    }
+
+# ==================== PUBLIC: LIST LIVE SESSIONS ====================
 
 @router.get("/sessions")
 async def get_live_sessions(

@@ -102,6 +102,9 @@ class User(Base):
     # Messages
     sent_messages = relationship("Message", back_populates="sender", cascade="all, delete-orphan")
     
+    # Meetings
+    organized_meetings = relationship("Meeting", back_populates="organizer", cascade="all, delete-orphan")
+    
     # User Activity
     activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")

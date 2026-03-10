@@ -203,15 +203,17 @@ export default function Component03Login() {
             <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
               {/* Email */}
               <div>
-                <label className="block text-[#888] text-[10px] uppercase tracking-wider mb-2">
+                <label htmlFor="email" className="block text-[#888] text-[10px] uppercase tracking-wider mb-2">
                   Email Address
                 </label>
                 <div className="relative">
                   <input
                     ref={emailInputRef}
+                    id="email"
+                    name="email"
                     type="email"
                     autoComplete="email"
-                    name="email"
+                    aria-label="Email address"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="Enter your email"
@@ -223,14 +225,17 @@ export default function Component03Login() {
 
               {/* Password */}
               <div>
-                <label className="block text-[#888] text-[10px] uppercase tracking-wider mb-2">
+                <label htmlFor="password" className="block text-[#888] text-[10px] uppercase tracking-wider mb-2">
                   Password
                 </label>
                 <div className="relative">
                   <input
                     ref={passwordInputRef}
+                    id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
+                    aria-label="Password"
                     value={password}
                     onChange={(e) => handlePasswordChange(e.target.value)}
                     placeholder="Enter your password"

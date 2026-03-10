@@ -24,6 +24,14 @@ interface Message {
   is_read: boolean;
 }
 
+interface User {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+  avatar_url: string | null;
+}
+
 export default function InstructorMessages() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -34,6 +42,52 @@ export default function InstructorMessages() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // New message modal state
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newMessageContent, setNewMessageContent] = useState("");
+  const [sendingToNewUser, setSendingToNewUser] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Load all users when modal opens
+  useEffect(() => {
+    if (showNewMessageModal && allUsers.length === 0) {
+      loadAllUsers();
+    }
+  }, [showNewMessageModal]);
+
+  // Filter users when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchResults(allUsers);
+    } else {
+      const filtered = allUsers.filter(
+        (u) =>
+          u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(filtered);
+    }
+  }, [searchQuery, allUsers]);
+
+  const loadAllUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await instructorApi.getAllUsers({ limit: 100 });
+      // Filter out current user
+      const otherUsers = (res.users || []).filter((u: User) => u.id !== user?.id);
+      setAllUsers(otherUsers);
+      setSearchResults(otherUsers);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('ff_access_token');
@@ -106,6 +160,44 @@ export default function InstructorMessages() {
     }
   };
 
+  const handleSearchUsers = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+      setSearchResults(allUsers);
+      return;
+    }
+    const filtered = allUsers.filter(
+      (u) =>
+        u.full_name.toLowerCase().includes(query.toLowerCase()) ||
+        u.email.toLowerCase().includes(query.toLowerCase())
+    );
+    setSearchResults(filtered);
+  };
+
+  const handleSendToNewUser = async () => {
+    if (!selectedUser || !newMessageContent.trim()) return;
+    setSendingToNewUser(true);
+    try {
+      await instructorApi.sendMessageToAnyUser({
+        recipient_id: selectedUser.id,
+        content: newMessageContent,
+        message_type: "text"
+      });
+      toast.success(`Message sent to ${selectedUser.full_name}`);
+      setShowNewMessageModal(false);
+      setSelectedUser(null);
+      setNewMessageContent("");
+      setSearchQuery("");
+      setSearchResults([]);
+      fetchConversations();
+    } catch (error: any) {
+      console.error('Failed to send message:', error);
+      toast.error(error.message || 'Failed to send message');
+    } finally {
+      setSendingToNewUser(false);
+    }
+  };
+
   const formatTime = (dateStr: string | null) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -123,8 +215,14 @@ export default function InstructorMessages() {
       <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl overflow-hidden flex" style={{ height: 'calc(100vh - 240px)', minHeight: '500px' }}>
         {/* Conversations List */}
         <div className="w-[300px] border-r border-[#2a2a2a] flex flex-col flex-shrink-0">
-          <div className="p-4 border-b border-[#2a2a2a]">
+          <div className="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
             <h2 className="text-white font-semibold text-[14px]">Conversations</h2>
+            <button
+              onClick={() => setShowNewMessageModal(true)}
+              className="bg-[#bfff00] text-black px-3 py-1.5 rounded-lg text-[12px] font-semibold hover:opacity-90 transition-opacity"
+            >
+              + New
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
@@ -133,6 +231,12 @@ export default function InstructorMessages() {
               <div className="text-center py-10">
                 <div className="text-[32px] mb-2">💬</div>
                 <p className="text-[#888] text-[13px]">No conversations yet</p>
+                <button
+                  onClick={() => setShowNewMessageModal(true)}
+                  className="mt-3 text-[#bfff00] text-[13px] hover:underline"
+                >
+                  Start a new conversation
+                </button>
               </div>
             ) : conversations.map((conv) => (
               <div
@@ -181,7 +285,7 @@ export default function InstructorMessages() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((msg) => (
+                {[...messages].reverse().map((msg) => (
                   <div key={msg.id} className={`flex ${msg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
                       msg.sender_id === user?.id ? 'bg-[#bfff00] text-black' : 'bg-[#1a1a1a] text-white'
@@ -221,11 +325,125 @@ export default function InstructorMessages() {
                 <div className="text-[56px] mb-3">💬</div>
                 <p className="text-[#888] text-[14px]">Select a conversation to start messaging</p>
                 <p className="text-[#555] text-[12px] mt-1">All messages with your students appear here</p>
+                <button
+                  onClick={() => setShowNewMessageModal(true)}
+                  className="mt-4 bg-[#bfff00] text-black px-5 py-2.5 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity"
+                >
+                  Start New Conversation
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* New Message Modal */}
+      {showNewMessageModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-[500px] max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-[#2a2a2a] flex items-center justify-between">
+              <h3 className="text-white font-semibold text-[16px]">New Message</h3>
+              <button
+                onClick={() => {
+                  setShowNewMessageModal(false);
+                  setSelectedUser(null);
+                  setNewMessageContent("");
+                  setSearchQuery("");
+                  setSearchResults([]);
+                }}
+                className="text-[#888] hover:text-white text-[20px]"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-4">
+              {!selectedUser ? (
+                <>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchUsers(e.target.value)}
+                    placeholder="Search for students, instructors, or admins..."
+                    className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-2.5 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[13px] mb-4"
+                  />
+                  
+                  {loadingUsers ? (
+                    <div className="text-center py-4 text-[#888]">Loading users...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {searchResults.map((result) => (
+                        <div
+                          key={result.id}
+                          onClick={() => setSelectedUser(result)}
+                          className="p-3 bg-[#0f0f0f] rounded-lg cursor-pointer hover:bg-[#151515] transition-colors flex items-center gap-3"
+                        >
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-[14px] flex-shrink-0"
+                               style={{ background: 'linear-gradient(135deg, #bfff00, #8fef00)' }}>
+                            {result.full_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-[14px] font-medium truncate">{result.full_name}</p>
+                            <p className="text-[#888] text-[12px] truncate">{result.email}</p>
+                          </div>
+                          <span className="text-[#555] text-[11px] capitalize">{result.role}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : searchQuery.length >= 2 ? (
+                    <div className="text-center py-4 text-[#888]">No users found</div>
+                  ) : (
+                    <div className="text-center py-4 text-[#888]">Type at least 2 characters to search</div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-[#0f0f0f] rounded-lg">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-[14px] flex-shrink-0"
+                         style={{ background: 'linear-gradient(135deg, #bfff00, #8fef00)' }}>
+                      {selectedUser.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-[14px] font-medium truncate">{selectedUser.full_name}</p>
+                      <p className="text-[#888] text-[12px] truncate">{selectedUser.email}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedUser(null)}
+                      className="text-[#888] hover:text-white text-[12px]"
+                    >
+                      Change
+                    </button>
+                  </div>
+                  
+                  <textarea
+                    value={newMessageContent}
+                    onChange={(e) => setNewMessageContent(e.target.value)}
+                    placeholder="Type your message..."
+                    rows={4}
+                    className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-2.5 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[13px] resize-none"
+                  />
+                  
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => setSelectedUser(null)}
+                      className="flex-1 bg-[#2a2a2a] text-white px-5 py-2.5 rounded-lg font-semibold text-[13px] hover:bg-[#333] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSendToNewUser}
+                      disabled={sendingToNewUser || !newMessageContent.trim()}
+                      className="flex-1 bg-[#bfff00] text-black px-5 py-2.5 rounded-lg font-semibold text-[13px] disabled:opacity-50 hover:opacity-90 transition-opacity"
+                    >
+                      {sendingToNewUser ? 'Sending...' : 'Send Message'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </InstructorLayout>
   );
 }

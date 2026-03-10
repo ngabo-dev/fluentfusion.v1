@@ -18,6 +18,7 @@ from ...models.progress import Enrollment
 from ...models.assignment import Assignment, AssignmentSubmission
 from ...models.message import Conversation, Message
 from ...models.notification import Notification
+from ...models.meeting import Meeting
 from ...dependencies import get_current_active_user
 
 router = APIRouter(prefix="/student", tags=["Student"])
@@ -297,6 +298,20 @@ class StudentMessageCreate(BaseModel):
     message_type: str = "text"
 
 
+class ReplyCreate(BaseModel):
+    content: str
+
+
+class MeetingResponse(BaseModel):
+    response: str
+    response_note: Optional[str] = None
+
+
+class MeetingRespondRequest(BaseModel):
+    response: str
+    response_note: Optional[str] = None
+
+
 @router.post("/messages")
 async def student_send_message(
     message: StudentMessageCreate,
@@ -387,4 +402,245 @@ async def student_send_message(
         "message": "Message sent",
         "message_id": msg.id,
         "conversation_id": conversation.id,
+    }
+
+
+# ==================== STUDENT MESSAGES (GET /messages) ====================
+
+@router.get("/messages")
+async def get_student_messages(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get all conversations for the student (alias for /conversations)."""
+    # This is the same as /conversations but returns in a format expected by frontend
+    conversations = (
+        db.query(Conversation)
+        .filter(Conversation.student_id == current_user.id)
+        .order_by(Conversation.last_message_at.desc())
+        .all()
+    )
+
+    total = len(conversations)
+    start = (page - 1) * limit
+    paginated = conversations[start : start + limit]
+
+    results = []
+    for conv in paginated:
+        instructor = db.query(User).filter(User.id == conv.instructor_id).first()
+        unread_count = (
+            db.query(Message)
+            .filter(
+                Message.conversation_id == conv.id,
+                Message.sender_id != current_user.id,
+                Message.is_read == False,
+            )
+            .count()
+        )
+        # Get last message
+        last_msg = (
+            db.query(Message)
+            .filter(Message.conversation_id == conv.id)
+            .order_by(Message.created_at.desc())
+            .first()
+        )
+        results.append(
+            {
+                "id": conv.id,
+                "instructor_id": instructor.id if instructor else None,
+                "instructor_name": instructor.full_name if instructor else "Unknown",
+                "instructor_avatar": instructor.avatar_url if instructor else None,
+                "last_message": {
+                    "content": last_msg.content if last_msg else None,
+                    "created_at": last_msg.created_at.isoformat() if last_msg and last_msg.created_at else None,
+                },
+                "last_message_preview": conv.last_message_preview,
+                "last_message_at": conv.last_message_at.isoformat()
+                if conv.last_message_at
+                else None,
+                "unread_count": unread_count,
+            }
+        )
+
+    return {
+        "conversations": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit,
+    }
+
+
+@router.post("/messages/{conversation_id}/reply")
+async def student_reply_to_message(
+    conversation_id: int,
+    data: ReplyCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Reply to a conversation."""
+    conversation = (
+        db.query(Conversation)
+        .filter(
+            Conversation.id == conversation_id,
+            Conversation.student_id == current_user.id,
+        )
+        .first()
+    )
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Create the reply message
+    msg = Message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content=data.content,
+        message_type="text",
+    )
+    db.add(msg)
+
+    conversation.last_message_preview = data.content[:100]
+    conversation.last_message_at = datetime.now(timezone.utc)
+
+    # Notify instructor
+    notification = Notification(
+        user_id=conversation.instructor_id,
+        type="message",
+        title=f"New reply from {current_user.full_name}",
+        body=data.content[:100],
+        action_url=f"/instructor/messages",
+        source_type="conversation",
+        source_id=conversation.id,
+    )
+    db.add(notification)
+    db.commit()
+    db.refresh(msg)
+
+    return {
+        "message": "Reply sent",
+        "message_id": msg.id,
+        "conversation_id": conversation.id,
+    }
+
+
+# ==================== STUDENT MEETINGS ====================
+
+@router.get("/meetings")
+async def get_student_meetings(
+    status: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get all meetings where the student is invited."""
+    # Get all meetings and filter in Python
+    # We need to query using SQLAlchemy's JSON column access
+    from sqlalchemy import and_
+    import json
+    
+    # Get all non-cancelled meetings
+    all_meetings = db.query(Meeting).filter(Meeting.status != "cancelled").all()
+    
+    # Filter meetings where user is in invitee_ids
+    # Since the JSON column may return None or a list, we handle both cases
+    user_meetings = []
+    for meeting in all_meetings:
+        # Access the raw database column value
+        invitee_ids_raw = meeting.invitee_ids
+        
+        # Parse the invitee_ids - could be None, a list, or a JSON string
+        invitee_list = []
+        if invitee_ids_raw is not None:
+            if isinstance(invitee_ids_raw, list):
+                invitee_list = invitee_ids_raw
+            elif isinstance(invitee_ids_raw, str):
+                try:
+                    invitee_list = json.loads(invitee_ids_raw)
+                except:
+                    invitee_list = []
+        
+        # Check if current user's ID is in the invitee list
+        user_id_str = str(current_user.id)
+        if user_id_str in [str(x) for x in invitee_list]:
+            user_meetings.append(meeting)
+    
+    # Apply status filter if provided
+    if status:
+        user_meetings = [m for m in user_meetings if m.status == status]
+    
+    total = len(user_meetings)
+    start = (page - 1) * limit
+    paginated = user_meetings[start : start + limit]
+
+    results = []
+    for meeting in paginated:
+        organizer = db.query(User).filter(User.id == meeting.organizer_id).first()
+        results.append(
+            {
+                "id": meeting.id,
+                "title": meeting.title,
+                "description": meeting.description,
+                "meeting_type": meeting.meeting_type,
+                "scheduled_at": meeting.scheduled_at.isoformat() if meeting.scheduled_at else None,
+                "duration_minutes": meeting.duration_minutes,
+                "timezone": meeting.timezone,
+                "meeting_link": meeting.meeting_link,
+                "meeting_platform": meeting.meeting_platform,
+                "status": meeting.status,
+                "reason": meeting.reason,
+                "response": meeting.response,
+                "organizer_id": meeting.organizer_id,
+                "organizer_name": organizer.full_name if organizer else "Unknown",
+                "organizer_avatar": organizer.avatar_url if organizer else None,
+                "created_at": meeting.created_at.isoformat() if meeting.created_at else None,
+            }
+        )
+
+    return {
+        "meetings": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit,
+    }
+
+
+@router.post("/meetings/{meeting_id}/respond")
+async def student_respond_to_meeting(
+    meeting_id: int,
+    data: MeetingRespondRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Respond to a meeting invitation (accept/decline)."""
+    meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    # Verify student is invited
+    if meeting.invitee_ids and str(current_user.id) not in str(meeting.invitee_ids):
+        raise HTTPException(status_code=403, detail="You are not invited to this meeting")
+    
+    if data.response not in ["accepted", "declined"]:
+        raise HTTPException(status_code=400, detail="Response must be 'accepted' or 'declined'")
+    
+    meeting.response = data.response
+    meeting.response_at = datetime.now(timezone.utc)
+    meeting.response_note = data.response_note
+    
+    # Update meeting status
+    if data.response == "accepted":
+        meeting.status = "confirmed"
+    elif data.response == "declined":
+        meeting.status = "declined"
+    
+    db.commit()
+    db.refresh(meeting)
+    
+    return {
+        "message": f"Meeting {data.response}",
+        "meeting_id": meeting.id,
+        "response": meeting.response,
+        "status": meeting.status,
     }

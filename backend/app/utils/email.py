@@ -366,3 +366,195 @@ async def _send_sendgrid_email(to_email: str, subject: str, html_content: str):
 async def _send_ses_email(to_email: str, subject: str, html_content: str):
     # Implement AWS SES
     pass
+
+
+# ==================== MESSAGE AND MEETING NOTIFICATIONS ====================
+
+async def send_message_notification_email(
+    to_email: str,
+    recipient_name: str,
+    sender_name: str,
+    message_preview: str
+):
+    """Send email notification for new message from instructor"""
+    subject = f"💬 {sender_name} sent you a message"
+    message_link = f"{settings.FRONTEND_URL}/messages"
+    
+    html_content = f"""
+    <html>
+        <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #0A0A0A; border: 1px solid #2A2A2A; border-radius: 16px; padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <span style="font-size: 64px;">💬</span>
+                    <h1 style="font-family: 'Syne', sans-serif; color: #FFFFFF; font-size: 28px;">
+                        FLUENT<span style="color: #BFFF00;">FUSION</span>
+                    </h1>
+                    <p style="color: #BFFF00; font-size: 14px;">NEW MESSAGE</p>
+                </div>
+                
+                <h2 style="color: #FFFFFF; font-size: 24px; text-align: center;">
+                    {sender_name} sent you a message!
+                </h2>
+                
+                <p style="color: #888888; font-size: 16px; line-height: 1.6;">
+                    Hello {recipient_name},
+                </p>
+                
+                <div style="background: #151515; border: 1px solid #2A2A2A; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                    <p style="color: #CCCCCC; font-size: 16px; margin: 0;">
+                        "{message_preview[:150]}{'...' if len(message_preview) > 150 else ''}"
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{message_link}" style="background: #BFFF00; color: #000000; text-decoration: none; padding: 16px 32px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
+                        Read & Reply →
+                    </a>
+                </div>
+                
+                <div style="border-top: 1px solid #2A2A2A; padding-top: 24px; margin-top: 32px; text-align: center;">
+                    <p style="color: #555555; font-size: 12px;">
+                        Best regards,<br>
+                        <strong style="color: #FFFFFF;">{sender_name}</strong> (FluentFusion Instructor)<br>
+                        🧠💚
+                    </p>
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+    await send_email(to_email, subject, html_content)
+
+
+async def send_meeting_invitation_email(
+    to_email: str,
+    recipient_name: str,
+    organizer_name: str,
+    meeting_title: str,
+    meeting_description: str,
+    scheduled_at: str,
+    duration_minutes: int,
+    reason: str,
+    meeting_link: str
+):
+    """Send email notification for meeting invitation"""
+    subject = f"📅 {organizer_name} scheduled a meeting with you"
+    meeting_response_link = f"{settings.FRONTEND_URL}/meetings"
+    
+    html_content = f"""
+    <html>
+        <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #0A0A0A; border: 1px solid #2A2A2A; border-radius: 16px; padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <span style="font-size: 64px;">📅</span>
+                    <h1 style="font-family: 'Syne', sans-serif; color: #FFFFFF; font-size: 28px;">
+                        FLUENT<span style="color: #BFFF00;">FUSION</span>
+                    </h1>
+                    <p style="color: #BFFF00; font-size: 14px;">MEETING INVITATION</p>
+                </div>
+                
+                <h2 style="color: #FFFFFF; font-size: 24px; text-align: center;">
+                    {organizer_name} scheduled a meeting with you!
+                </h2>
+                
+                <p style="color: #888888; font-size: 16px; line-height: 1.6;">
+                    Hello {recipient_name},
+                </p>
+                
+                <div style="background: linear-gradient(145deg, rgba(191,255,0,0.1) 0%, rgba(191,255,0,0) 50%); border: 1px solid #2A2A2A; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                    <h3 style="color: #BFFF00; margin-top: 0;">{meeting_title}</h3>
+                    
+                    <p style="color: #CCCCCC; font-size: 16px;">
+                        <strong>📅 Date & Time:</strong> {scheduled_at} ({duration_minutes} minutes)
+                    </p>
+                    
+                    {f'<p style="color: #CCCCCC; font-size: 16px; margin-top: 12px;"><strong>📝 Description:</strong> {meeting_description}</p>' if meeting_description else ''}
+                    
+                    {f'<p style="color: #CCCCCC; font-size: 16px; margin-top: 12px;"><strong>🎯 Reason:</strong> {reason}</p>' if reason else ''}
+                    
+                    {f'<p style="color: #CCCCCC; font-size: 16px; margin-top: 12px;"><strong>🔗 Meeting Link:</strong> <a href="{meeting_link}" style="color: #BFFF00;">{meeting_link}</a></p>' if meeting_link else ''}
+                </div>
+                
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{meeting_response_link}" style="background: #BFFF00; color: #000000; text-decoration: none; padding: 16px 32px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
+                        Accept or Decline →
+                    </a>
+                </div>
+                
+                <p style="color: #888888; font-size: 14px; text-align: center;">
+                    Please respond at your earliest convenience.
+                </p>
+                
+                <div style="border-top: 1px solid #2A2A2A; padding-top: 24px; margin-top: 32px; text-align: center;">
+                    <p style="color: #555555; font-size: 12px;">
+                        Best regards,<br>
+                        <strong style="color: #FFFFFF;">{organizer_name}</strong> (FluentFusion Instructor)<br>
+                        🧠💚
+                    </p>
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+    await send_email(to_email, subject, html_content)
+
+
+async def send_bulk_message_notification_email(
+    to_email: str,
+    recipient_name: str,
+    sender_name: str,
+    group_name: str,
+    message_preview: str
+):
+    """Send email notification for bulk/group message from instructor"""
+    subject = f"📢 {sender_name} sent a message to {group_name}"
+    message_link = f"{settings.FRONTEND_URL}/messages"
+    
+    html_content = f"""
+    <html>
+        <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #0A0A0A; border: 1px solid #2A2A2A; border-radius: 16px; padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <span style="font-size: 64px;">📢</span>
+                    <h1 style="font-family: 'Syne', sans-serif; color: #FFFFFF; font-size: 28px;">
+                        FLUENT<span style="color: #BFFF00;">FUSION</span>
+                    </h1>
+                    <p style="color: #BFFF00; font-size: 14px;">GROUP MESSAGE</p>
+                </div>
+                
+                <h2 style="color: #FFFFFF; font-size: 24px; text-align: center;">
+                    New message for {group_name}!
+                </h2>
+                
+                <p style="color: #888888; font-size: 16px; line-height: 1.6;">
+                    Hello {recipient_name},
+                </p>
+                
+                <p style="color: #888888; font-size: 16px;">
+                    <strong>{sender_name}</strong> sent a message to the {group_name} group:
+                </p>
+                
+                <div style="background: #151515; border: 1px solid #2A2A2A; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                    <p style="color: #CCCCCC; font-size: 16px; margin: 0;">
+                        "{message_preview[:150]}{'...' if len(message_preview) > 150 else ''}"
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{message_link}" style="background: #BFFF00; color: #000000; text-decoration: none; padding: 16px 32px; border-radius: 10px; font-weight: bold; font-size: 16px; display: inline-block;">
+                        View Message →
+                    </a>
+                </div>
+                
+                <div style="border-top: 1px solid #2A2A2A; padding-top: 24px; margin-top: 32px; text-align: center;">
+                    <p style="color: #555555; font-size: 12px;">
+                        Best regards,<br>
+                        <strong style="color: #FFFFFF;">{sender_name}</strong> (FluentFusion Instructor)<br>
+                        🧠💚
+                    </p>
+                </div>
+            </div>
+        </body>
+    </html>
+    """
+    await send_email(to_email, subject, html_content)

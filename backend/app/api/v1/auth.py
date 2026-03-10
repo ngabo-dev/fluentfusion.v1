@@ -102,12 +102,13 @@ async def register(
             password_hash=hashed_password,
             full_name=user_data.full_name,
             role=user_role,
-            is_active=is_active
+            is_active=is_active,
+            is_email_verified=True  # Auto-verify in development for testing
         )
         db.add(user)
         db.commit()
         db.refresh(user)
-        logger.info(f"User created successfully: id={user.id}")
+        logger.info(f"User created successfully: id={user.id}, email_verified={user.is_email_verified}")
     except Exception as e:
         logger.error(f"Error creating user: {e}")
         db.rollback()

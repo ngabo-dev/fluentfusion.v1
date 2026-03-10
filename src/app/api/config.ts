@@ -951,6 +951,38 @@ export const instructorApi = {
     });
   },
 
+  // Send message to any user (no enrollment required)
+  sendMessageToAnyUser: async (data: {
+    recipient_id: number;
+    content: string;
+    message_type?: string;
+    attachment_url?: string;
+  }) => {
+    return apiCall<{ message: string; message_id: number; conversation_id: number; recipient: any }>('/instructor/messages/to-user', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Get all users on platform (for messaging)
+  getAllUsers: async (params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    search?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    if (params?.role) queryParams.set('role', params.role);
+    if (params?.search) queryParams.set('search', params.search);
+    
+    const query = queryParams.toString();
+    return apiCall<{ users: any[]; total: number; page: number; total_pages: number }>(
+      `/instructor/users${query ? `?${query}` : ''}`
+    );
+  },
+
   // Get reports
   getReports: async (params?: {
     page?: number;
