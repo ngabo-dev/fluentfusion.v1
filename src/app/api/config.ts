@@ -1292,6 +1292,52 @@ export const instructorApi = {
       { method: 'POST', body: JSON.stringify(data) }
     );
   },
+
+  // === Meetings / Live Sessions ===
+
+  // Get instructor's meetings
+  getMeetings: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    if (params?.status) queryParams.set('status', params.status);
+    
+    const query = queryParams.toString();
+    return apiCall<{ meetings: any[]; total: number; page: number; total_pages: number }>(
+      `/instructor/meetings${query ? `?${query}` : ''}`
+    );
+  },
+
+  // Create a new meeting
+  createMeeting: async (data: {
+    title: string;
+    description?: string;
+    meeting_type: string;
+    scheduled_at: string;
+    duration_minutes?: number;
+    timezone?: string;
+    meeting_link?: string;
+    meeting_platform?: string;
+    reason?: string;
+    invitee_ids?: number[];
+  }) => {
+    return apiCall<{ message: string; meeting_id: number; title: string; scheduled_at: string; invitee_count: number; status: string }>(
+      '/instructor/meetings',
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+
+  // Cancel a meeting
+  cancelMeeting: async (meetingId: number) => {
+    return apiCall<{ message: string }>(
+      `/instructor/meetings/${meetingId}`,
+      { method: 'DELETE' }
+    );
+  },
 };
 
 // Practice/Flashcards API

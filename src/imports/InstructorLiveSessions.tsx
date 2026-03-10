@@ -1,39 +1,180 @@
 import { useState, useEffect } from "react";
-import { liveSessionsApi } from "../app/api/config";
+import { instructorApi } from "../app/api/config";
 import InstructorLayout from "../app/components/InstructorLayout";
+import { toast } from "sonner";
 
-interface LiveSession {
+interface Meeting {
   id: number;
   title: string;
   description?: string;
-  language?: string;
+  meeting_type: string;
   scheduled_at: string;
-  duration_minutes?: number;
+  duration_minutes: number;
+  timezone: string;
+  meeting_link?: string;
+  meeting_platform?: string;
   status: string;
-  registered_count?: number;
-  max_participants?: number;
-  join_url?: string;
+  invitee_count: number;
+  invitees?: { id: number; name: string; email: string }[];
+  group_name?: string;
+  reason?: string;
+  created_at?: string;
+}
+
+interface User {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+  avatar_url: string | null;
 }
 
 export default function InstructorLiveSessions() {
-  const [sessions, setSessions] = useState<LiveSession[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Form state
+  const [meetingTitle, setMeetingTitle] = useState("");
+  const [meetingDescription, setMeetingDescription] = useState("");
+  const [meetingType, setMeetingType] = useState("individual");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const [scheduledTime, setScheduledTime] = useState("");
+  const [duration, setDuration] = useState(60);
+  const [customDuration, setCustomDuration] = useState<number | null>(null);
+  const [meetingLink, setMeetingLink] = useState("");
+  const [meetingPlatform, setMeetingPlatform] = useState("zoom");
+  const [selectedInvitees, setSelectedInvitees] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        setLoading(true);
-        const result = await liveSessionsApi.getSessions({ limit: 50 });
-        setSessions(result.sessions || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load live sessions");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSessions();
+    fetchMeetings();
   }, []);
+
+  // Load users when modal opens
+  useEffect(() => {
+    if (showCreateModal && allUsers.length === 0) {
+      loadAllUsers();
+    }
+  }, [showCreateModal]);
+
+  // Filter users
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchResults(allUsers);
+    } else {
+      const filtered = allUsers.filter(
+        (u) =>
+          u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(filtered);
+    }
+  }, [searchQuery, allUsers]);
+
+  const fetchMeetings = async () => {
+    try {
+      setLoading(true);
+      const result = await instructorApi.getMeetings({ limit: 50 });
+      setMeetings(result.meetings || []);
+    } catch (err: any) {
+      setError(err.message || "Failed to load meetings");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAllUsers = async () => {
+    try {
+      const res = await instructorApi.getAllUsers({ limit: 100 });
+      const otherUsers = (res.users || []).filter((u: User) => u.id !== 4); // Exclude self
+      setAllUsers(otherUsers);
+      setSearchResults(otherUsers);
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    }
+  };
+
+  const handleCreateMeeting = async () => {
+    if (!meetingTitle.trim()) {
+      toast.error("Please enter a meeting title");
+      return;
+    }
+    if (!scheduledDate || !scheduledTime) {
+      toast.error("Please select date and time");
+      return;
+    }
+
+    const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+    
+    setCreating(true);
+    try {
+      await instructorApi.createMeeting({
+        title: meetingTitle,
+        description: meetingDescription,
+        meeting_type: meetingType,
+        scheduled_at: scheduledAt,
+        duration_minutes: duration,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        meeting_link: meetingLink || undefined,
+        meeting_platform: meetingLink ? meetingPlatform : undefined,
+        invitee_ids: meetingType === "individual" || meetingType === "group" 
+          ? selectedInvitees.map(u => u.id) 
+          : undefined,
+      });
+      
+      toast.success("Meeting scheduled successfully!");
+      setShowCreateModal(false);
+      resetForm();
+      fetchMeetings();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create meeting");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCancelMeeting = async (meetingId: number) => {
+    if (!confirm("Are you sure you want to cancel this meeting?")) return;
+    
+    try {
+      await instructorApi.cancelMeeting(meetingId);
+      toast.success("Meeting cancelled");
+      fetchMeetings();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel meeting");
+    }
+  };
+
+  const resetForm = () => {
+    setMeetingTitle("");
+    setMeetingDescription("");
+    setMeetingType("individual");
+    setScheduledDate("");
+    setScheduledTime("");
+    setDuration(60);
+    setCustomDuration(null);
+    setMeetingLink("");
+    setMeetingPlatform("zoom");
+    setSelectedInvitees([]);
+    setSearchQuery("");
+  };
+
+  const addInvitee = (user: User) => {
+    if (!selectedInvitees.find(u => u.id === user.id)) {
+      setSelectedInvitees([...selectedInvitees, user]);
+    }
+    setSearchQuery("");
+  };
+
+  const removeInvitee = (userId: number) => {
+    setSelectedInvitees(selectedInvitees.filter(u => u.id !== userId));
+  };
 
   const formatDate = (dateStr: string) => {
     try {
@@ -51,12 +192,14 @@ export default function InstructorLiveSessions() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "live":
-      case "active":
-        return "bg-green-500/20 text-green-400";
       case "scheduled":
         return "bg-blue-500/20 text-blue-400";
-      case "ended":
+      case "confirmed":
+        return "bg-green-500/20 text-green-400";
+      case "declined":
+        return "bg-red-500/20 text-red-400";
+      case "cancelled":
+        return "bg-[#2a2a2a] text-[#888]";
       case "completed":
         return "bg-[#2a2a2a] text-[#888]";
       default:
@@ -64,95 +207,364 @@ export default function InstructorLiveSessions() {
     }
   };
 
-  if (loading) {
-    return (
-      <InstructorLayout title="Live Sessions">
+  const filteredMeetings = meetings.filter(m => {
+    if (filter === "all") return true;
+    return m.status.toLowerCase() === filter;
+  });
+
+  return (
+    <InstructorLayout title="Live Sessions" subtitle="Schedule and manage live teaching sessions">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex gap-2">
+          {["all", "scheduled", "completed", "cancelled"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                filter === f
+                  ? "bg-[#bfff00] text-black"
+                  : "bg-[#1a1a1a] text-[#888] hover:text-white"
+              }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-[#bfff00] text-black px-5 py-2.5 rounded-lg font-semibold text-[14px] hover:opacity-90 transition-opacity flex items-center gap-2"
+        >
+          <span>🎥</span>
+          New Meeting
+        </button>
+      </div>
+
+      {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-[#bfff00] text-xl">Loading...</div>
         </div>
-      </InstructorLayout>
-    );
-  }
-
-  return (
-    <InstructorLayout
-      title="Live Sessions"
-      subtitle="Manage and join your scheduled live teaching sessions"
-    >
-      {error && (
+      ) : error ? (
         <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-[8px] mb-6">
           {error}
         </div>
-      )}
-
-      {sessions.length === 0 ? (
+      ) : filteredMeetings.length === 0 ? (
         <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-12 text-center">
           <div className="text-[48px] mb-4">🎥</div>
           <h3 className="text-white text-[18px] font-semibold mb-2">
-            No live sessions yet
+            No meetings found
           </h3>
-          <p className="text-[#888] text-[14px]">
-            Live sessions will appear here once they are scheduled on the platform.
+          <p className="text-[#888] text-[14px] mb-6">
+            Schedule a live session to connect with your students.
           </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[#bfff00] text-black px-6 py-3 rounded-lg font-semibold text-[14px] hover:opacity-90 transition-opacity"
+          >
+            Schedule First Meeting
+          </button>
         </div>
       ) : (
         <div className="grid gap-4">
-          {sessions.map((session) => (
+          {filteredMeetings.map((meeting) => (
             <div
-              key={session.id}
-              className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 flex items-center justify-between hover:border-[#3a3a3a] transition-colors"
+              key={meeting.id}
+              className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 hover:border-[#3a3a3a] transition-colors"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-white font-semibold text-[16px]">
-                    {session.title}
-                  </h3>
-                  <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${getStatusColor(session.status)}`}
-                  >
-                    {session.status}
-                  </span>
-                  {session.language && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(191,255,0,0.1)] text-[#bfff00]">
-                      {session.language}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-white font-semibold text-[16px]">
+                      {meeting.title}
+                    </h3>
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${getStatusColor(meeting.status)}`}
+                    >
+                      {meeting.status}
                     </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(191,255,0,0.1)] text-[#bfff00]">
+                      {meeting.meeting_type}
+                    </span>
+                  </div>
+                  {meeting.description && (
+                    <p className="text-[#888] text-[13px] mb-3">
+                      {meeting.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-6 text-[#555] text-[13px] flex-wrap">
+                    <span>📅 {formatDate(meeting.scheduled_at)}</span>
+                    <span>⏱ {meeting.duration_minutes} min</span>
+                    <span>👥 {meeting.invitee_count} invited</span>
+                    {meeting.group_name && (
+                      <span className="text-[#bfff00]">📢 {meeting.group_name}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 ml-4">
+                  {meeting.status === "scheduled" && meeting.meeting_link && (
+                    <a
+                      href={meeting.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-[#bfff00] text-black px-4 py-2 rounded-lg font-semibold text-[13px] no-underline hover:opacity-90 transition-opacity"
+                    >
+                      Join
+                    </a>
+                  )}
+                  {meeting.status === "scheduled" && (
+                    <button
+                      onClick={() => handleCancelMeeting(meeting.id)}
+                      className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg font-medium text-[13px] hover:bg-red-500/30 transition-colors"
+                    >
+                      Cancel
+                    </button>
                   )}
                 </div>
-                {session.description && (
-                  <p className="text-[#888] text-[13px] mb-3">
-                    {session.description}
-                  </p>
-                )}
-                <div className="flex items-center gap-6 text-[#555] text-[13px]">
-                  <span>📅 {formatDate(session.scheduled_at)}</span>
-                  {session.duration_minutes && (
-                    <span>⏱ {session.duration_minutes} min</span>
-                  )}
-                  {session.registered_count !== undefined && (
-                    <span>
-                      👥 {session.registered_count}
-                      {session.max_participants
-                        ? ` / ${session.max_participants}`
-                        : ""}{" "}
-                      registered
-                    </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Meeting Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-[600px] max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-[#2a2a2a]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-semibold text-[18px]">Schedule New Meeting</h3>
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetForm();
+                  }}
+                  className="text-[#888] hover:text-white text-[24px]"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Meeting Title */}
+              <div>
+                <label className="text-white text-[13px] font-medium mb-2 block">Meeting Title *</label>
+                <input
+                  type="text"
+                  value={meetingTitle}
+                  onChange={(e) => setMeetingTitle(e.target.value)}
+                  placeholder="e.g., French Conversation Practice"
+                  className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-white text-[13px] font-medium mb-2 block">Description</label>
+                <textarea
+                  value={meetingDescription}
+                  onChange={(e) => setMeetingDescription(e.target.value)}
+                  placeholder="What will this session cover?"
+                  rows={2}
+                  className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px] resize-none"
+                />
+              </div>
+
+              {/* Meeting Type */}
+              <div>
+                <label className="text-white text-[13px] font-medium mb-2 block">Meeting Type *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "individual", label: "One-on-One", icon: "👤" },
+                    { value: "group", label: "Group", icon: "👥" },
+                    { value: "all_students", label: "All Students", icon: "📚" },
+                  ].map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => setMeetingType(type.value)}
+                      className={`p-3 rounded-lg border text-[13px] font-medium transition-colors ${
+                        meetingType === type.value
+                          ? "border-[#bfff00] bg-[#bfff00]/10 text-[#bfff00]"
+                          : "border-[#2a2a2a] text-[#888] hover:border-[#3a3a3a]"
+                      }`}
+                    >
+                      <span className="block text-lg mb-1">{type.icon}</span>
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date & Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-white text-[13px] font-medium mb-2 block">Date *</label>
+                  <input
+                    type="date"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
+                  />
+                </div>
+                <div>
+                  <label className="text-white text-[13px] font-medium mb-2 block">Time *</label>
+                  <input
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
+                  />
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="text-white text-[13px] font-medium mb-2 block">Duration</label>
+                <div className="flex gap-2">
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="flex-1 bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
+                  >
+                    <option value={15}>15 minutes</option>
+                    <option value={30}>30 minutes</option>
+                    <option value={45}>45 minutes</option>
+                    <option value={60}>1 hour</option>
+                    <option value={90}>1.5 hours</option>
+                    <option value={120}>2 hours</option>
+                    <option value={0}>Custom</option>
+                  </select>
+                  {duration === 0 && (
+                    <input
+                      type="number"
+                      min={1}
+                      max={480}
+                      value={customDuration || ''}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setCustomDuration(val);
+                        if (val > 0) setDuration(val);
+                      }}
+                      placeholder="Enter minutes"
+                      aria-label="Custom duration in minutes"
+                      title="Enter custom duration in minutes"
+                      className="w-28 bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
+                    />
                   )}
                 </div>
               </div>
 
-              {session.join_url &&
-                (session.status === "live" || session.status === "active") && (
-                  <a
-                    href={session.join_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-[#bfff00] text-black px-5 py-2.5 rounded-[8px] font-semibold text-[14px] no-underline hover:bg-[#aeff00] transition-colors ml-4 shrink-0"
+              {/* Invitees (for individual/group) */}
+              {(meetingType === "individual" || meetingType === "group") && (
+                <div>
+                  <label className="text-white text-[13px] font-medium mb-2 block">
+                    Invite Participants
+                  </label>
+                  
+                  {/* Selected invitees */}
+                  {selectedInvitees.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedInvitees.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center gap-2 bg-[#0f0f0f] px-3 py-1.5 rounded-full"
+                        >
+                          <span className="text-white text-[12px]">{user.full_name}</span>
+                          <button
+                            onClick={() => removeInvitee(user.id)}
+                            className="text-[#888] hover:text-white text-[14px]"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search - show all users on focus */}
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setSearchResults(allUsers)}
+                    placeholder="Search for participants..."
+                    className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px] mb-2"
+                  />
+
+                  {/* Search results - always show when focused or has query */}
+                  {(searchQuery || searchResults.length > 0) && (
+                    <div className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg max-h-48 overflow-y-auto">
+                      {searchResults
+                        .filter((u) => !selectedInvitees.find((s) => s.id === u.id))
+                        .slice(0, 8)
+                        .map((user) => (
+                          <button
+                            key={user.id}
+                            onClick={() => addInvitee(user)}
+                            className="w-full p-3 text-left hover:bg-[#151515] flex items-center gap-3 border-b border-[#2a2a2a] last:border-0"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-[#bfff00] flex items-center justify-center text-black font-bold text-[12px]">
+                              {user.full_name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-white text-[13px]">{user.full_name}</p>
+                              <p className="text-[#888] text-[11px]">{user.email}</p>
+                            </div>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Meeting Link */}
+              <div>
+                <label className="text-white text-[13px] font-medium mb-2 block">
+                  Meeting Link (Optional)
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={meetingPlatform}
+                    onChange={(e) => setMeetingPlatform(e.target.value)}
+                    className="bg-[#0f0f0f] text-white rounded-lg px-3 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
                   >
-                    Join Now
-                  </a>
-                )}
+                    <option value="zoom">Zoom</option>
+                    <option value="google_meet">Google Meet</option>
+                    <option value="teams">Microsoft Teams</option>
+                    <option value="custom">Custom Link</option>
+                  </select>
+                  <input
+                    type="url"
+                    value={meetingLink}
+                    onChange={(e) => setMeetingLink(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
+                  />
+                </div>
+              </div>
             </div>
-          ))}
+
+            {/* Footer */}
+            <div className="p-6 border-t border-[#2a2a2a] flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  resetForm();
+                }}
+                className="flex-1 bg-[#2a2a2a] text-white px-5 py-3 rounded-lg font-semibold text-[14px] hover:bg-[#333] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateMeeting}
+                disabled={creating || !meetingTitle || !scheduledDate || !scheduledTime}
+                className="flex-1 bg-[#bfff00] text-black px-5 py-3 rounded-lg font-semibold text-[14px] disabled:opacity-50 hover:opacity-90 transition-opacity"
+              >
+                {creating ? "Scheduling..." : "Schedule Meeting"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </InstructorLayout>
