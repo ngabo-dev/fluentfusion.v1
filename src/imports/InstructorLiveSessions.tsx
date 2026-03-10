@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { instructorApi } from "../app/api/config";
+import { instructorApi, sessionApi, usersApi } from "../app/api/config";
+import LiveKitRoom from "./LiveKitRoom";
 import InstructorLayout from "../app/components/InstructorLayout";
 import { toast } from "sonner";
 
@@ -34,6 +35,11 @@ export default function InstructorLiveSessions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeLiveKitSession, setActiveLiveKitSession] = useState<{
+    roomName: string;
+    sessionId?: number;
+    title: string;
+  } | null>(null);
   
   // Form state
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -51,17 +57,29 @@ export default function InstructorLiveSessions() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [liveKitSessions, setLiveKitSessions] = useState<any[]>([]);
 
   useEffect(() => {
     fetchMeetings();
   }, []);
 
-  // Load users when modal opens
+  // Also fetch LiveKit sessions
   useEffect(() => {
     if (showCreateModal && allUsers.length === 0) {
       loadAllUsers();
     }
+    // Load LiveKit sessions
+    fetchLiveKitSessions();
   }, [showCreateModal]);
+
+  const fetchLiveKitSessions = async () => {
+    try {
+      const result = await sessionApi.listSessions({ limit: 50 });
+      setLiveKitSessions(result.sessions || []);
+    } catch (err) {
+      console.error("Failed to load LiveKit sessions:", err);
+    }
+  };
 
   // Filter users
   useEffect(() => {
@@ -114,6 +132,29 @@ export default function InstructorLiveSessions() {
     
     setCreating(true);
     try {
+      // First create the LiveKit session
+      let liveKitSessionId: number | undefined;
+      try {
+        const languagesResult = await usersApi.getLanguages();
+        const defaultLang = languagesResult.languages?.find((l: any) => l.code === 'en') || languagesResult.languages?.[0];
+        
+        const sessionResult = await sessionApi.createSession({
+          title: meetingTitle,
+          description: meetingDescription,
+          language_id: defaultLang?.id || 1,
+          level: "beginner",
+          scheduled_at: scheduledAt,
+          duration_minutes: duration,
+          max_participants: 100,
+        });
+        liveKitSessionId = sessionResult.session?.id;
+        console.log("Created LiveKit session:", sessionResult);
+      } catch (lkErr) {
+        console.error("Failed to create LiveKit session:", lkErr);
+        // Continue without LiveKit - it's optional
+      }
+
+      // Then create the meeting record
       await instructorApi.createMeeting({
         title: meetingTitle,
         description: meetingDescription,
@@ -132,6 +173,7 @@ export default function InstructorLiveSessions() {
       setShowCreateModal(false);
       resetForm();
       fetchMeetings();
+      fetchLiveKitSessions();
     } catch (err: any) {
       toast.error(err.message || "Failed to create meeting");
     } finally {
@@ -212,8 +254,44 @@ export default function InstructorLiveSessions() {
     return m.status.toLowerCase() === filter;
   });
 
+  const handleStartLiveKit = (session: any) => {
+    setActiveLiveKitSession({
+      roomName: session.room_name || `session-${session.id}`,
+      sessionId: session.id,
+      title: session.title,
+    });
+  };
+
+  const handleLeaveLiveKit = () => {
+    setActiveLiveKitSession(null);
+    fetchLiveKitSessions();
+  };
+
   return (
     <InstructorLayout title="Live Sessions" subtitle="Schedule and manage live teaching sessions">
+      {/* Active LiveKit Session */}
+      {activeLiveKitSession && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-white text-xl font-semibold">
+              🔴 Live: {activeLiveKitSession.title}
+            </h2>
+            <button
+              onClick={() => setActiveLiveKitSession(null)}
+              className="text-[#888] hover:text-white"
+            >
+              ✕ Close
+            </button>
+          </div>
+          <LiveKitRoom
+            roomName={activeLiveKitSession.roomName}
+            sessionId={activeLiveKitSession.sessionId}
+            isHost={true}
+            onLeave={handleLeaveLiveKit}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-2">
@@ -248,83 +326,143 @@ export default function InstructorLiveSessions() {
         <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-[8px] mb-6">
           {error}
         </div>
-      ) : filteredMeetings.length === 0 ? (
-        <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-12 text-center">
-          <div className="text-[48px] mb-4">🎥</div>
-          <h3 className="text-white text-[18px] font-semibold mb-2">
-            No meetings found
-          </h3>
-          <p className="text-[#888] text-[14px] mb-6">
-            Schedule a live session to connect with your students.
-          </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-[#bfff00] text-black px-6 py-3 rounded-lg font-semibold text-[14px] hover:opacity-90 transition-opacity"
-          >
-            Schedule First Meeting
-          </button>
-        </div>
       ) : (
-        <div className="grid gap-4">
-          {filteredMeetings.map((meeting) => (
-            <div
-              key={meeting.id}
-              className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 hover:border-[#3a3a3a] transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-white font-semibold text-[16px]">
-                      {meeting.title}
-                    </h3>
-                    <span
-                      className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${getStatusColor(meeting.status)}`}
-                    >
-                      {meeting.status}
-                    </span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(191,255,0,0.1)] text-[#bfff00]">
-                      {meeting.meeting_type}
-                    </span>
+        <>
+          {/* LiveKit Sessions Section */}
+          {liveKitSessions.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-white text-lg font-semibold mb-4">LiveKit Sessions</h3>
+              <div className="grid gap-4">
+                {liveKitSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 hover:border-[#3a3a3a] transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-white font-semibold text-[16px]">{session.title}</h3>
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                              session.status === "live" 
+                                ? "bg-red-500/20 text-red-400" 
+                                : session.status === "scheduled"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : "bg-[#2a2a2a] text-[#888]"
+                            }`}
+                          >
+                            {session.status}
+                          </span>
+                        </div>
+                        {session.description && (
+                          <p className="text-[#888] text-[13px] mb-3">{session.description}</p>
+                        )}
+                        <div className="flex items-center gap-6 text-[#555] text-[13px] flex-wrap">
+                          <span>📅 {formatDate(session.scheduled_at)}</span>
+                          <span>⏱ {session.duration_minutes} min</span>
+                          <span>👥 {session.enrolled_count || 0} enrolled</span>
+                          {session.room_name && (
+                            <span className="text-[#bfff00]">🎥 LiveKit</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        {session.status === "scheduled" || session.status === "live" ? (
+                          <button
+                            onClick={() => handleStartLiveKit(session)}
+                            className="bg-[#bfff00] text-black px-4 py-2 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity"
+                          >
+                            {session.status === "live" ? "Join Live" : "Start Live"}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
-                  {meeting.description && (
-                    <p className="text-[#888] text-[13px] mb-3">
-                      {meeting.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-6 text-[#555] text-[13px] flex-wrap">
-                    <span>📅 {formatDate(meeting.scheduled_at)}</span>
-                    <span>⏱ {meeting.duration_minutes} min</span>
-                    <span>👥 {meeting.invitee_count} invited</span>
-                    {meeting.group_name && (
-                      <span className="text-[#bfff00]">📢 {meeting.group_name}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-2 ml-4">
-                  {meeting.status === "scheduled" && meeting.meeting_link && (
-                    <a
-                      href={meeting.meeting_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-[#bfff00] text-black px-4 py-2 rounded-lg font-semibold text-[13px] no-underline hover:opacity-90 transition-opacity"
-                    >
-                      Join
-                    </a>
-                  )}
-                  {meeting.status === "scheduled" && (
-                    <button
-                      onClick={() => handleCancelMeeting(meeting.id)}
-                      className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg font-medium text-[13px] hover:bg-red-500/30 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Regular Meetings Section */}
+          {filteredMeetings.length === 0 ? (
+            <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-12 text-center">
+              <div className="text-[48px] mb-4">🎥</div>
+              <h3 className="text-white text-[18px] font-semibold mb-2">
+                No meetings found
+              </h3>
+              <p className="text-[#888] text-[14px] mb-6">
+                Schedule a live session to connect with your students.
+              </p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-[#bfff00] text-black px-6 py-3 rounded-lg font-semibold text-[14px] hover:opacity-90 transition-opacity"
+              >
+                Schedule First Meeting
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredMeetings.map((meeting) => (
+                <div
+                  key={meeting.id}
+                  className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 hover:border-[#3a3a3a] transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-white font-semibold text-[16px]">
+                          {meeting.title}
+                        </h3>
+                        <span
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${getStatusColor(meeting.status)}`}
+                        >
+                          {meeting.status}
+                        </span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(191,255,0,0.1)] text-[#bfff00]">
+                          {meeting.meeting_type}
+                        </span>
+                      </div>
+                      {meeting.description && (
+                        <p className="text-[#888] text-[13px] mb-3">
+                          {meeting.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-6 text-[#555] text-[13px] flex-wrap">
+                        <span>📅 {formatDate(meeting.scheduled_at)}</span>
+                        <span>⏱ {meeting.duration_minutes} min</span>
+                        <span>👥 {meeting.invitee_count} invited</span>
+                        {meeting.group_name && (
+                          <span className="text-[#bfff00]">📢 {meeting.group_name}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 ml-4">
+                      {meeting.status === "scheduled" && meeting.meeting_link && (
+                        <a
+                          href={meeting.meeting_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-[#bfff00] text-black px-4 py-2 rounded-lg font-semibold text-[13px] no-underline hover:opacity-90 transition-opacity"
+                        >
+                          Join
+                        </a>
+                      )}
+                      {meeting.status === "scheduled" && (
+                        <button
+                          onClick={() => handleCancelMeeting(meeting.id)}
+                          className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg font-medium text-[13px] hover:bg-red-500/30 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Create Meeting Modal */}

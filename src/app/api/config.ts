@@ -1436,6 +1436,71 @@ export const quizApi = {
   },
 };
 
+// LiveKit Session API
+export const sessionApi = {
+  // Get LiveKit token for joining a room
+  getToken: async (roomName: string, role: string = 'student') => {
+    const user = authApi.getCurrentUser();
+    return apiCall<{
+      token: string;
+      livekit_url: string;
+      room_name: string;
+      identity: string;
+      role: string;
+    }>(`/session/token?room_name=${encodeURIComponent(roomName)}&username=${encodeURIComponent(user?.full_name || user?.email || 'user')}&role=${role}`);
+  },
+
+  // Create a new live session with LiveKit room
+  createSession: async (data: {
+    title: string;
+    description?: string;
+    language_id: number;
+    level?: string;
+    scheduled_at: string;
+    duration_minutes?: number;
+    max_participants?: number;
+  }) => {
+    return apiCall<{ message: string; session: any }>('/session/create', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // List available sessions
+  listSessions: async (params?: {
+    language_id?: number;
+    level?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.language_id) queryParams.set('language_id', params.language_id.toString());
+    if (params?.level) queryParams.set('level', params.level);
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{ sessions: any[]; total: number; page: number; total_pages: number }>(
+      `/session/list${query ? `?${query}` : ''}`
+    );
+  },
+
+  // Start recording
+  startRecording: async (sessionId: number) => {
+    return apiCall<{ message: string; egress_id: string; recording_url: string }>('/session/record/start', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+  },
+
+  // Stop recording
+  stopRecording: async (sessionId: number) => {
+    return apiCall<{ message: string; recording_url: string }>('/session/record/stop', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+  },
+};
+
 // Live Sessions API
 export const liveSessionsApi = {
   // Get upcoming sessions
