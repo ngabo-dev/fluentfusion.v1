@@ -1,7 +1,7 @@
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
 import { coursesApi, authApi } from '../app/api/config';
-import Sidebar from '../app/components/Sidebar';
+import StudentLayout from '../app/components/StudentLayout';
 
 // Language filter options with counts (for sidebar)
 const SIDEBAR_LANGUAGE_FILTERS = [
@@ -43,53 +43,7 @@ const RATING_FILTERS = [
   { id: 'any', name: 'Any' },
 ];
 
-function NavNav({ user }: { user: any }) {
-  const navigate = useNavigate();
-  
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-  };
 
-  return (
-    <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
-      <div className="flex flex-row items-center h-full px-10">
-        <Link to="/dashboard" className="flex gap-3 items-center no-underline">
-          <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
-            <span className="text-[18px]">🧠</span>
-          </div>
-          <span className="text-[18px] text-white font-bold">
-            FLUENT<span className="text-[#bfff00]">FUSION</span>
-          </span>
-        </Link>
-        <div className="ml-auto flex gap-4 items-center">
-          <button className="relative text-[20px] hover:text-white transition-colors">
-            🔔
-          </button>
-          <Link to="/profile">
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold text-black"
-              style={{ background: 'linear-gradient(135deg, rgb(191, 255, 0) 0%, rgb(143, 239, 0) 100%)' }}
-            >
-              {user ? getInitials(user.full_name) : 'U'}
-            </div>
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-function PageHeader({ courseCount }: { courseCount: number }) {
-  return (
-    <div className="mb-6">
-      <h1 className="text-[32px] text-white font-bold">
-        Course <span className="text-[#bfff00]">Catalog</span>
-      </h1>
-      <p className="text-[#888] text-[14px] mt-1">Explore {courseCount}+ expert-led language courses</p>
-    </div>
-  );
-}
 
 function SearchSection({ 
   searchValue, 
@@ -655,83 +609,58 @@ export default function Component11CourseCatalog() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen flex flex-col">
-        <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
-          <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
-          <div className="flex flex-row items-center size-full">
-            <div className="flex items-center justify-between px-[40px] w-full">
-              <Link to="/dashboard" className="flex gap-[11px] items-center no-underline">
-                <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
-                  <span className="text-[18px]">🧠</span>
-                </div>
-                <span className="text-[18px] text-white font-bold">
-                  FLUENT<span className="text-[#bfff00]">FUSION</span>
-                </span>
-              </Link>
-            </div>
-          </div>
+      <StudentLayout>
+        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+          <LoadingSkeleton />
         </div>
-        <div className="flex flex-1">
-          <Sidebar />
-          <div className="flex-1 flex items-center justify-center">
-            <LoadingSkeleton />
-          </div>
-        </div>
-      </div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen flex flex-col" data-name="11-course-catalog">
-      <NavNav user={user} />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 p-8 pt-6 ml-[240px] overflow-auto">
-          <PageHeader courseCount={totalCourses} />
-          <SearchSection 
-            searchValue={searchQuery} 
-            onSearchChange={setSearchQuery} 
-            sortBy={sortBy} 
-            onSortChange={setSortBy} 
+    <StudentLayout title="Course Catalog" subtitle={`Explore ${totalCourses}+ expert-led language courses`}>
+      <SearchSection 
+        searchValue={searchQuery} 
+        onSearchChange={setSearchQuery} 
+        sortBy={sortBy} 
+        onSortChange={setSortBy} 
+      />
+      <FilterChips 
+        selectedLanguage={selectedLanguage} 
+        onLanguageSelect={handleLanguageSelect}
+        selectedLevel={selectedLevel}
+        onLevelSelect={handleLevelSelect}
+      />
+      
+      <div className="flex gap-7">
+        <FilterSidebar 
+          languages={SIDEBAR_LANGUAGE_FILTERS}
+          selectedLanguages={selectedLanguages}
+          onLanguageToggle={handleLanguageToggle}
+          levels={LEVEL_FILTERS}
+          selectedLevels={selectedLevels}
+          onLevelToggle={handleLevelToggle}
+          prices={PRICE_FILTERS}
+          selectedPrices={selectedPrices}
+          onPriceToggle={handlePriceToggle}
+          ratings={RATING_FILTERS}
+          selectedRating={selectedRating}
+          onRatingSelect={handleRatingSelect}
+          onClearFilters={handleClearFilters}
+        />
+        <div className="flex-1">
+          <CourseGrid 
+            courses={courses} 
+            onCourseClick={handleCourseClick}
+            total={totalCourses}
           />
-          <FilterChips 
-            selectedLanguage={selectedLanguage} 
-            onLanguageSelect={handleLanguageSelect}
-            selectedLevel={selectedLevel}
-            onLevelSelect={handleLevelSelect}
+          <Pagination 
+            page={page} 
+            totalPages={totalPages} 
+            onPageChange={handlePageChange} 
           />
-          
-          <div className="flex gap-7">
-            <FilterSidebar 
-              languages={SIDEBAR_LANGUAGE_FILTERS}
-              selectedLanguages={selectedLanguages}
-              onLanguageToggle={handleLanguageToggle}
-              levels={LEVEL_FILTERS}
-              selectedLevels={selectedLevels}
-              onLevelToggle={handleLevelToggle}
-              prices={PRICE_FILTERS}
-              selectedPrices={selectedPrices}
-              onPriceToggle={handlePriceToggle}
-              ratings={RATING_FILTERS}
-              selectedRating={selectedRating}
-              onRatingSelect={handleRatingSelect}
-              onClearFilters={handleClearFilters}
-            />
-            <div className="flex-1">
-              <CourseGrid 
-                courses={courses} 
-                onCourseClick={handleCourseClick}
-                total={totalCourses}
-              />
-              <Pagination 
-                page={page} 
-                totalPages={totalPages} 
-                onPageChange={handlePageChange} 
-              />
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
-    </div>
+    </StudentLayout>
   );
 }

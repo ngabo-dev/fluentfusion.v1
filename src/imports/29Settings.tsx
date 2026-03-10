@@ -1,5 +1,6 @@
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
+import StudentLayout from '../app/components/StudentLayout';
 
 function DivLogoMark() {
   return (
@@ -886,20 +887,17 @@ export default function Component29Settings() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] content-stretch flex flex-col h-screen isolate items-start justify-center relative size-full">
-        <div className="flex flex-col items-center justify-center">
+      <StudentLayout title="Settings" subtitle="Manage your account preferences">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="w-8 h-8 border-2 border-[#bfff00] border-t-transparent rounded-full animate-spin" />
         </div>
-      </div>
+      </StudentLayout>
     );
   }
 
-  const userInitials = getUserInitials();
-
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start relative size-full" data-name="29-settings">
-      <NavNav userInitials={userInitials} />
+    <StudentLayout title="Settings" subtitle="Manage your account preferences">
       <DivAppWrap />
-    </div>
+    </StudentLayout>
   );
 }

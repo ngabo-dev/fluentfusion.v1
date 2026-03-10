@@ -1,7 +1,7 @@
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
 import { authApi, practiceApi } from '../app/api/config';
-import Sidebar from '../app/components/Sidebar';
+import StudentLayout from '../app/components/StudentLayout';
 
 function DivScreenId() {
   return null; // Hide debug screen ID
@@ -988,7 +988,6 @@ function DivAppWrap({ currentCard, isFlipped, onFlip, onKnown, onShuffle, onLear
     <div className="min-h-[834px] relative shrink-0 w-full z-[1]" data-name="div.app-wrap">
       <div className="flex flex-row justify-center min-h-[inherit] size-full">
         <div className="content-stretch flex items-start justify-center min-h-[inherit] relative w-full">
-          <Sidebar />
           <MainMain 
             currentCard={currentCard}
             isFlipped={isFlipped}
@@ -1210,17 +1209,14 @@ export default function Component16Flashcards() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] content-stretch flex flex-col h-screen isolate items-start justify-center relative size-full" data-name="16-flashcards">
-        <DivScreenId />
-        <div className="text-white">Loading...</div>
-      </div>
+      <StudentLayout title="Practice" subtitle="Flashcard decks to reinforce your vocabulary">
+        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading flashcards...</div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start relative size-full" data-name="16-flashcards">
-      <DivScreenId />
-      <NavNav />
+    <StudentLayout title="Practice" subtitle="Flashcard decks to reinforce your vocabulary">
       <DivAppWrap 
         currentCard={currentCard}
         isFlipped={isFlipped}
@@ -1245,6 +1241,6 @@ export default function Component16Flashcards() {
         currentCardIndex={currentCardIndex}
         onCardSelect={(index) => { setCurrentCardIndex(index); setIsFlipped(false); }}
       />
-    </div>
+    </StudentLayout>
   );
 }
