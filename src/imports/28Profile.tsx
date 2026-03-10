@@ -1,5 +1,6 @@
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
+import StudentLayout from '../app/components/StudentLayout';
 
 function DivLogoMark() {
   return (
@@ -1187,13 +1188,8 @@ function MainMain() {
 
 function DivAppWrap() {
   return (
-    <div className="min-h-[834px] relative shrink-0 w-full z-[1]" data-name="div.app-wrap">
-      <div className="flex flex-row justify-center min-h-[inherit] size-full">
-        <div className="content-stretch flex items-start justify-center min-h-[inherit] pl-[240px] relative w-full">
-          <AsideSidebar />
-          <MainMain />
-        </div>
-      </div>
+    <div className="relative w-full" data-name="div.app-wrap">
+      <MainMain />
     </div>
   );
 }
@@ -1236,20 +1232,17 @@ export default function Component28Profile() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] content-stretch flex flex-col h-screen isolate items-start justify-center relative size-full">
-        <div className="flex flex-col items-center justify-center">
+      <StudentLayout title="My Profile" subtitle="Manage your account and preferences">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="w-8 h-8 border-2 border-[#bfff00] border-t-transparent rounded-full animate-spin" />
         </div>
-      </div>
+      </StudentLayout>
     );
   }
 
-  const userInitials = getUserInitials();
-
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start relative size-full" data-name="28-profile">
-      <NavNav userInitials={userInitials} />
+    <StudentLayout title="My Profile" subtitle="Manage your account and preferences">
       <DivAppWrap />
-    </div>
+    </StudentLayout>
   );
 }

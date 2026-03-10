@@ -231,7 +231,7 @@ export default function StudentMessages() {
                           : "bg-[#1a1a1a] text-white"
                       }`}
                     >
-                      {msg.sender_id !== user?.id && (
+                      {msg.sender_id !== user?.id && msg.sender_name && (
                         <p className="text-[10px] font-semibold mb-1 text-[#888]">{msg.sender_name}</p>
                       )}
                       <p className="text-[13px]">{msg.content}</p>

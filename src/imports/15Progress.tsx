@@ -1,6 +1,7 @@
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
 import { authApi } from '../app/api/config';
+import StudentLayout from '../app/components/StudentLayout';
 
 function DivScreenId() {
   return null; // Hide debug screen ID
@@ -1603,13 +1604,8 @@ function MainMain() {
 
 function DivAppWrap() {
   return (
-    <div className="min-h-[834px] relative shrink-0 w-full z-[1]" data-name="div.app-wrap">
-      <div className="flex flex-row justify-center min-h-[inherit] size-full">
-        <div className="content-stretch flex items-start justify-center min-h-[inherit] pl-[240px] relative w-full">
-          <AsideSidebar />
-          <MainMain />
-        </div>
-      </div>
+    <div className="relative w-full" data-name="div.app-wrap">
+      <MainMain />
     </div>
   );
 }
@@ -1649,18 +1645,15 @@ export default function Component15Progress() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] content-stretch flex flex-col h-screen isolate items-start justify-center relative size-full" data-name="15-progress">
-        <DivScreenId />
-        <div className="text-white">Loading...</div>
-      </div>
+      <StudentLayout title="Progress" subtitle="Track your learning journey">
+        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading...</div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start relative size-full" data-name="15-progress">
-      <DivScreenId />
-      <NavNav user={user} />
+    <StudentLayout title="Progress" subtitle="Track your learning journey">
       <DivAppWrap />
-    </div>
+    </StudentLayout>
   );
 }

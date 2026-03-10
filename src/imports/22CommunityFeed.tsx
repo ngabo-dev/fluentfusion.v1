@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from 'react-router';
 import clsx from "clsx";
+import StudentLayout from '../app/components/StudentLayout';
 type BackgroundImage5Props = {
   additionalClassNames?: string;
 };
@@ -353,73 +354,15 @@ export default function Component22CommunityFeed() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] flex items-center justify-center min-h-screen">
-        <div className="text-[#bfff00] text-[18px]">Loading...</div>
-      </div>
+      <StudentLayout title="Community" subtitle="Ask questions, share insights, connect with learners worldwide">
+        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading...</div>
+      </StudentLayout>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start relative size-full" data-name="22-community-feed">
-      <div className="absolute bg-[#151515] bottom-[115.48px] content-stretch flex flex-col items-start px-[11px] py-[6px] right-[17px] rounded-[6px] z-[3]" data-name="div.screen-id">
-        <div aria-hidden="true" className="absolute border border-[#2a2a2a] border-solid inset-0 pointer-events-none rounded-[6px]" />
-        <div className="flex flex-col font-['JetBrains_Mono:Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[#555] text-[10px] tracking-[1px] whitespace-nowrap">
-          <p className="leading-[16px]">7.1 · Community Feed</p>
-        </div>
-      </div>
-      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-[2]" data-name="nav.nav">
-        <div aria-hidden="true" className="absolute border-[#2a2a2a] border-b border-solid inset-0 pointer-events-none" />
-        <div className="flex flex-row items-center size-full">
-          <div className="content-stretch flex items-center justify-between pb-px px-[40px] relative size-full">
-            <Link to="/dashboard" className="cursor-pointer">
-              <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[11px] items-center relative">
-                <div className="bg-[#bfff00] content-stretch flex items-center justify-center pb-[4.91px] pt-[4.09px] relative rounded-[10px] shrink-0 size-[38px]" data-name="div.logo-mark">
-                  <div className="flex flex-col font-['Noto_Color_Emoji:Regular','Noto_Sans:Regular',sans-serif] justify-center leading-[0] relative shrink-0 text-[18px] text-black text-center whitespace-nowrap" style={{ fontVariationSettings: "'CTGR' 0, 'wdth' 100, 'wght' 400" }}>
-                    <p className="leading-[28.8px]">🧠</p>
-                  </div>
-                </div>
-                <div className="content-stretch flex flex-col items-start relative shrink-0" data-name="div.logo-name">
-                  <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[0px] text-left text-white tracking-[-0.36px] uppercase whitespace-nowrap">
-                    <p className="text-[18px]">
-                      <span className="leading-[28.8px] text-white">FLUENT</span>
-                      <span className="leading-[28.8px] text-[#bfff00]">FUSION</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Link>
-            <div className="relative shrink-0" data-name="div.flex">
-              <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[16px] items-center relative">
-                <Link to="/notifications" className="content-stretch flex flex-col items-start relative shrink-0">
-                  <div className="flex flex-col font-['Noto_Color_Emoji:Regular','Noto_Sans:Regular',sans-serif] justify-center leading-[0] relative shrink-0 text-[20px] text-white whitespace-nowrap" style={{ fontVariationSettings: "'CTGR' 0, 'wdth' 100, 'wght' 400" }}>
-                    <p className="leading-[32px]">🔔</p>
-                  </div>
-                </Link>
-                <Link to="/profile" className="content-stretch flex items-center relative">
-                  <DivAvatarBackgroundImageAndText text={getUserInitials()} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="min-h-[834px] relative shrink-0 w-full z-[1]" data-name="div.app-wrap">
-        <div className="flex flex-row justify-center min-h-[inherit] size-full">
-          <div className="content-stretch flex items-start justify-center min-h-[inherit] pl-[240px] relative w-full">
-            <div className="absolute bg-[#0f0f0f] h-[834px] left-0 top-0 w-[240px]" data-name="aside.sidebar">
-              <div className="content-stretch cursor-pointer flex flex-col items-start overflow-auto pr-px py-[20px] relative size-full">
-                <SidebarLink to="/dashboard" icon="⚡" label="Dashboard" />
-                <SidebarLink to="/courses" icon="📚" label="My Courses" />
-                <SidebarLink to="/practice/flashcards" icon="🎯" label="Practice" />
-                <SidebarLink to="/live-sessions" icon="🎥" label="Live Sessions" />
-                <SidebarLink to="/community" icon="🌍" label="Community" active />
-                <SidebarLink to="/profile" icon="👤" label="Profile" />
-              </div>
-              <div aria-hidden="true" className="absolute border-[#2a2a2a] border-r border-solid inset-0 pointer-events-none" />
-            </div>
-            <div className="flex-[1_0_0] min-h-px min-w-px relative self-stretch" data-name="main.main">
-              <div className="overflow-x-clip overflow-y-auto size-full">
-                <div className="content-stretch flex flex-col gap-[28px] items-start px-[40px] py-[36px] relative size-full">
+    <StudentLayout title="Community" subtitle="Ask questions, share insights, connect with learners worldwide">
+      <div className="content-stretch flex flex-col gap-[28px] items-start px-[40px] py-[36px] relative size-full">
                   <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0 w-full" data-name="div.page-hdr">
                     <div className="content-stretch flex flex-col items-start relative shrink-0 w-full" data-name="div">
                       <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[0px] text-white tracking-[-0.64px] uppercase w-full">
@@ -655,11 +598,6 @@ export default function Component22CommunityFeed() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </StudentLayout>
   );
 }
