@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<!--
+  FluentFusion — Live Session Room
+  ================================
+  Vanilla JS · LiveKit JS SDK (CDN) · No framework required
+
+  URL params:
+    ?room=<room_name>   – LiveKit room name (required)
+    ?user=<username>    – Participant identity (required)
+    ?role=teacher|student  – Grant level (default: student)
+
+  Environment:
+    Set API_BASE at the top of the <script> block to point at your
+    FastAPI backend.  Defaults to http://localhost:8000/api/v1.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Session — FluentFusion</title>
+
+  <!-- LiveKit JS SDK via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+
+  <style>
+    /* ── Design tokens (mirrors shared.css) ── */
+    :root {
+      --bg:        #0a0a0a;
+      --bg2:       #0f0f0f;
+      --card:      #151515;
+      --card2:     #1a1a1a;
+      --input-bg:  #1f1f1f;
+      --border:    #2a2a2a;
+      --border2:   #333333;
+      --neon:      #BFFF00;
+      --neon-dim:  rgba(191,255,0,0.10);
+      --fg:        #ffffff;
+      --muted:     #888888;
+      --success:   #00FF7F;
+      --warning:   #FFB800;
+      --danger:    #FF4444;
+      --info:      #00CFFF;
+      --radius:    8px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      height: 100%;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Root layout ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    #topbar {
+      height: 54px;
+      background: rgba(10,10,10,0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .logo-text {
+      font-family: 'Syne', 'Arial Black', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      color: var(--fg);
+    }
+    .logo-text span { color: var(--neon); }
+    #room-title {
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Connection status pill */
+    #status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--card2);
+      border: 1px solid var(--border2);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: background 0.2s;
+    }
+    #status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.2s;
+    }
+    #status-pill.connecting { color: var(--warning); }
+    #status-pill.connecting #status-dot { background: var(--warning); animation: blink 1s infinite; }
+    #status-pill.connected  { color: var(--success); }
+    #status-pill.connected  #status-dot { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    #status-pill.disconnected { color: var(--danger); }
+    #status-pill.disconnected #status-dot { background: var(--danger); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Content area ── */
+    #content {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      overflow: hidden;
+    }
+    @media (max-width: 768px) {
+      #content { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      #chat-panel { height: 220px; border-left: none; border-top: 1px solid var(--border); }
+    }
+
+    /* ── Video area ── */
+    #video-area {
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Participant grid */
+    #video-grid {
+      flex: 1;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      grid-auto-rows: minmax(160px, 1fr);
+      overflow-y: auto;
+      align-content: start;
+    }
+    /* Single participant = full screen */
+    #video-grid.solo { grid-template-columns: 1fr; }
+
+    .participant-tile {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+    }
+    .participant-tile video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .participant-tile.local { border-color: var(--neon); }
+    .participant-tile.speaking { border-color: var(--success); box-shadow: 0 0 0 2px var(--success); }
+
+    /* Name + mic badge */
+    .tile-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      padding: 24px 10px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .tile-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tile-mic-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .tile-mic-btn:hover { background: rgba(255,255,255,0.3); }
+    .tile-mic-btn.muted { background: rgba(255,68,68,0.5); }
+
+    /* Avatar placeholder when video is off */
+    .tile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--neon-dim);
+      border: 2px solid var(--neon);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--neon);
+    }
+
+    /* ── Controls bar ── */
+    #controls {
+      height: 72px;
+      background: rgba(10,10,10,0.97);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+    .ctrl-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--border2);
+      background: var(--card2);
+      color: var(--fg);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .ctrl-btn:hover { border-color: var(--neon); }
+    .ctrl-btn.active { background: var(--neon); color: #000; border-color: var(--neon); }
+    .ctrl-btn.off    { background: rgba(255,68,68,0.2); border-color: var(--danger); color: var(--danger); }
+    .ctrl-btn.leave  { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .ctrl-btn.record { background: rgba(255,68,68,0.15); border-color: var(--danger); }
+    .ctrl-btn.record.recording { background: var(--danger); color: #fff; }
+    .ctrl-sep { width: 1px; height: 32px; background: var(--border); }
+
+    /* ── Chat panel ── */
+    #chat-panel {
+      background: var(--bg2);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chat-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .chat-msg-sender {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--neon);
+    }
+    .chat-msg-sender.system { color: var(--info); }
+    .chat-msg-body {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      border-top-left-radius: 2px;
+      padding: 8px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .chat-msg.own .chat-msg-body {
+      background: var(--neon-dim);
+      border-color: rgba(191,255,0,0.2);
+    }
+
+    #chat-footer {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    #chat-input {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--fg);
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    #chat-input:focus { border-color: var(--neon); }
+    #chat-send {
+      background: var(--neon);
+      border: none;
+      border-radius: var(--radius);
+      padding: 0 14px;
+      font-size: 16px;
+      cursor: pointer;
+      color: #000;
+      font-weight: 700;
+      transition: opacity 0.15s;
+    }
+    #chat-send:hover { opacity: 0.85; }
+
+    /* ── Loading / error overlay ── */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 200;
+    }
+    #overlay.hidden { display: none; }
+    .overlay-icon { font-size: 48px; }
+    .overlay-title { font-size: 20px; font-weight: 700; }
+    .overlay-msg { font-size: 14px; color: var(--muted); max-width: 360px; text-align: center; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border2);
+      border-top-color: var(--neon);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-primary {
+      background: var(--neon);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<!-- ─── Loading / error overlay ─────────────────── -->
+<div id="overlay">
+  <div class="spinner"></div>
+  <div class="overlay-title" id="overlay-title">Connecting…</div>
+  <div class="overlay-msg"  id="overlay-msg">Fetching your session token</div>
+</div>
+
+<!-- ─── Main app (shown after connect) ──────────── -->
+<div id="app">
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="logo-text">FLUENT<span>FUSION</span></div>
+      <div id="room-title">—</div>
+    </div>
+    <div id="status-pill" class="connecting">
+      <div id="status-dot"></div>
+      <span id="status-text">Connecting</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Video area -->
+    <div id="video-area">
+      <div id="video-grid"></div>
+
+      <!-- Controls -->
+      <div id="controls">
+        <!-- Mic toggle -->
+        <button class="ctrl-btn active" id="btn-mic"    title="Mute/Unmute">🎙️</button>
+        <!-- Camera toggle -->
+        <button class="ctrl-btn active" id="btn-cam"    title="Camera on/off">📷</button>
+        <!-- Screen share -->
+        <button class="ctrl-btn"        id="btn-screen" title="Share screen">🖥️</button>
+        <div class="ctrl-sep"></div>
+        <!-- Record (teacher only — hidden by default) -->
+        <button class="ctrl-btn record" id="btn-record" title="Record session" style="display:none;">⏺️</button>
+        <!-- Leave -->
+        <button class="ctrl-btn leave"  id="btn-leave"  title="Leave session">✕</button>
+      </div>
+    </div>
+
+    <!-- Chat panel -->
+    <div id="chat-panel">
+      <div id="chat-header">
+        <span>Session Chat</span>
+        <span id="participant-count" style="font-size:12px;color:var(--muted);font-weight:400;">0 participants</span>
+      </div>
+      <div id="chat-messages"></div>
+      <div id="chat-footer">
+        <input id="chat-input" type="text" placeholder="Type a message…" autocomplete="off" maxlength="500" />
+        <button id="chat-send">➤</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FluentFusion — Session Room  (Vanilla JS + LiveKit SDK)
+   ═══════════════════════════════════════════════════════════════
+   CONFIG — adjust API_BASE to match your backend URL.
+   The LiveKit URL is returned directly by the token endpoint.
+*/
+const API_BASE = (window.__FF_API_BASE__ || 'http://localhost:8000/api/v1');
+
+/* ── Parse URL params ── */
+const urlParams  = new URLSearchParams(window.location.search);
+const ROOM_NAME  = urlParams.get('room') || 'default-room';
+const USERNAME   = urlParams.get('user') || 'anonymous-' + Math.random().toString(36).slice(2, 7);
+const ROLE       = (urlParams.get('role') || 'student').toLowerCase();
+const SESSION_ID = urlParams.get('session_id') || null;   // optional — used for recording
+const IS_HOST    = ROLE === 'teacher' || ROLE === 'instructor' || ROLE === 'host';
+
+/* ── LiveKit room instance ── */
+let room         = null;
+let micEnabled   = true;
+let camEnabled   = true;
+let screenSharing = false;
+let recording    = false;
+
+/* ── DOM refs ── */
+const overlay        = document.getElementById('overlay');
+const overlayTitle   = document.getElementById('overlay-title');
+const overlayMsg     = document.getElementById('overlay-msg');
+const appEl          = document.getElementById('app');
+const videoGrid      = document.getElementById('video-grid');
+const statusPill     = document.getElementById('status-pill');
+const statusDot      = document.getElementById('status-dot');
+const statusText     = document.getElementById('status-text');
+const roomTitleEl    = document.getElementById('room-title');
+const participantCnt = document.getElementById('participant-count');
+const chatMessages   = document.getElementById('chat-messages');
+const chatInput      = document.getElementById('chat-input');
+const chatSend       = document.getElementById('chat-send');
+const btnMic         = document.getElementById('btn-mic');
+const btnCam         = document.getElementById('btn-cam');
+const btnScreen      = document.getElementById('btn-screen');
+const btnRecord      = document.getElementById('btn-record');
+const btnLeave       = document.getElementById('btn-leave');
+
+/* ─────────────────────────────────────────────────
+   INIT
+   ───────────────────────────────────────────────── */
+async function init() {
+  setStatus('connecting');
+  roomTitleEl.textContent = ROOM_NAME;
+
+  // Show record button only for host
+  if (IS_HOST) btnRecord.style.display = 'flex';
+
+  try {
+    /* 1. Fetch LiveKit token from backend */
+    overlayMsg.textContent = 'Fetching session token…';
+    const tokenData = await fetchToken();
+
+    /* 2. Create & connect LiveKit room */
+    overlayMsg.textContent = 'Connecting to room…';
+    await connectToRoom(tokenData.token, tokenData.livekit_url);
+
+  } catch (err) {
+    showError('Connection Failed', err.message || 'Could not join the session. Please try again.');
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   TOKEN FETCH
+   ───────────────────────────────────────────────── */
+async function fetchToken() {
+  const url = `${API_BASE}/session/token?room_name=${encodeURIComponent(ROOM_NAME)}&username=${encodeURIComponent(USERNAME)}&role=${encodeURIComponent(ROLE)}`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Token request failed (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+/* ─────────────────────────────────────────────────
+   ROOM CONNECTION
+   ───────────────────────────────────────────────── */
+async function connectToRoom(token, livekitUrl) {
+  room = new LivekitClient.Room({
+    adaptiveStream: true,
+    dynacast: true,
+    videoCaptureDefaults: { resolution: LivekitClient.VideoPresets.h720.resolution },
+  });
+
+  /* ── Room events ── */
+  room
+    .on(LivekitClient.RoomEvent.Connected, onConnected)
+    .on(LivekitClient.RoomEvent.Disconnected, onDisconnected)
+    .on(LivekitClient.RoomEvent.Reconnecting, () => setStatus('connecting'))
+    .on(LivekitClient.RoomEvent.Reconnected, () => setStatus('connected'))
+    .on(LivekitClient.RoomEvent.ParticipantConnected, onParticipantConnected)
+    .on(LivekitClient.RoomEvent.ParticipantDisconnected, onParticipantDisconnected)
+    .on(LivekitClient.RoomEvent.TrackSubscribed, onTrackSubscribed)
+    .on(LivekitClient.RoomEvent.TrackUnsubscribed, onTrackUnsubscribed)
+    .on(LivekitClient.RoomEvent.TrackMuted, onTrackMuted)
+    .on(LivekitClient.RoomEvent.TrackUnmuted, onTrackUnmuted)
+    .on(LivekitClient.RoomEvent.DataReceived, onDataReceived)
+    .on(LivekitClient.RoomEvent.ActiveSpeakersChanged, onSpeakersChanged);
+
+  await room.connect(livekitUrl, token);
+
+  /* ── Enable local camera + mic ── */
+  await room.localParticipant.enableCameraAndMicrophone();
+}
+
+/* ─────────────────────────────────────────────────
+   ROOM EVENT HANDLERS
+   ───────────────────────────────────────────────── */
+function onConnected() {
+  setStatus('connected');
+  overlay.classList.add('hidden');
+
+  // Render local participant tile
+  renderLocalParticipant();
+  // Render any already-present remote participants
+  room.remoteParticipants.forEach((p) => renderRemoteParticipant(p));
+
+  updateParticipantCount();
+  addSystemMessage(`You joined as ${USERNAME} (${ROLE})`);
+}
+
+function onDisconnected() {
+  setStatus('disconnected');
+  addSystemMessage('You have been disconnected from the room.');
+}
+
+function onParticipantConnected(participant) {
+  renderRemoteParticipant(participant);
+  updateParticipantCount();
+  addSystemMessage(`${participant.identity} joined the room`);
+}
+
+function onParticipantDisconnected(participant) {
+  removeTile(participant.sid);
+  updateParticipantCount();
+  addSystemMessage(`${participant.identity} left the room`);
+}
+
+function onTrackSubscribed(track, publication, participant) {
+  const tile = getTile(participant.sid);
+  if (!tile) return;
+
+  if (track.kind === 'video') {
+    // Remove placeholder avatar and attach video element
+    const avatar = tile.querySelector('.tile-avatar');
+    if (avatar) avatar.remove();
+    const videoEl = track.attach();
+    videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    tile.insertBefore(videoEl, tile.querySelector('.tile-footer'));
+  } else if (track.kind === 'audio') {
+    // Attach audio (no visible element needed)
+    const audioEl = track.attach();
+    audioEl.style.display = 'none';
+    document.body.appendChild(audioEl);
+  }
+}
+
+function onTrackUnsubscribed(track, publication, participant) {
+  track.detach();
+  // If video track removed, show avatar again
+  if (track.kind === 'video') {
+    const tile = getTile(participant.sid);
+    if (tile && !tile.querySelector('.tile-avatar')) {
+      const avatar = makeAvatar(participant.identity);
+      tile.insertBefore(avatar, tile.querySelector('.tile-footer'));
+    }
+  }
+}
+
+function onTrackMuted(publication, participant) {
+  if (publication.kind === 'audio') updateMicIcon(participant);
+}
+function onTrackUnmuted(publication, participant) {
+  if (publication.kind === 'audio') updateMicIcon(participant);
+}
+
+function onSpeakersChanged(speakers) {
+  // Highlight speaking participants
+  document.querySelectorAll('.participant-tile').forEach(t => t.classList.remove('speaking'));
+  speakers.forEach(p => {
+    const tile = getTile(p.sid);
+    if (tile) tile.classList.add('speaking');
+  });
+}
+
+/* ─────────────────────────────────────────────────
+   DATA CHANNEL (Chat)
+   ───────────────────────────────────────────────── */
+function onDataReceived(data) {
+  try {
+    // Validate that data is a buffer before decoding
+    if (!(data instanceof Uint8Array) && !(data instanceof ArrayBuffer)) return;
+    const msg = JSON.parse(new TextDecoder().decode(data));
+    if (msg && msg.type === 'chat' && typeof msg.sender === 'string' && typeof msg.text === 'string') {
+      addChatMessage(msg.sender, msg.text, msg.sender === USERNAME);
+    }
+  } catch (_) { /* ignore malformed messages */ }
+}
+
+async function sendChatMessage(text) {
+  if (!text.trim() || !room) return;
+  const payload = JSON.stringify({ type: 'chat', sender: USERNAME, text: text.trim() });
+  await room.localParticipant.publishData(
+    new TextEncoder().encode(payload),
+    { reliable: true }
+  );
+  // Show own message immediately
+  addChatMessage(USERNAME, text.trim(), true);
+}
+
+/* ─────────────────────────────────────────────────
+   TILE RENDERING
+   ───────────────────────────────────────────────── */
+function renderLocalParticipant() {
+  const local = room.localParticipant;
+  const tile = createTile(local.sid, local.identity, /* isLocal= */ true);
+  videoGrid.appendChild(tile);
+
+  // Attach local camera track if available
+  const camPub = local.getTrackPublication(LivekitClient.Track.Source.Camera);
+  if (camPub && camPub.track) {
+    const videoEl = camPub.track.attach();
+    videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    tile.insertBefore(videoEl, tile.querySelector('.tile-footer'));
+    const avatar = tile.querySelector('.tile-avatar');
+    if (avatar) avatar.remove();
+  }
+
+  updateGridLayout();
+}
+
+function renderRemoteParticipant(participant) {
+  if (getTile(participant.sid)) return; // already rendered
+  const tile = createTile(participant.sid, participant.identity, false);
+  videoGrid.appendChild(tile);
+
+  // Attach already-subscribed tracks
+  participant.trackPublications.forEach(pub => {
+    if (pub.track && pub.kind === 'video') {
+      const videoEl = pub.track.attach();
+      videoEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+      tile.insertBefore(videoEl, tile.querySelector('.tile-footer'));
+      const avatar = tile.querySelector('.tile-avatar');
+      if (avatar) avatar.remove();
+    } else if (pub.track && pub.kind === 'audio') {
+      const audioEl = pub.track.attach();
+      audioEl.style.display = 'none';
+      document.body.appendChild(audioEl);
+    }
+  });
+
+  updateGridLayout();
+}
+
+function createTile(sid, identity, isLocal) {
+  const tile = document.createElement('div');
+  tile.className = 'participant-tile' + (isLocal ? ' local' : '');
+  tile.dataset.sid = sid;
+
+  // Avatar placeholder
+  const avatar = makeAvatar(identity);
+  tile.appendChild(avatar);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'tile-footer';
+
+  const nameEl = document.createElement('div');
+  nameEl.className = 'tile-name';
+  nameEl.textContent = isLocal ? `${identity} (You)` : identity;
+  footer.appendChild(nameEl);
+
+  const micBtn = document.createElement('button');
+  micBtn.className = 'tile-mic-btn';
+  micBtn.title = isLocal ? 'Mute/Unmute yourself' : 'Participant mic status';
+  micBtn.textContent = '🎙️';
+
+  // Local participants can toggle their own mic; host can toggle remote mics (if room_admin)
+  if (isLocal) {
+    micBtn.addEventListener('click', toggleMic);
+  } else if (IS_HOST) {
+    micBtn.addEventListener('click', () => muteForcefully(sid));
+  }
+
+  footer.appendChild(micBtn);
+  tile.appendChild(footer);
+
+  return tile;
+}
+
+function makeAvatar(identity) {
+  const avatar = document.createElement('div');
+  avatar.className = 'tile-avatar';
+  avatar.textContent = (identity || '?').charAt(0).toUpperCase();
+  return avatar;
+}
+
+function getTile(sid) {
+  return videoGrid.querySelector(`[data-sid="${sid}"]`);
+}
+
+function removeTile(sid) {
+  const tile = getTile(sid);
+  if (tile) {
+    // Detach any audio elements attached to body
+    tile.querySelectorAll('audio').forEach(a => { a.srcObject = null; a.remove(); });
+    tile.remove();
+    updateGridLayout();
+  }
+}
+
+function updateGridLayout() {
+  const count = videoGrid.children.length;
+  videoGrid.classList.toggle('solo', count <= 1);
+}
+
+function updateMicIcon(participant) {
+  const tile = getTile(participant.sid);
+  if (!tile) return;
+  const btn = tile.querySelector('.tile-mic-btn');
+  if (!btn) return;
+  const audioPub = participant.getTrackPublication(LivekitClient.Track.Source.Microphone);
+  const isMuted = !audioPub || audioPub.isMuted;
+  btn.textContent = isMuted ? '🔇' : '🎙️';
+  btn.classList.toggle('muted', isMuted);
+}
+
+function updateParticipantCount() {
+  const total = 1 + (room ? room.remoteParticipants.size : 0);
+  participantCnt.textContent = `${total} participant${total !== 1 ? 's' : ''}`;
+}
+
+/* ─────────────────────────────────────────────────
+   CONTROLS
+   ───────────────────────────────────────────────── */
+async function toggleMic() {
+  if (!room) return;
+  micEnabled = !micEnabled;
+  await room.localParticipant.setMicrophoneEnabled(micEnabled);
+  btnMic.classList.toggle('active', micEnabled);
+  btnMic.classList.toggle('off', !micEnabled);
+  btnMic.textContent = micEnabled ? '🎙️' : '🔇';
+
+  // Update local tile mic icon
+  const localTile = getTile(room.localParticipant.sid);
+  if (localTile) {
+    const btn = localTile.querySelector('.tile-mic-btn');
+    if (btn) { btn.textContent = micEnabled ? '🎙️' : '🔇'; btn.classList.toggle('muted', !micEnabled); }
+  }
+}
+
+async function toggleCam() {
+  if (!room) return;
+  camEnabled = !camEnabled;
+  await room.localParticipant.setCameraEnabled(camEnabled);
+  btnCam.classList.toggle('active', camEnabled);
+  btnCam.classList.toggle('off', !camEnabled);
+  btnCam.textContent = camEnabled ? '📷' : '🚫';
+
+  // Show/hide local video
+  const localTile = getTile(room.localParticipant.sid);
+  if (localTile) {
+    const videoEl = localTile.querySelector('video');
+    const avatar  = localTile.querySelector('.tile-avatar');
+    if (!camEnabled && videoEl && !avatar) {
+      const av = makeAvatar(room.localParticipant.identity);
+      localTile.insertBefore(av, localTile.querySelector('.tile-footer'));
+    } else if (camEnabled && avatar) {
+      avatar.remove();
+    }
+  }
+}
+
+async function toggleScreenShare() {
+  if (!room) return;
+  try {
+    screenSharing = !screenSharing;
+    await room.localParticipant.setScreenShareEnabled(screenSharing);
+    btnScreen.classList.toggle('active', screenSharing);
+    btnScreen.title = screenSharing ? 'Stop sharing screen' : 'Share screen';
+  } catch (err) {
+    screenSharing = false;
+    btnScreen.classList.remove('active');
+    addSystemMessage('Screen sharing was cancelled or is not supported.');
+  }
+}
+
+async function toggleRecording() {
+  if (!SESSION_ID) {
+    addSystemMessage('No session_id provided — cannot start recording.');
+    return;
+  }
+  try {
+    if (!recording) {
+      const res = await fetch(`${API_BASE}/session/record/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: parseInt(SESSION_ID, 10) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      recording = true;
+      btnRecord.classList.add('recording');
+      btnRecord.title = 'Stop recording';
+      addSystemMessage('⏺ Recording started');
+    } else {
+      const res = await fetch(`${API_BASE}/session/record/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: parseInt(SESSION_ID, 10) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      recording = false;
+      btnRecord.classList.remove('recording');
+      btnRecord.title = 'Record session';
+      addSystemMessage('⏹ Recording stopped');
+    }
+  } catch (err) {
+    addSystemMessage(`Recording error: ${err.message}`);
+  }
+}
+
+async function muteForcefully(remoteSid) {
+  /* Host mutes a remote participant via LiveKit server API.
+     This is a client-side request to the server-side mute API.
+     LiveKit room_admin grant on the JWT enables this. */
+  addSystemMessage('Mute control requires direct LiveKit admin API access.');
+}
+
+function leaveRoom() {
+  if (room) {
+    room.disconnect();
+    room = null;
+  }
+  // Redirect back to sessions list
+  const listUrl = new URL(window.location.href);
+  listUrl.pathname = '/sessions';
+  listUrl.search   = '';
+  window.location.href = listUrl.href;
+}
+
+/* ─────────────────────────────────────────────────
+   CHAT UI
+   ───────────────────────────────────────────────── */
+function addChatMessage(sender, text, isOwn = false) {
+  const row = document.createElement('div');
+  row.className = 'chat-msg' + (isOwn ? ' own' : '');
+
+  const senderEl = document.createElement('div');
+  senderEl.className = 'chat-msg-sender';
+  senderEl.textContent = sender;
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'chat-msg-body';
+  bodyEl.textContent = text;
+
+  row.appendChild(senderEl);
+  row.appendChild(bodyEl);
+  chatMessages.appendChild(row);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addSystemMessage(text) {
+  const row = document.createElement('div');
+  row.className = 'chat-msg';
+
+  const senderEl = document.createElement('div');
+  senderEl.className = 'chat-msg-sender system';
+  senderEl.textContent = '🔔 System';
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'chat-msg-body';
+  bodyEl.textContent = text;
+  bodyEl.style.color = 'var(--muted)';
+  bodyEl.style.fontSize = '12px';
+
+  row.appendChild(senderEl);
+  row.appendChild(bodyEl);
+  chatMessages.appendChild(row);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/* ─────────────────────────────────────────────────
+   STATUS INDICATOR
+   ───────────────────────────────────────────────── */
+function setStatus(state) {
+  statusPill.className = state;
+  // Rebuild inner content
+  statusPill.innerHTML = `<div id="status-dot"></div><span id="status-text">${capitalize(state)}</span>`;
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ─────────────────────────────────────────────────
+   ERROR OVERLAY
+   ───────────────────────────────────────────────── */
+function showError(title, msg) {
+  overlay.classList.remove('hidden');
+  overlay.innerHTML = `
+    <div class="overlay-icon">⚠️</div>
+    <div class="overlay-title">${escapeHtml(title)}</div>
+    <div class="overlay-msg">${escapeHtml(msg)}</div>
+    <button class="btn-primary" onclick="window.location.reload()">Retry</button>
+  `;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ─────────────────────────────────────────────────
+   EVENT BINDINGS
+   ───────────────────────────────────────────────── */
+btnMic.addEventListener('click', toggleMic);
+btnCam.addEventListener('click', toggleCam);
+btnScreen.addEventListener('click', toggleScreenShare);
+btnRecord.addEventListener('click', toggleRecording);
+btnLeave.addEventListener('click', leaveRoom);
+
+chatSend.addEventListener('click', () => {
+  sendChatMessage(chatInput.value);
+  chatInput.value = '';
+});
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage(chatInput.value);
+    chatInput.value = '';
+  }
+});
+
+/* ─────────────────────────────────────────────────
+   START
+   ───────────────────────────────────────────────── */
+// Warn before leaving if connected
+window.addEventListener('beforeunload', (e) => {
+  if (room && room.state === 'connected') {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+init();
+</script>
+</body>
+</html>

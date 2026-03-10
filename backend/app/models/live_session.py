@@ -24,7 +24,12 @@ class LiveSession(Base):
     status = Column(String(50), default="scheduled")  # scheduled, live, ended, cancelled
     stream_url = Column(String(500))  # Video stream URL when live
     recording_url = Column(String(500))  # Set after session ends
+    started_at = Column(DateTime(timezone=True))
     ended_at = Column(DateTime(timezone=True))
+
+    # LiveKit fields
+    room_name = Column(String(255), unique=True)  # LiveKit room identifier
+    egress_id = Column(String(255))  # LiveKit Egress ID for active recordings
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
