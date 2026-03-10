@@ -58,6 +58,7 @@ export default function InstructorLiveSessions() {
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [liveKitSessions, setLiveKitSessions] = useState<any[]>([]);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
 
   useEffect(() => {
     fetchMeetings();
@@ -132,50 +133,76 @@ export default function InstructorLiveSessions() {
     
     setCreating(true);
     try {
-      // First create the LiveKit session
-      let liveKitSessionId: number | undefined;
-      try {
-        const languagesResult = await usersApi.getLanguages();
-        const defaultLang = languagesResult.languages?.find((l: any) => l.code === 'en') || languagesResult.languages?.[0];
-        
-        const sessionResult = await sessionApi.createSession({
+      // If editing, update the meeting
+      if (editingMeeting) {
+        // Note: Backend may not have PATCH endpoint yet, but we try
+        try {
+          await instructorApi.updateMeeting(editingMeeting.id, {
+            title: meetingTitle,
+            description: meetingDescription,
+            meeting_type: meetingType,
+            scheduled_at: scheduledAt,
+            duration_minutes: duration,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            meeting_link: meetingLink || undefined,
+            meeting_platform: meetingLink ? meetingPlatform : undefined,
+            invitee_ids: meetingType === "individual" || meetingType === "group" 
+              ? selectedInvitees.map(u => u.id) 
+              : undefined,
+          });
+          toast.success("Live session updated!");
+        } catch (updateErr: any) {
+          console.error("Failed to update meeting:", updateErr);
+          toast.error(updateErr.message || "Failed to update meeting - backend may not support updates yet");
+        }
+      } else {
+        // Create new meeting with LiveKit session
+        // First create the LiveKit session
+        let liveKitSessionId: number | undefined;
+        try {
+          const languagesResult = await usersApi.getLanguages();
+          const defaultLang = languagesResult.languages?.find((l: any) => l.code === 'en') || languagesResult.languages?.[0];
+          
+          const sessionResult = await sessionApi.createSession({
+            title: meetingTitle,
+            description: meetingDescription,
+            language_id: defaultLang?.id || 1,
+            level: "beginner",
+            scheduled_at: scheduledAt,
+            duration_minutes: duration,
+            max_participants: 100,
+          });
+          liveKitSessionId = sessionResult.session?.id;
+          console.log("Created LiveKit session:", sessionResult);
+        } catch (lkErr) {
+          console.error("Failed to create LiveKit session:", lkErr);
+          // Continue without LiveKit - it's optional
+        }
+
+        // Then create the meeting record
+        await instructorApi.createMeeting({
           title: meetingTitle,
           description: meetingDescription,
-          language_id: defaultLang?.id || 1,
-          level: "beginner",
+          meeting_type: meetingType,
           scheduled_at: scheduledAt,
           duration_minutes: duration,
-          max_participants: 100,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          meeting_link: meetingLink || undefined,
+          meeting_platform: meetingLink ? meetingPlatform : undefined,
+          invitee_ids: meetingType === "individual" || meetingType === "group" 
+            ? selectedInvitees.map(u => u.id) 
+            : undefined,
         });
-        liveKitSessionId = sessionResult.session?.id;
-        console.log("Created LiveKit session:", sessionResult);
-      } catch (lkErr) {
-        console.error("Failed to create LiveKit session:", lkErr);
-        // Continue without LiveKit - it's optional
+        
+        toast.success("Live session scheduled with LiveKit!");
       }
-
-      // Then create the meeting record
-      await instructorApi.createMeeting({
-        title: meetingTitle,
-        description: meetingDescription,
-        meeting_type: meetingType,
-        scheduled_at: scheduledAt,
-        duration_minutes: duration,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        meeting_link: meetingLink || undefined,
-        meeting_platform: meetingLink ? meetingPlatform : undefined,
-        invitee_ids: meetingType === "individual" || meetingType === "group" 
-          ? selectedInvitees.map(u => u.id) 
-          : undefined,
-      });
       
-      toast.success("Meeting scheduled successfully!");
       setShowCreateModal(false);
       resetForm();
       fetchMeetings();
       fetchLiveKitSessions();
     } catch (err: any) {
-      toast.error(err.message || "Failed to create meeting");
+      toast.error(err.message || "Failed to process meeting");
     } finally {
       setCreating(false);
     }
@@ -254,17 +281,40 @@ export default function InstructorLiveSessions() {
     return m.status.toLowerCase() === filter;
   });
 
-  const handleStartLiveKit = (session: any) => {
+  const handleStartLiveKit = (meeting: any) => {
     setActiveLiveKitSession({
-      roomName: session.room_name || `session-${session.id}`,
-      sessionId: session.id,
-      title: session.title,
+      roomName: meeting.room_name || `meeting-${meeting.id}`,
+      sessionId: meeting.id,
+      title: meeting.title,
     });
   };
 
   const handleLeaveLiveKit = () => {
     setActiveLiveKitSession(null);
     fetchLiveKitSessions();
+    fetchMeetings();
+  };
+
+  const handleEditMeeting = (meeting: any) => {
+    // Populate form with meeting data for editing
+    setMeetingTitle(meeting.title || "");
+    setMeetingDescription(meeting.description || "");
+    setMeetingType(meeting.meeting_type || "individual");
+    
+    // Parse date and time from scheduled_at
+    if (meeting.scheduled_at) {
+      const date = new Date(meeting.scheduled_at);
+      setScheduledDate(date.toISOString().split('T')[0]);
+      setScheduledTime(date.toTimeString().slice(0, 5));
+    }
+    
+    setDuration(meeting.duration_minutes || 60);
+    setMeetingLink(meeting.meeting_link || "");
+    setMeetingPlatform(meeting.meeting_platform || "zoom");
+    
+    // Set editing state
+    setEditingMeeting(meeting);
+    setShowCreateModal(true);
   };
 
   return (
@@ -314,7 +364,7 @@ export default function InstructorLiveSessions() {
           className="bg-[#bfff00] text-black px-5 py-2.5 rounded-lg font-semibold text-[14px] hover:opacity-90 transition-opacity flex items-center gap-2"
         >
           <span>🎥</span>
-          New Meeting
+          New Live Session
         </button>
       </div>
 
@@ -384,11 +434,11 @@ export default function InstructorLiveSessions() {
           )}
 
           {/* Regular Meetings Section */}
-          {filteredMeetings.length === 0 ? (
+          {filteredMeetings.length === 0 && liveKitSessions.length === 0 ? (
             <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-12 text-center">
               <div className="text-[48px] mb-4">🎥</div>
               <h3 className="text-white text-[18px] font-semibold mb-2">
-                No meetings found
+                No live sessions found
               </h3>
               <p className="text-[#888] text-[14px] mb-6">
                 Schedule a live session to connect with your students.
@@ -397,7 +447,7 @@ export default function InstructorLiveSessions() {
                 onClick={() => setShowCreateModal(true)}
                 className="bg-[#bfff00] text-black px-6 py-3 rounded-lg font-semibold text-[14px] hover:opacity-90 transition-opacity"
               >
-                Schedule First Meeting
+                Schedule First Live Session
               </button>
             </div>
           ) : (
@@ -438,16 +488,23 @@ export default function InstructorLiveSessions() {
                     </div>
 
                     <div className="flex gap-2 ml-4">
-                      {meeting.status === "scheduled" && meeting.meeting_link && (
-                        <a
-                          href={meeting.meeting_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-[#bfff00] text-black px-4 py-2 rounded-lg font-semibold text-[13px] no-underline hover:opacity-90 transition-opacity"
-                        >
-                          Join
-                        </a>
-                      )}
+                      {/* Start Live Button - for all meetings */}
+                      <button
+                        onClick={() => handleStartLiveKit(meeting)}
+                        className="bg-[#bfff00] text-black px-4 py-2 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity flex items-center gap-1"
+                      >
+                        📹 {meeting.status === "scheduled" ? "Start Live" : "Join Live"}
+                      </button>
+                      
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => handleEditMeeting(meeting)}
+                        className="bg-[#2a2a2a] text-white px-4 py-2 rounded-lg font-medium text-[13px] hover:bg-[#3a3a3a] transition-colors"
+                      >
+                        ✏️ Edit
+                      </button>
+                      
+                      {/* Cancel Button */}
                       {meeting.status === "scheduled" && (
                         <button
                           onClick={() => handleCancelMeeting(meeting.id)}
@@ -471,7 +528,9 @@ export default function InstructorLiveSessions() {
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl w-[600px] max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-[#2a2a2a]">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-semibold text-[18px]">Schedule New Meeting</h3>
+                <h3 className="text-white font-semibold text-[18px]">
+                  {editingMeeting ? "Edit Live Session" : "Schedule LiveKit Session"}
+                </h3>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
@@ -656,10 +715,10 @@ export default function InstructorLiveSessions() {
                 </div>
               )}
 
-              {/* Meeting Link */}
+              {/* Meeting Link - Optional for backup */}
               <div>
                 <label className="text-white text-[13px] font-medium mb-2 block">
-                  Meeting Link (Optional)
+                  External Meeting Link (Optional - for backup)
                 </label>
                 <div className="flex gap-2">
                   <select
@@ -680,26 +739,50 @@ export default function InstructorLiveSessions() {
                     className="flex-1 bg-[#0f0f0f] text-white rounded-lg px-4 py-3 outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors text-[14px]"
                   />
                 </div>
+                <p className="text-[#888] text-[11px] mt-1">
+                  💡 Leave empty - LiveKit will generate a room automatically
+                </p>
               </div>
             </div>
 
-            {/* Footer */}
+            {/* Footer with both buttons in a flex container */}
             <div className="p-6 border-t border-[#2a2a2a] flex gap-3">
+              {editingMeeting && (
+                <button
+                  onClick={() => {
+                    setEditingMeeting(null);
+                    setMeetingTitle("");
+                    setMeetingDescription("");
+                    setMeetingType("individual");
+                    setScheduledDate("");
+                    setScheduledTime("");
+                    setDuration(60);
+                    setCustomDuration(null);
+                    setMeetingLink("");
+                    setMeetingPlatform("zoom");
+                    setSelectedInvitees([]);
+                    setSearchQuery("");
+                  }}
+                  className="flex-1 bg-[#2a2a2a] text-white px-5 py-3 rounded-lg font-semibold text-[14px] hover:bg-[#333] transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="flex-1 bg-[#2a2a2a] text-white px-5 py-3 rounded-lg font-semibold text-[14px] hover:bg-[#333] transition-colors"
+                className={`${editingMeeting ? '' : 'flex-1'} bg-[#2a2a2a] text-white px-5 py-3 rounded-lg font-semibold text-[14px] hover:bg-[#333] transition-colors`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateMeeting}
                 disabled={creating || !meetingTitle || !scheduledDate || !scheduledTime}
-                className="flex-1 bg-[#bfff00] text-black px-5 py-3 rounded-lg font-semibold text-[14px] disabled:opacity-50 hover:opacity-90 transition-opacity"
+                className={`${editingMeeting ? 'flex-1' : 'flex-1'} bg-[#bfff00] text-black px-5 py-3 rounded-lg font-semibold text-[14px] disabled:opacity-50 hover:opacity-90 transition-opacity`}
               >
-                {creating ? "Scheduling..." : "Schedule Meeting"}
+                {creating ? "Saving..." : editingMeeting ? "Update Live Session" : "Schedule Live Session"}
               </button>
             </div>
           </div>

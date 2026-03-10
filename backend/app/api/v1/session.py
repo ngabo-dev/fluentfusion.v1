@@ -50,36 +50,35 @@ def _build_livekit_token(
             detail="LiveKit credentials are not configured on this server.",
         )
 
-    try:
-        from livekit.api import AccessToken, VideoGrants
-
-        grants = VideoGrants(
-            room=room_name,
-            room_join=True,
-            room_admin=is_host,           # teacher can kick, mute, etc.
-            room_record=is_host,          # teacher can trigger recording
-            can_publish=True,
-            can_subscribe=True,
-            can_publish_data=True,
-        )
-
-        token = (
-            AccessToken(
-                api_key=settings.LIVEKIT_API_KEY,
-                api_secret=settings.LIVEKIT_API_SECRET,
-            )
-            .with_identity(identity)
-            .with_name(display_name)
-            .with_grants(grants)
-            .to_jwt()
-        )
-        return token
-    except ImportError as exc:
-        logger.error("livekit-api package not installed: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LiveKit SDK is not available.",
-        ) from exc
+    # Generate JWT manually using PyJWT (works with LiveKit 1.x)
+    import jwt
+    import time
+    
+    # Build the claims according to LiveKit JWT format
+    now = int(time.time())
+    claims = {
+        "sub": identity,
+        "name": display_name,
+        "iss": settings.LIVEKIT_API_KEY,
+        "exp": now + 3600,  # 1 hour expiry
+        "nbf": now - 60,    # Not before 1 minute ago
+        "video": {
+            "room": room_name,
+            "join": True,
+            "admin": is_host,
+            "publish": True,
+            "subscribe": True,
+            "publishData": True,
+            "record": is_host,
+        },
+    }
+    
+    token = jwt.encode(
+        claims,
+        settings.LIVEKIT_API_SECRET,
+        algorithm="HS256"
+    )
+    return token
 
 
 # ---------------------------------------------------------------------------

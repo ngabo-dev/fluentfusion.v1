@@ -106,8 +106,11 @@ export default function LiveKitRoom({ roomName, sessionId, isHost = false, onLea
     );
   }
 
-  // Build LiveKit room URL with token as hash (for security)
-  const roomUrl = `${tokenData.livekit_url}/room/?room=${encodeURIComponent(tokenData.room_name)}&token=${encodeURIComponent(tokenData.token)}`;
+  // Build LiveKit room URL
+  // For LiveKit Cloud: https://project.livekit.cloud/room/roomname?token=...
+  // Convert wss:// to https:// for the HTTP room URL
+  const baseUrl = tokenData.livekit_url.replace('wss://', 'https://');
+  const roomUrl = `${baseUrl}/room/${encodeURIComponent(tokenData.room_name)}?token=${encodeURIComponent(tokenData.token)}`;
 
   return (
     <div className="bg-[#0f0f0f] rounded-lg overflow-hidden flex flex-col" style={{ height: "calc(100vh - 200px)", minHeight: "600px" }}>

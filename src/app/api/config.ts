@@ -1338,6 +1338,25 @@ export const instructorApi = {
       { method: 'DELETE' }
     );
   },
+
+  // Update a meeting
+  updateMeeting: async (meetingId: number, data: {
+    title?: string;
+    description?: string;
+    meeting_type?: string;
+    scheduled_at?: string;
+    duration_minutes?: number;
+    timezone?: string;
+    meeting_link?: string;
+    meeting_platform?: string;
+    reason?: string;
+    invitee_ids?: number[];
+  }) => {
+    return apiCall<{ message: string; meeting_id: number }>(
+      `/instructor/meetings/${meetingId}`,
+      { method: 'PATCH', body: JSON.stringify(data) }
+    );
+  },
 };
 
 // Practice/Flashcards API

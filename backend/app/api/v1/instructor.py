@@ -2327,3 +2327,87 @@ async def cancel_meeting(
     db.commit()
     
     return {"message": "Meeting cancelled successfully"}
+
+
+class MeetingUpdatePayload(BaseModel):
+    """Update a meeting"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    meeting_type: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    timezone: Optional[str] = None
+    meeting_link: Optional[str] = None
+    meeting_platform: Optional[str] = None
+    reason: Optional[str] = None
+    invitee_ids: Optional[List[int]] = None
+
+
+@router.patch("/meetings/{meeting_id}")
+async def update_meeting(
+    meeting_id: int,
+    payload: MeetingUpdatePayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Update a meeting"""
+    meeting = db.query(Meeting).filter(
+        Meeting.id == meeting_id,
+        Meeting.organizer_id == current_user.id
+    ).first()
+    
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    if meeting.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Cannot update cancelled meeting")
+    
+    if meeting.status == "completed":
+        raise HTTPException(status_code=400, detail="Cannot update completed meeting")
+    
+    # Update fields if provided
+    if payload.title is not None:
+        meeting.title = payload.title
+    if payload.description is not None:
+        meeting.description = payload.description
+    if payload.meeting_type is not None:
+        meeting.meeting_type = payload.meeting_type
+    if payload.scheduled_at is not None:
+        try:
+            scheduled_at = datetime.fromisoformat(payload.scheduled_at.replace("Z", "+00:00"))
+            if scheduled_at.tzinfo is None:
+                scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+            # Check if meeting is in the future
+            now = datetime.now(timezone.utc)
+            if scheduled_at <= now:
+                raise HTTPException(status_code=400, detail="Meeting must be scheduled in the future")
+            meeting.scheduled_at = scheduled_at
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid datetime format. Use ISO format.")
+    if payload.duration_minutes is not None:
+        meeting.duration_minutes = payload.duration_minutes
+    if payload.timezone is not None:
+        meeting.timezone = payload.timezone
+    if payload.meeting_link is not None:
+        meeting.meeting_link = payload.meeting_link
+    if payload.meeting_platform is not None:
+        meeting.meeting_platform = payload.meeting_platform
+    if payload.reason is not None:
+        meeting.reason = payload.reason
+    
+    # Handle invitee updates
+    if payload.invitee_ids is not None and payload.meeting_type in ["individual", "group"]:
+        # Verify all invitees exist
+        invitees = db.query(User).filter(User.id.in_(payload.invitee_ids)).all()
+        if len(invitees) != len(payload.invitee_ids):
+            raise HTTPException(status_code=404, detail="One or more invitees not found")
+        meeting.invitee_ids = payload.invitee_ids
+        meeting.invitee_count = len(payload.invitee_ids)
+    
+    db.commit()
+    db.refresh(meeting)
+    
+    return {
+        "message": "Meeting updated successfully",
+        "meeting_id": meeting.id
+    }
