@@ -46,7 +46,7 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "https://fluentfusion.app",
     ]
-    
+
     # ── Security
     ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1"]
 
@@ -74,6 +74,13 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
     STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
+    # ── LiveKit
+    LIVEKIT_URL: str = os.getenv("LIVEKIT_URL", "")
+    LIVEKIT_API_KEY: str = os.getenv("LIVEKIT_API_KEY", "")
+    LIVEKIT_API_SECRET: str = os.getenv("LIVEKIT_API_SECRET", "")
+    # S3 bucket used for session recordings (re-uses existing AWS credentials)
+    AWS_S3_BUCKET: str = os.getenv("AWS_S3_BUCKET", os.getenv("S3_BUCKET", "fluentfusion"))
+
     # ── OpenAI
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
@@ -84,7 +91,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = False
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_PERIOD: int = 60   # seconds
-    
+
     # ── Frontend URL (for emails, etc.)
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
