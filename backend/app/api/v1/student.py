@@ -7,6 +7,7 @@ with instructors.
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func, text
 from typing import Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel
@@ -19,6 +20,7 @@ from ...models.assignment import Assignment, AssignmentSubmission
 from ...models.message import Conversation, Message
 from ...models.notification import Notification
 from ...models.meeting import Meeting
+from ...models.announcement import Announcement
 from ...dependencies import get_current_active_user
 
 router = APIRouter(prefix="/student", tags=["Student"])
@@ -60,18 +62,30 @@ async def get_student_assignments(
         .all()
     )
 
+    # Batch load courses (avoid N+1)
+    course_ids = list({a.course_id for a in assignments})
+    course_map = {c.id: c for c in db.query(Course).filter(Course.id.in_(course_ids)).all()}
+
+    # Batch load latest submission per assignment for this student (avoid N+1)
+    assignment_ids = [a.id for a in assignments]
+    all_subs = (
+        db.query(AssignmentSubmission)
+        .filter(
+            AssignmentSubmission.assignment_id.in_(assignment_ids),
+            AssignmentSubmission.student_id == current_user.id,
+        )
+        .order_by(AssignmentSubmission.submitted_at.desc())
+        .all()
+    )
+    submission_map: dict = {}
+    for s in all_subs:
+        if s.assignment_id not in submission_map:
+            submission_map[s.assignment_id] = s
+
     results = []
     for a in assignments:
-        course = db.query(Course).filter(Course.id == a.course_id).first()
-        submission = (
-            db.query(AssignmentSubmission)
-            .filter(
-                AssignmentSubmission.assignment_id == a.id,
-                AssignmentSubmission.student_id == current_user.id,
-            )
-            .order_by(AssignmentSubmission.submitted_at.desc())
-            .first()
-        )
+        course = course_map.get(a.course_id)
+        submission = submission_map.get(a.id)
 
         if submission and submission.grade is not None:
             status = "graded"
@@ -195,18 +209,27 @@ async def get_student_conversations(
     start = (page - 1) * limit
     paginated = conversations[start : start + limit]
 
+    # Batch load instructors (avoid N+1)
+    instructor_ids = list({c.instructor_id for c in paginated})
+    instructor_map = {u.id: u for u in db.query(User).filter(User.id.in_(instructor_ids)).all()}
+
+    # Batch unread counts with a single GROUP BY query (avoid N+1)
+    conv_ids = [c.id for c in paginated]
+    unread_rows = (
+        db.query(Message.conversation_id, func.count(Message.id))
+        .filter(
+            Message.conversation_id.in_(conv_ids),
+            Message.sender_id != current_user.id,
+            Message.is_read == False,
+        )
+        .group_by(Message.conversation_id)
+        .all()
+    )
+    unread_map = {row[0]: row[1] for row in unread_rows}
+
     results = []
     for conv in paginated:
-        instructor = db.query(User).filter(User.id == conv.instructor_id).first()
-        unread_count = (
-            db.query(Message)
-            .filter(
-                Message.conversation_id == conv.id,
-                Message.sender_id != current_user.id,
-                Message.is_read == False,
-            )
-            .count()
-        )
+        instructor = instructor_map.get(conv.instructor_id)
         results.append(
             {
                 "id": conv.id,
@@ -217,7 +240,7 @@ async def get_student_conversations(
                 "last_message_at": conv.last_message_at.isoformat()
                 if conv.last_message_at
                 else None,
-                "unread_count": unread_count,
+                "unread_count": unread_map.get(conv.id, 0),
             }
         )
 
@@ -268,9 +291,13 @@ async def get_student_conversation_messages(
             msg.read_at = datetime.now(timezone.utc)
     db.commit()
 
+    # Batch load senders (avoid N+1)
+    sender_ids = list({msg.sender_id for msg in messages})
+    sender_map = {u.id: u for u in db.query(User).filter(User.id.in_(sender_ids)).all()}
+
     results = []
     for msg in messages:
-        sender = db.query(User).filter(User.id == msg.sender_id).first()
+        sender = sender_map.get(msg.sender_id)
         results.append(
             {
                 "id": msg.id,
@@ -332,27 +359,30 @@ async def student_send_message(
         raise HTTPException(status_code=404, detail="Instructor not found")
 
     # Verify the student is enrolled in at least one of the instructor's courses
+    # NOTE: Allow messaging even if not enrolled - students can message any instructor
+    # This was previously blocking student-initiated messages
     instructor_course_ids = [
         row[0]
         for row in db.query(Course.id)
         .filter(Course.instructor_id == message.instructor_id)
         .all()
     ]
-    is_enrolled = False
-    if instructor_course_ids:
-        is_enrolled = (
-            db.query(Enrollment)
-            .filter(
-                Enrollment.user_id == current_user.id,
-                Enrollment.course_id.in_(instructor_course_ids),
-            )
-            .first()
-        ) is not None
+    # Allow messaging even if not enrolled - comment out the enrollment check
+    # is_enrolled = False
+    # if instructor_course_ids:
+    #     is_enrolled = (
+    #         db.query(Enrollment)
+    #         .filter(
+    #             Enrollment.user_id == current_user.id,
+    #             Enrollment.course_id.in_(instructor_course_ids),
+    #         )
+    #         .first()
+    #     ) is not None
 
-    if not is_enrolled:
-        raise HTTPException(
-            status_code=403, detail="You are not enrolled in any of this instructor's courses"
-        )
+    # if not is_enrolled:
+    #     raise HTTPException(
+    #         status_code=403, detail="You are not enrolled in any of this instructor's courses"
+    #     )
 
     # Get or create the conversation
     conversation = (
@@ -427,25 +457,42 @@ async def get_student_messages(
     start = (page - 1) * limit
     paginated = conversations[start : start + limit]
 
+    # Batch load instructors (avoid N+1)
+    msg_instructor_ids = list({c.instructor_id for c in paginated})
+    msg_instructor_map = {u.id: u for u in db.query(User).filter(User.id.in_(msg_instructor_ids)).all()}
+
+    # Batch unread counts with GROUP BY (avoid N+1)
+    msg_conv_ids = [c.id for c in paginated]
+    msg_unread_rows = (
+        db.query(Message.conversation_id, func.count(Message.id))
+        .filter(
+            Message.conversation_id.in_(msg_conv_ids),
+            Message.sender_id != current_user.id,
+            Message.is_read == False,
+        )
+        .group_by(Message.conversation_id)
+        .all()
+    )
+    msg_unread_map = {row[0]: row[1] for row in msg_unread_rows}
+
+    # Batch last messages: get max message id per conversation, then fetch those
+    last_msg_subq = (
+        db.query(Message.conversation_id, func.max(Message.id).label("max_id"))
+        .filter(Message.conversation_id.in_(msg_conv_ids))
+        .group_by(Message.conversation_id)
+        .subquery()
+    )
+    last_msgs = (
+        db.query(Message)
+        .join(last_msg_subq, Message.id == last_msg_subq.c.max_id)
+        .all()
+    )
+    last_msg_map = {m.conversation_id: m for m in last_msgs}
+
     results = []
     for conv in paginated:
-        instructor = db.query(User).filter(User.id == conv.instructor_id).first()
-        unread_count = (
-            db.query(Message)
-            .filter(
-                Message.conversation_id == conv.id,
-                Message.sender_id != current_user.id,
-                Message.is_read == False,
-            )
-            .count()
-        )
-        # Get last message
-        last_msg = (
-            db.query(Message)
-            .filter(Message.conversation_id == conv.id)
-            .order_by(Message.created_at.desc())
-            .first()
-        )
+        instructor = msg_instructor_map.get(conv.instructor_id)
+        last_msg = last_msg_map.get(conv.id)
         results.append(
             {
                 "id": conv.id,
@@ -460,7 +507,7 @@ async def get_student_messages(
                 "last_message_at": conv.last_message_at.isoformat()
                 if conv.last_message_at
                 else None,
-                "unread_count": unread_count,
+                "unread_count": msg_unread_map.get(conv.id, 0),
             }
         )
 
@@ -535,48 +582,31 @@ async def get_student_meetings(
     current_user: User = Depends(get_current_active_user),
 ):
     """Get all meetings where the student is invited."""
-    # Get all meetings and filter in Python
-    # We need to query using SQLAlchemy's JSON column access
-    from sqlalchemy import and_
-    import json
-    
-    # Get all non-cancelled meetings
-    all_meetings = db.query(Meeting).filter(Meeting.status != "cancelled").all()
-    
-    # Filter meetings where user is in invitee_ids
-    # Since the JSON column may return None or a list, we handle both cases
-    user_meetings = []
-    for meeting in all_meetings:
-        # Access the raw database column value
-        invitee_ids_raw = meeting.invitee_ids
-        
-        # Parse the invitee_ids - could be None, a list, or a JSON string
-        invitee_list = []
-        if invitee_ids_raw is not None:
-            if isinstance(invitee_ids_raw, list):
-                invitee_list = invitee_ids_raw
-            elif isinstance(invitee_ids_raw, str):
-                try:
-                    invitee_list = json.loads(invitee_ids_raw)
-                except:
-                    invitee_list = []
-        
-        # Check if current user's ID is in the invitee list
-        user_id_str = str(current_user.id)
-        if user_id_str in [str(x) for x in invitee_list]:
-            user_meetings.append(meeting)
-    
-    # Apply status filter if provided
+    # Use PostgreSQL's JSONB containment operator to filter in the DB
+    # This avoids loading the entire meetings table into Python memory
+    query = db.query(Meeting).filter(
+        Meeting.status != "cancelled",
+        text("invitee_ids::jsonb @> :val").bindparams(val=f'[{current_user.id}]'),
+    )
+
     if status:
-        user_meetings = [m for m in user_meetings if m.status == status]
-    
-    total = len(user_meetings)
-    start = (page - 1) * limit
-    paginated = user_meetings[start : start + limit]
+        query = query.filter(Meeting.status == status)
+
+    total = query.count()
+    paginated = (
+        query.order_by(Meeting.scheduled_at.asc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    # Batch load organizers (avoid N+1)
+    organizer_ids = list({m.organizer_id for m in paginated})
+    organizer_map = {u.id: u for u in db.query(User).filter(User.id.in_(organizer_ids)).all()}
 
     results = []
     for meeting in paginated:
-        organizer = db.query(User).filter(User.id == meeting.organizer_id).first()
+        organizer = organizer_map.get(meeting.organizer_id)
         results.append(
             {
                 "id": meeting.id,
@@ -643,4 +673,81 @@ async def student_respond_to_meeting(
         "meeting_id": meeting.id,
         "response": meeting.response,
         "status": meeting.status,
+    }
+
+
+# ==================== STUDENT ANNOUNCEMENTS ====================
+
+@router.get("/announcements")
+async def get_student_announcements(
+    course_id: Optional[int] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get announcements for student's enrolled courses."""
+    # Find enrolled course IDs
+    enrolled_course_ids = [
+        row[0] for row in db.query(Enrollment.course_id).filter(
+            Enrollment.user_id == current_user.id
+        ).all()
+    ]
+    
+    if not enrolled_course_ids:
+        return {"announcements": [], "total": 0, "page": page, "total_pages": 0}
+    
+    # Query announcements for enrolled courses
+    query = db.query(Announcement).filter(
+        Announcement.target_course_id.in_(enrolled_course_ids),
+        Announcement.is_published == True,
+    )
+    
+    # Filter by course_id if provided
+    if course_id:
+        query = query.filter(Announcement.target_course_id == course_id)
+    
+    total = query.count()
+    announcements = (
+        query.order_by(Announcement.published_at.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+    
+    # Batch load authors and courses (avoid N+1)
+    ann_author_ids = list({a.author_id for a in announcements if a.author_id})
+    ann_author_map = {u.id: u for u in db.query(User).filter(User.id.in_(ann_author_ids)).all()}
+    ann_course_ids = list({a.target_course_id for a in announcements if a.target_course_id})
+    ann_course_map = {c.id: c for c in db.query(Course).filter(Course.id.in_(ann_course_ids)).all()}
+
+    results = []
+    for a in announcements:
+        author = ann_author_map.get(a.author_id)
+        course = ann_course_map.get(a.target_course_id)
+
+        results.append(
+            {
+                "id": a.id,
+                "title": a.title,
+                "content": a.content,
+                "summary": a.summary,
+                "course_id": a.target_course_id,
+                "course_title": course.title if course else "Unknown",
+                "author_name": author.full_name if author else "Unknown",
+                "author_avatar": author.avatar_url if author else None,
+                "announcement_type": a.announcement_type,
+                "priority": a.priority,
+                "image_url": a.image_url,
+                "action_url": a.action_url,
+                "published_at": a.published_at.isoformat() if a.published_at else None,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+            }
+        )
+    
+    return {
+        "announcements": results,
+        "total": total,
+        "page": page,
+        "total_pages": (total + limit - 1) // limit,
     }

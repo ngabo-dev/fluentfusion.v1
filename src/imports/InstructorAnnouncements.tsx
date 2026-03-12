@@ -15,11 +15,18 @@ interface Announcement {
   scheduled_for: string | null;
 }
 
+interface Student {
+  id: number;
+  full_name: string;
+  email: string;
+}
+
 export default function InstructorAnnouncements() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -27,7 +34,9 @@ export default function InstructorAnnouncements() {
     title: "",
     content: "",
     course_id: 0,
-    is_published: true
+    is_published: true,
+    target_type: "course" as "course" | "students" | "all_students",
+    target_student_ids: [] as number[]
   });
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; show: boolean }>({ id: 0, show: false });
@@ -52,6 +61,15 @@ export default function InstructorAnnouncements() {
     fetchData();
   }, [navigate]);
 
+  // Fetch students when course is selected
+  useEffect(() => {
+    if (newAnnouncement.course_id) {
+      fetchStudents(newAnnouncement.course_id);
+    } else {
+      setStudents([]);
+    }
+  }, [newAnnouncement.course_id]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -68,16 +86,37 @@ export default function InstructorAnnouncements() {
     }
   };
 
+  const fetchStudents = async (courseId: number) => {
+    try {
+      const res = await instructorApi.getStudents({ course_id: courseId, limit: 100 });
+      setStudents(res.students || []);
+    } catch (error) {
+      console.error('Failed to fetch students:', error);
+      setStudents([]);
+    }
+  };
+
   const handleCreate = async () => {
     if (!newAnnouncement.title || !newAnnouncement.content || !newAnnouncement.course_id) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+    if (newAnnouncement.target_type === 'students' && newAnnouncement.target_student_ids.length === 0) {
+      toast.error('Please select at least one student');
       return;
     }
     setCreating(true);
     try {
       await instructorApi.createAnnouncement(newAnnouncement);
       setShowCreateModal(false);
-      setNewAnnouncement({ title: "", content: "", course_id: 0, is_published: true });
+      setNewAnnouncement({ 
+        title: "", 
+        content: "", 
+        course_id: 0, 
+        is_published: true,
+        target_type: "course",
+        target_student_ids: []
+      });
       toast.success('Announcement created successfully');
       fetchData();
     } catch (error: any) {
@@ -178,7 +217,7 @@ export default function InstructorAnnouncements() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100]" onClick={() => setShowCreateModal(false)}>
-          <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-[560px] mx-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-[560px] mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h2 className="text-white text-[18px] font-bold mb-5">Create Announcement</h2>
             <div className="space-y-4">
               <div>
@@ -186,7 +225,7 @@ export default function InstructorAnnouncements() {
                 <select
                   title="Select course"
                   value={newAnnouncement.course_id || ""}
-                  onChange={(e) => setNewAnnouncement({ ...newAnnouncement, course_id: Number(e.target.value) })}
+                  onChange={(e) => setNewAnnouncement({ ...newAnnouncement, course_id: Number(e.target.value), target_student_ids: [] })}
                   className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-2.5 outline-none border border-[#2a2a2a] text-[13px]"
                 >
                   <option value="">Select a course</option>
@@ -195,6 +234,62 @@ export default function InstructorAnnouncements() {
                   ))}
                 </select>
               </div>
+              
+              {/* Recipient Selection */}
+              <div>
+                <label className="text-[#888] text-[11px] uppercase tracking-widest block mb-2">Send To</label>
+                <select
+                  title="Select recipients"
+                  value={newAnnouncement.target_type}
+                  onChange={(e) => setNewAnnouncement({ ...newAnnouncement, target_type: e.target.value as any, target_student_ids: [] })}
+                  className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-2.5 outline-none border border-[#2a2a2a] text-[13px]"
+                >
+                  <option value="course">All students in course</option>
+                  <option value="all_students">All enrolled students</option>
+                  <option value="students">Specific students</option>
+                </select>
+              </div>
+              
+              {/* Student Selection (when specific students selected) */}
+              {newAnnouncement.target_type === 'students' && (
+                <div>
+                  <label className="text-[#888] text-[11px] uppercase tracking-widest block mb-2">Select Students *</label>
+                  <div className="max-h-[150px] overflow-y-auto bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg p-2">
+                    {students.length === 0 ? (
+                      <p className="text-[#555] text-[12px] p-2">No students enrolled in this course</p>
+                    ) : (
+                      students.map((student) => (
+                        <label key={student.id} className="flex items-center gap-2 p-2 hover:bg-[#1a1a1a] rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newAnnouncement.target_student_ids.includes(student.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewAnnouncement({
+                                  ...newAnnouncement,
+                                  target_student_ids: [...newAnnouncement.target_student_ids, student.id]
+                                });
+                              } else {
+                                setNewAnnouncement({
+                                  ...newAnnouncement,
+                                  target_student_ids: newAnnouncement.target_student_ids.filter(id => id !== student.id)
+                                });
+                              }
+                            }}
+                            className="w-4 h-4 accent-[#bfff00]"
+                          />
+                          <span className="text-white text-[13px]">{student.full_name}</span>
+                          <span className="text-[#555] text-[11px]">{student.email}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                  {newAnnouncement.target_student_ids.length > 0 && (
+                    <p className="text-[#bfff00] text-[11px] mt-1">{newAnnouncement.target_student_ids.length} student(s) selected</p>
+                  )}
+                </div>
+              )}
+              
               <div>
                 <label className="text-[#888] text-[11px] uppercase tracking-widest block mb-2">Title *</label>
                 <input
@@ -229,7 +324,7 @@ export default function InstructorAnnouncements() {
                 <button onClick={() => setShowCreateModal(false)} className="flex-1 bg-[#0f0f0f] text-[#888] py-2.5 rounded-lg text-[13px] hover:text-white transition-colors">Cancel</button>
                 <button
                   onClick={handleCreate}
-                  disabled={creating || !newAnnouncement.title || !newAnnouncement.content || !newAnnouncement.course_id}
+                  disabled={creating || !newAnnouncement.title || !newAnnouncement.content || !newAnnouncement.course_id || (newAnnouncement.target_type === 'students' && newAnnouncement.target_student_ids.length === 0)}
                   className="flex-1 bg-[#bfff00] text-black py-2.5 rounded-lg font-semibold text-[13px] disabled:opacity-50"
                 >
                   {creating ? 'Creating...' : 'Create Announcement'}

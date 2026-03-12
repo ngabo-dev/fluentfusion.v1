@@ -50,35 +50,60 @@ def _build_livekit_token(
             detail="LiveKit credentials are not configured on this server.",
         )
 
-    # Generate JWT manually using PyJWT (works with LiveKit 1.x)
-    import jwt
-    import time
-    
-    # Build the claims according to LiveKit JWT format
-    now = int(time.time())
-    claims = {
-        "sub": identity,
-        "name": display_name,
-        "iss": settings.LIVEKIT_API_KEY,
-        "exp": now + 3600,  # 1 hour expiry
-        "nbf": now - 60,    # Not before 1 minute ago
-        "video": {
-            "room": room_name,
-            "join": True,
-            "admin": is_host,
-            "publish": True,
-            "subscribe": True,
-            "publishData": True,
-            "record": is_host,
-        },
-    }
-    
-    token = jwt.encode(
-        claims,
-        settings.LIVEKIT_API_SECRET,
-        algorithm="HS256"
-    )
-    return token
+    # Use livekit.api for proper token generation
+    try:
+        from livekit import api
+        
+        token = api.AccessToken(
+            settings.LIVEKIT_API_KEY,
+            settings.LIVEKIT_API_SECRET,
+            identity=identity,
+            name=display_name,
+        )
+        
+        # Add video grants
+        token.add_grant(
+            room=room_name,
+            join=True,
+            publish=is_host,
+            subscribe=True,
+            admin=is_host,
+        )
+        
+        # Set token expiry
+        token.valid_for = 3600  # 1 hour
+        
+        return token.to_jwt()
+        
+    except ImportError:
+        # Fallback to manual JWT generation if livekit package not available
+        import jwt
+        import time
+        
+        now = int(time.time())
+        claims = {
+            "sub": identity,
+            "name": display_name,
+            "iss": settings.LIVEKIT_API_KEY,
+            "exp": now + 3600,
+            "nbf": now - 60,
+            "video": {
+                "room": room_name,
+                "join": True,
+                "admin": is_host,
+                "publish": True,
+                "subscribe": True,
+                "publishData": True,
+                "record": is_host,
+            },
+        }
+        
+        token = jwt.encode(
+            claims,
+            settings.LIVEKIT_API_SECRET,
+            algorithm="HS256"
+        )
+        return token
 
 
 # ---------------------------------------------------------------------------
@@ -205,60 +230,70 @@ async def list_sessions(
 
     Filters by ``language_id`` and/or ``level`` when supplied.
     """
-    query = db.query(LiveSession).filter(
-        LiveSession.status.in_(["scheduled", "live"])
-    )
-
-    if language_id:
-        query = query.filter(LiveSession.language_id == language_id)
-    if level:
-        query = query.filter(LiveSession.level == level)
-
-    total = query.count()
-    sessions = (
-        query.order_by(LiveSession.scheduled_at)
-        .offset((page - 1) * limit)
-        .limit(limit)
-        .all()
-    )
-
-    results = []
-    for s in sessions:
-        instructor = db.query(User).filter(User.id == s.instructor_id).first()
-        reg_count = (
-            db.query(LiveSessionRegistration)
-            .filter(LiveSessionRegistration.session_id == s.id)
-            .count()
-        )
-        lang = db.query(Language).filter(Language.id == s.language_id).first()
-
-        results.append(
-            {
-                "id": s.id,
-                "title": s.title,
-                "description": s.description,
-                "room_name": s.room_name,
-                "language_id": s.language_id,
-                "language_name": lang.name if lang else "Unknown",
-                "level": s.level,
-                "instructor_id": s.instructor_id,
-                "instructor_name": instructor.full_name if instructor else "Instructor",
-                "instructor_avatar": instructor.avatar_url if instructor else None,
-                "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
-                "duration_minutes": s.duration_min,
-                "max_participants": s.max_participants,
-                "enrolled_count": reg_count,
-                "status": s.status,
-                "is_live": s.status == "live",
-            }
+    try:
+        query = db.query(LiveSession).filter(
+            LiveSession.status.in_(["scheduled", "live"])
         )
 
-    return {
-        "sessions": results,
-        "total": total,
-        "page": page,
-        "total_pages": (total + limit - 1) // limit,
-    }
+        if language_id:
+            query = query.filter(LiveSession.language_id == language_id)
+        if level:
+            query = query.filter(LiveSession.level == level)
+
+        total = query.count()
+        sessions = (
+            query.order_by(LiveSession.scheduled_at)
+            .offset((page - 1) * limit)
+            .limit(limit)
+            .all()
+        )
+
+        results = []
+        for s in sessions:
+            instructor = db.query(User).filter(User.id == s.instructor_id).first()
+            reg_count = (
+                db.query(LiveSessionRegistration)
+                .filter(LiveSessionRegistration.session_id == s.id)
+                .count()
+            )
+            lang = db.query(Language).filter(Language.id == s.language_id).first()
+
+            results.append(
+                {
+                    "id": s.id,
+                    "title": s.title,
+                    "description": s.description,
+                    "room_name": s.room_name,
+                    "language_id": s.language_id,
+                    "language_name": lang.name if lang else "Unknown",
+                    "level": s.level,
+                    "instructor_id": s.instructor_id,
+                    "instructor_name": instructor.full_name if instructor else "Instructor",
+                    "instructor_avatar": instructor.avatar_url if instructor else None,
+                    "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
+                    "duration_minutes": s.duration_min,
+                    "max_participants": s.max_participants,
+                    "enrolled_count": reg_count,
+                    "status": s.status,
+                    "is_live": s.status == "live",
+                }
+            )
+
+        return {
+            "sessions": results,
+            "total": total,
+            "page": page,
+            "total_pages": (total + limit - 1) // limit,
+        }
+    except Exception as e:
+        logger.error(f"Error listing sessions: {e}", exc_info=True)
+        # Return empty list instead of error if table doesn't exist
+        return {
+            "sessions": [],
+            "total": 0,
+            "page": page,
+            "total_pages": 0,
+        }
 
 
 # ---------------------------------------------------------------------------

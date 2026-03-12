@@ -1,6 +1,6 @@
 """
 FluentFusion AI — Unified Backend
-=================================
+==================================
 Combines the FluentFusion language learning platform API with the
 PULSE (Predictive Unified Learner State Engine) ML service.
 
@@ -45,7 +45,7 @@ logging.basicConfig(
 logger = logging.getLogger("fluentfusion")
 
 
-# ── Lifespan: load PULSE model on startup
+# ── Lifespan: optimized startup with minimal DB queries
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 FluentFusion unified service starting...")
@@ -58,8 +58,20 @@ async def lifespan(app: FastAPI):
     
     db = SessionLocal()
     try:
+        # Use func.count for efficient counting (single query per count)
+        from sqlalchemy import func
+        
+        # Batch query all counts at once to reduce DB round trips
+        super_admin_count = db.query(func.count(User.id)).filter(User.role == "super_admin").scalar() or 0
+        instructor_count = db.query(func.count(User.id)).filter(User.role == "instructor").scalar() or 0
+        student_count = db.query(func.count(User.id)).filter(User.role == "student").scalar() or 0
+        language_count = db.query(func.count(Language.id)).scalar() or 0
+        course_count = db.query(func.count(Course.id)).filter(Course.is_published == True).scalar() or 0
+        
+        # Track if we need to commit
+        needs_commit = False
+        
         # Seed default super admin if no super_admin exists
-        super_admin_count = db.query(User).filter(User.role == "super_admin").count()
         if super_admin_count == 0:
             logger.info("Creating default super admin user...")
             from passlib.context import CryptContext
@@ -77,13 +89,10 @@ async def lifespan(app: FastAPI):
                 bio="Super Administrator of FluentFusion Platform"
             )
             db.add(super_admin)
-            db.commit()
-            db.refresh(super_admin)
-            logger.info(f"✅ Created default super admin: {super_admin.email} (ID: {super_admin.id})")
-            logger.info("   Default credentials: ngabo40@gmail.com / admin123")
+            needs_commit = True
+            logger.info("✅ Will create default super admin")
         
         # Create demo instructor if no instructors exist
-        instructor_count = db.query(User).filter(User.role == "instructor").count()
         if instructor_count == 0:
             logger.info("Creating demo instructor user...")
             from passlib.context import CryptContext
@@ -100,13 +109,10 @@ async def lifespan(app: FastAPI):
                 bio="Experienced language instructor"
             )
             db.add(demo_instructor)
-            db.commit()
-            db.refresh(demo_instructor)
-            logger.info(f"✅ Created demo instructor: {demo_instructor.email}")
-            logger.info("   Default credentials: j.niyongabo@alustudent.com / instructor123")
+            needs_commit = True
+            logger.info("✅ Will create demo instructor")
         
         # Create demo student if no students exist
-        student_count = db.query(User).filter(User.role == "student").count()
         if student_count == 0:
             logger.info("Creating demo student user...")
             from passlib.context import CryptContext
@@ -123,14 +129,35 @@ async def lifespan(app: FastAPI):
                 bio="Language learning enthusiast"
             )
             db.add(demo_student)
-            db.commit()
-            db.refresh(demo_student)
-            logger.info(f"✅ Created demo student: {demo_student.email}")
-            logger.info("   Default credentials: ngabo7834@gmail.com / student123")
+            needs_commit = True
+            logger.info("✅ Will create demo student")
         
-        # Seed languages
-        count = db.query(Language).count()
-        if count == 0:
+        # Commit user creations in one transaction
+        if needs_commit:
+            db.commit()
+            logger.info("✅ Users created successfully")
+        
+        # Refresh users to get their IDs
+        if super_admin_count == 0:
+            super_admin = db.query(User).filter(User.email == "ngabo40@gmail.com").first()
+            if super_admin:
+                logger.info(f"✅ Created super admin: {super_admin.email} (ID: {super_admin.id})")
+                logger.info("   Default credentials: ngabo40@gmail.com / admin123")
+        
+        if instructor_count == 0:
+            demo_instructor = db.query(User).filter(User.email == "j.niyongabo@alustudent.com").first()
+            if demo_instructor:
+                logger.info(f"✅ Created demo instructor: {demo_instructor.email}")
+                logger.info("   Default credentials: j.niyongabo@alustudent.com / instructor123")
+        
+        if student_count == 0:
+            demo_student = db.query(User).filter(User.email == "ngabo7834@gmail.com").first()
+            if demo_student:
+                logger.info(f"✅ Created demo student: {demo_student.email}")
+                logger.info("   Default credentials: ngabo7834@gmail.com / student123")
+        
+        # Seed languages using bulk_save_objects for faster insertion
+        if language_count == 0:
             logger.info("Seeding languages...")
             languages = [
                 Language(name="English", code="en", flag_emoji="🇬🇧"),
@@ -147,8 +174,7 @@ async def lifespan(app: FastAPI):
                 Language(name="Swahili", code="sw", flag_emoji="🇰🇪"),
                 Language(name="Kinyarwanda", code="rw", flag_emoji="🇷🇼"),
             ]
-            for lang in languages:
-                db.add(lang)
+            db.bulk_save_objects(languages)
             db.commit()
             logger.info(f"✅ Seeded {len(languages)} languages")
         else:
@@ -162,24 +188,16 @@ async def lifespan(app: FastAPI):
                 logger.info("✅ Added Kinyarwanda language")
         
         # Seed sample courses if none exist (published courses)
-        course_count = db.query(Course).filter(Course.is_published == True).count()
         if course_count == 0:
             logger.info("Seeding sample courses...")
             
-            # Get or create a demo instructor
-            instructor = db.query(User).filter(User.email == "j.niyongabo@alustudent.com").first()
-            if not instructor:
-                # Find any existing user with instructor role
-                instructor = db.query(User).filter(User.role == "instructor").first()
-            if not instructor:
-                # Find any super_admin user
-                instructor = db.query(User).filter(User.role == "super_admin").first()
-            if not instructor:
-                # Find any admin user
-                instructor = db.query(User).filter(User.role == "admin").first()
-            if not instructor:
-                # Use the first available user
-                instructor = db.query(User).first()
+            # Get or create a demo instructor - optimize to single query
+            instructor = db.query(User).filter(
+                (User.email == "j.niyongabo@alustudent.com") | 
+                (User.role == "instructor") |
+                (User.role == "super_admin") |
+                (User.role == "admin")
+            ).first()
             
             # If no user exists, create a demo instructor
             if not instructor:
@@ -201,7 +219,7 @@ async def lifespan(app: FastAPI):
                 logger.info(f"✅ Created demo instructor with ID: {instructor.id}")
             
             if instructor:
-                # Get languages
+                # Get all languages in one query
                 languages = db.query(Language).all()
                 if not languages:
                     logger.warning("No languages found, skipping course seeding")
@@ -379,7 +397,7 @@ async def lifespan(app: FastAPI):
         v = ModelLoader.metadata.get("model_info", {}).get("version", "unknown")
         logger.info(f"✅ PULSE model loaded | version={v}")
     else:
-        logger.warning(" PULSE running in⚠️  demo mode — model artifacts not found")
+        logger.warning("⚠️ PULSE running in demo mode — model artifacts not found")
     yield
     logger.info("👋 FluentFusion service shutting down")
 

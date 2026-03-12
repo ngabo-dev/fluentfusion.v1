@@ -9,7 +9,7 @@ async function apiCall<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ async function apiCall<T>(
   }
 
   const response = await fetch(url, config);
-  
+
   // Parse response - handle both success and error cases
   let data;
   try {
@@ -36,10 +36,9 @@ async function apiCall<T>(
   } catch {
     data = { detail: response.statusText || 'An error occurred' };
   }
-  
+
   if (!response.ok) {
-    // Log the full error for debugging
-    console.error('API Error:', response.status, data);
+    console.error('API Error:', response.status, options.method || 'GET', endpoint);
     
     // Handle validation errors specially - extract the actual message
     let errorMessage = data.detail || data.error || `HTTP error ${response.status}`;
@@ -1167,11 +1166,13 @@ export const instructorApi = {
     course_id: number;
     is_published?: boolean;
     scheduled_for?: string;
+    target_type?: 'course' | 'students' | 'all_students';
+    target_student_ids?: number[];
   }) => {
-    return apiCall<{ message: string; announcement_id: number }>(
-      `/instructor/announcements?title=${encodeURIComponent(data.title)}&content=${encodeURIComponent(data.content)}&course_id=${data.course_id}&is_published=${data.is_published ?? true}${data.scheduled_for ? `&scheduled_for=${data.scheduled_for}` : ''}`,
-      { method: 'POST' }
-    );
+    return apiCall<{ message: string; announcement_id: number }>('/instructor/announcements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   },
 
   // Delete announcement
@@ -1556,22 +1557,67 @@ export const liveSessionsApi = {
 
 // Gamification API (Daily Challenge)
 export const gamificationApi = {
-  // Get today's daily challenge
   getDailyChallenge: async () => {
-    return apiCall<{
-      challenge: any;
-      tasks: any[];
-      progress: Record<number, any>;
-      completed_count: number;
-      total_tasks: number;
-    }>('/gamification/daily-challenge/today');
+    return apiCall<{ challenge: any; tasks: any[]; user_progress: any[]; completed_count: number; total_tasks: number }>('/gamification/daily-challenge/today');
   },
-
-  // Complete a challenge task
   completeChallengeTask: async (taskId: number) => {
-    return apiCall<{ message: string; xp_earned: number }>(`/gamification/daily-challenge/${taskId}/complete`, {
-      method: 'POST',
-    });
+    return apiCall<{ message: string; xp_earned: number; is_completed: boolean }>(`/gamification/daily-challenge/${taskId}/complete`, { method: 'POST' });
+  },
+  getXP: async () => {
+    return apiCall<{ total_xp: number; current_level: number; xp_to_next_level: number }>('/gamification/xp');
+  },
+  getXPTransactions: async (page = 1, limit = 20) => {
+    return apiCall<{ transactions: any[]; total: number; page: number }>(`/gamification/xp/transactions?page=${page}&limit=${limit}`);
+  },
+  getStreak: async () => {
+    return apiCall<{ current_streak: number; longest_streak: number; last_activity_date: string | null; total_active_days: number }>('/gamification/streak');
+  },
+  recordActivity: async () => {
+    return apiCall<{ message: string; current_streak: number; longest_streak: number }>('/gamification/streak/record', { method: 'POST' });
+  },
+  getAllAchievements: async () => {
+    return apiCall<{ achievements: any[] }>('/gamification/achievements');
+  },
+  getMyAchievements: async () => {
+    return apiCall<{ earned: any[]; available: any[]; earned_ids: number[] }>('/gamification/achievements/mine');
+  },
+  getLeaderboard: async (period = 'weekly', limit = 50) => {
+    return apiCall<{ leaderboard: any[]; period: string }>(`/gamification/leaderboard?period=${period}&limit=${limit}`);
+  },
+  getMyRank: async (period = 'weekly') => {
+    return apiCall<{ rank: number | null; xp: number }>(`/gamification/leaderboard/my-rank?period=${period}`);
+  },
+  getStats: async () => {
+    return apiCall<any>('/gamification/stats');
+  },
+};
+
+export const communityApi = {
+  getPosts: async (params?: { page?: number; limit?: number; language_id?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.language_id) q.set('language_id', String(params.language_id));
+    const qs = q.toString() ? `?${q}` : '';
+    return apiCall<{ posts: any[]; total: number; page: number }>(`/community/posts${qs}`);
+  },
+  createPost: async (data: { body: string; post_type?: string; language_id?: number }) => {
+    return apiCall<any>('/community/posts', { method: 'POST', body: JSON.stringify(data) });
+  },
+  likePost: async (postId: number) => {
+    return apiCall<{ liked: boolean; like_count: number }>(`/community/posts/${postId}/like`, { method: 'POST' });
+  },
+  savePost: async (postId: number) => {
+    return apiCall<{ saved: boolean }>(`/community/posts/${postId}/save`, { method: 'POST' });
+  },
+  getComments: async (postId: number) => {
+    return apiCall<{ comments: any[] }>(`/community/posts/${postId}/comments`);
+  },
+  addComment: async (postId: number, body: string) => {
+    return apiCall<any>(`/community/posts/${postId}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
+  },
+  getMyPosts: async () => {
+    return apiCall<{ posts: any[] }>('/community/my-posts');
   },
 };
 
@@ -1660,5 +1706,77 @@ export const studentApi = {
       '/student/messages',
       { method: 'POST', body: JSON.stringify(data) }
     );
+  },
+
+  // ── Meetings ─────────────────────────────────────────────────────────────
+  // Get meetings where the student is invited
+  getMeetings: async (params?: { page?: number; limit?: number; status?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      meetings: Array<{
+        id: number;
+        title: string;
+        description: string | null;
+        meeting_type: string;
+        scheduled_at: string | null;
+        duration_minutes: number;
+        timezone: string;
+        meeting_link: string | null;
+        meeting_platform: string | null;
+        status: string;
+        reason: string | null;
+        response: string | null;
+        organizer_id: number;
+        organizer_name: string;
+        organizer_avatar: string | null;
+        created_at: string | null;
+      }>;
+      total: number;
+      page: number;
+      total_pages: number;
+    }>(`/student/meetings${qs}`);
+  },
+
+  // Respond to a meeting invitation (accept/decline)
+  respondToMeeting: async (meetingId: number, data: { response: string; response_note?: string }) => {
+    return apiCall<{ message: string; meeting_id: number; response: string; status: string }>(
+      `/student/meetings/${meetingId}/respond`,
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  },
+
+  // ── Announcements ───────────────────────────────────────────────────────────
+  // Get announcements for student's enrolled courses
+  getAnnouncements: async (params?: { course_id?: number; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.course_id) query.set('course_id', String(params.course_id));
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.limit) query.set('limit', String(params.limit));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return apiCall<{
+      announcements: Array<{
+        id: number;
+        title: string;
+        content: string;
+        summary: string | null;
+        course_id: number;
+        course_title: string;
+        author_name: string;
+        author_avatar: string | null;
+        announcement_type: string;
+        priority: string;
+        image_url: string | null;
+        action_url: string | null;
+        published_at: string | null;
+        created_at: string | null;
+      }>;
+      total: number;
+      page: number;
+      total_pages: number;
+    }>(`/student/announcements${qs}`);
   },
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { instructorApi, sessionApi, usersApi } from "../app/api/config";
+import { instructorApi, sessionApi, usersApi, authApi } from "../app/api/config";
 import LiveKitRoom from "./LiveKitRoom";
 import InstructorLayout from "../app/components/InstructorLayout";
 import { toast } from "sonner";
@@ -77,8 +77,10 @@ export default function InstructorLiveSessions() {
     try {
       const result = await sessionApi.listSessions({ limit: 50 });
       setLiveKitSessions(result.sessions || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load LiveKit sessions:", err);
+      // Silently fail - don't break the UI for this optional feature
+      setLiveKitSessions([]);
     }
   };
 
@@ -110,8 +112,10 @@ export default function InstructorLiveSessions() {
 
   const loadAllUsers = async () => {
     try {
+      const currentUser = authApi.getCurrentUser();
       const res = await instructorApi.getAllUsers({ limit: 100 });
-      const otherUsers = (res.users || []).filter((u: User) => u.id !== 4); // Exclude self
+      // Exclude the current logged-in user
+      const otherUsers = (res.users || []).filter((u: User) => u.id !== (currentUser?.id || 0));
       setAllUsers(otherUsers);
       setSearchResults(otherUsers);
     } catch (err) {

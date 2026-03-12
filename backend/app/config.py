@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # ── Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/fluentfusion")
 
+    # ── Supabase
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+    SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
+
     # ── Redis / Celery
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
 

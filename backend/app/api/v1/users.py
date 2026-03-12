@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ...database import get_db
 from ...models.user import User, UserSettings
@@ -19,16 +19,25 @@ from ...schemas.language import UserLanguageResponse
 from ...schemas.progress import DashboardStatsResponse
 from ...schemas.gamification import UserXPResponse, StreakResponse, UserAchievementResponse
 from ...dependencies import get_current_user, get_current_active_user
+from ...utils.redis_client import redis_client
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+# Cache TTL for stats (60 seconds)
+STATS_CACHE_TTL = 60
 
 # Public endpoints - no authentication required
 
 @router.get("/stats")
 async def get_platform_stats(db: Session = Depends(get_db)):
-    """Get public platform statistics for the welcome page"""
+    """Get public platform statistics for the welcome page (cached for 60s)"""
     from datetime import timedelta
-
+    
+    # Try to get from cache first
+    cached_stats = await redis_client.cache_get("platform_stats")
+    if cached_stats:
+        return cached_stats
+    
     # Get total users
     total_users = db.query(User).filter(User.is_active == True).count()
 
@@ -62,7 +71,7 @@ async def get_platform_stats(db: Session = Depends(get_db)):
         (completed_enrollments / total_enrollments * 100) if total_enrollments > 0 else 0
     )
 
-    return {
+    stats = {
         "active_learners": active_users or total_users,
         "total_users": total_users,
         "languages": total_languages,
@@ -70,12 +79,39 @@ async def get_platform_stats(db: Session = Depends(get_db)):
         "instructors": total_instructors,
         "success_rate": success_rate
     }
+    
+    # Cache the result
+    await redis_client.cache_set("platform_stats", stats, STATS_CACHE_TTL)
+    
+    return stats
 
 
 @router.get("/languages")
 async def get_available_languages(db: Session = Depends(get_db)):
-    """Get available languages for learning"""
+    """Get available languages for learning (cached for 5 minutes)"""
+    # Try to get from cache first
+    cached_languages = await redis_client.cache_get("available_languages")
+    if cached_languages:
+        return {"languages": cached_languages}
+    
     languages = db.query(Language).filter(Language.is_active == True).all()
+    
+    # Serialize languages manually
+    languages_data = [
+        {
+            "id": lang.id,
+            "code": lang.code,
+            "name": lang.name,
+            "native_name": lang.native_name,
+            "flag_emoji": lang.flag_emoji,
+            "is_active": lang.is_active
+        }
+        for lang in languages
+    ]
+    
+    # Cache for 5 minutes (300 seconds)
+    await redis_client.cache_set("available_languages", languages_data, 300)
+    
     return {"languages": languages}
 
 @router.get("/me", response_model=UserResponse)
@@ -189,6 +225,12 @@ async def get_dashboard_stats(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    # Try cache first (30s TTL — fast enough to feel live, slow enough to save DB)
+    cache_key = f"dashboard:{current_user.id}"
+    cached = await redis_client.cache_get(cache_key)
+    if cached:
+        return DashboardStatsResponse(**cached)
+
     # Get or create XP
     xp = db.query(UserXP).filter(UserXP.user_id == current_user.id).first()
     if not xp:
@@ -245,7 +287,7 @@ async def get_dashboard_stats(
         LessonCompletion.completed_at >= today_start
     ).scalar() or 0
     
-    return DashboardStatsResponse(
+    result = DashboardStatsResponse(
         xp_points=xp.total_xp,
         xp_today=xp_today,
         current_streak=streak.current_streak,
@@ -258,6 +300,8 @@ async def get_dashboard_stats(
         next_level_xp=xp.xp_to_next_level,
         level=xp.current_level
     )
+    await redis_client.cache_set(cache_key, result.dict(), 30)
+    return result
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_public_profile(

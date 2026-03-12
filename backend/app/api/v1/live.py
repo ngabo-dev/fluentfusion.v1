@@ -282,7 +282,9 @@ async def get_live_sessions(
             "status": s.status,
             "max_participants": s.max_participants,
             "enrolled_count": reg_count,
-            "is_live": s.status == "live"
+            "is_live": s.status == "live",
+            "stream_url": s.stream_url,
+            "room_name": s.room_name
         })
     
     return {
@@ -330,7 +332,9 @@ async def get_upcoming_sessions(
             "status": s.status,
             "max_participants": s.max_participants,
             "enrolled_count": reg_count,
-            "is_live": s.status == "live"
+            "is_live": s.status == "live",
+            "stream_url": s.stream_url,
+            "room_name": s.room_name
         })
     
     return {"sessions": sessions_data}
@@ -441,7 +445,9 @@ async def join_session(
     
     return {
         "message": "Joined session",
-        "stream_url": session.stream_url if session.status == "live" else None
+        "stream_url": session.stream_url if session.status == "live" else None,
+        "room_name": session.room_name,
+        "is_registered": True
     }
 
 @router.post("/sessions/{session_id}/leave")

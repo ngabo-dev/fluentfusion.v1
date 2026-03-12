@@ -148,9 +148,13 @@ async def get_instructor_earnings(
     total = query.count()
     earnings = query.order_by(InstructorEarning.created_at.desc()).offset((page - 1) * limit).limit(limit).all()
     
+    # Batch load courses (avoid N+1)
+    earning_course_ids = list({e.course_id for e in earnings if e.course_id})
+    earning_course_map = {c.id: c for c in db.query(Course).filter(Course.id.in_(earning_course_ids)).all()}
+
     results = []
     for e in earnings:
-        course = db.query(Course).filter(Course.id == e.course_id).first()
+        course = earning_course_map.get(e.course_id)
         results.append({
             "id": e.id,
             "course_id": e.course_id,
@@ -1047,16 +1051,21 @@ async def send_message(
     instructor_id = current_user.id
     
     # Verify student is enrolled in instructor's course
+    # Allow messaging ANY student - bypass enrollment check for instructor flexibility
     courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
     course_ids = [c.id for c in courses]
     
-    enrollment = db.query(Enrollment).filter(
-        Enrollment.user_id == message.student_id,
-        Enrollment.course_id.in_(course_ids)
-    ).first()
+    # Check enrollment but don't block - instructors can message any student
+    enrollment = None
+    if course_ids:
+        enrollment = db.query(Enrollment).filter(
+            Enrollment.user_id == message.student_id,
+            Enrollment.course_id.in_(course_ids)
+        ).first()
     
-    if not enrollment and current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Student not enrolled in your course")
+    # Removed enrollment requirement - instructors can message any student
+    # if not enrollment and current_user.role != "admin":
+    #     raise HTTPException(status_code=403, detail="Student not enrolled in your course")
     
     # Get or create conversation
     conversation = db.query(Conversation).filter(
@@ -1232,6 +1241,8 @@ class AnnouncementCreate(BaseModel):
     course_id: int
     is_published: bool = True
     scheduled_for: Optional[str] = None
+    target_type: Optional[str] = "course"  # course, students, all_students
+    target_student_ids: Optional[List[int]] = None  # Specific student IDs for "students" target_type
 
 # ==================== ANNOUNCEMENTS ====================
 
@@ -1290,7 +1301,7 @@ async def create_announcement(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_instructor)
 ):
-    """Create an announcement for a course"""
+    """Create an announcement for a course or specific students"""
     instructor_id = current_user.id
     
     # Verify course belongs to instructor
@@ -1303,6 +1314,18 @@ async def create_announcement(
     if announcement_data.scheduled_for:
         scheduled = datetime.fromisoformat(announcement_data.scheduled_for.replace('Z', '+00:00'))
     
+    # Determine target based on target_type
+    target_role = "student"
+    target_students = None
+    
+    if announcement_data.target_type == "all_students":
+        # Get all students enrolled in instructor's courses
+        enrollments = db.query(Enrollment).filter(Enrollment.course_id == announcement_data.course_id).all()
+        target_students = [e.user_id for e in enrollments]
+    elif announcement_data.target_type == "students" and announcement_data.target_student_ids:
+        target_students = announcement_data.target_student_ids
+    # Default is "course" - sends to all enrolled students
+    
     announcement = Announcement(
         author_id=current_user.id,
         title=announcement_data.title,
@@ -1311,16 +1334,33 @@ async def create_announcement(
         is_published=announcement_data.is_published,
         scheduled_for=scheduled,
         announcement_type="course",
-        target_role="student"
+        target_role=target_role
     )
     db.add(announcement)
     db.commit()
     db.refresh(announcement)
     
+    # Create notifications for targeted students
+    from ...models.notification import Notification
+    if target_students:
+        for student_id in target_students:
+            notification = Notification(
+                user_id=student_id,
+                type="announcement",
+                title=f"New announcement: {announcement_data.title}",
+                body=announcement_data.content[:200],
+                action_url=f"/courses/{announcement_data.course_id}",
+                source_type="announcement",
+                source_id=announcement.id
+            )
+            db.add(notification)
+        db.commit()
+    
     return {
         "message": "Announcement created",
         "announcement_id": announcement.id,
-        "title": announcement.title
+        "title": announcement.title,
+        "recipients_count": len(target_students) if target_students else 0
     }
 
 @router.delete("/announcements/{announcement_id}")

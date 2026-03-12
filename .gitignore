@@ -35,6 +35,7 @@ build/
 .env
 .env.local
 .env.*.local
+backend/.env
 
 # Test
 coverage/

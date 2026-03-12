@@ -396,6 +396,7 @@ function AppRoutes() {
         <Route path="/instructor/quiz/:quizId" element={<InstructorRoute><InstructorQuizBuilder /></InstructorRoute>} />
         <Route path="/instructor/quiz/new/:courseId" element={<InstructorRoute><InstructorQuizBuilder /></InstructorRoute>} />
         <Route path="/instructor/assignments" element={<InstructorRoute><InstructorAssignmentBuilder /></InstructorRoute>} />
+        <Route path="/instructor/assignment-builder" element={<InstructorRoute><InstructorAssignmentBuilder /></InstructorRoute>} />
         <Route path="/instructor/students" element={<InstructorRoute><Component25ManageStudents /></InstructorRoute>} />
         <Route path="/instructor/certificates" element={<InstructorRoute><InstructorCertificates /></InstructorRoute>} />
         <Route path="/instructor/announcements" element={<InstructorRoute><InstructorAnnouncements /></InstructorRoute>} />
