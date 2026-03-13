@@ -157,7 +157,7 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 text-[#888] hover:text-white transition-colors"
+        className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
       >
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
@@ -181,13 +181,14 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-[#151515] border border-[#2a2a2a] rounded-[14px] shadow-xl z-[100]">
-          <div className="flex items-center justify-between p-4 border-b border-[#2a2a2a]">
-            <h3 className="text-white font-bold">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-[14px] shadow-xl z-[100]">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--border-default)]">
+            <h3 className="text-[var(--text-primary)] font-bold">Notifications</h3>
             {unreadCount > 0 && (
-              <button 
+              <button
+                type="button"
                 onClick={markAllAsRead}
-                className="text-[#bfff00] text-sm hover:underline"
+                className="text-[var(--accent-primary)] text-sm hover:underline"
               >
                 Mark all read
               </button>
@@ -196,29 +197,29 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
           
           <div className="max-h-[400px] overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-center text-[#888]">Loading...</div>
+              <div className="p-4 text-center text-[var(--text-secondary)]">Loading...</div>
             ) : notifications.length === 0 ? (
-              <div className="p-4 text-center text-[#888]">No notifications</div>
+              <div className="p-4 text-center text-[var(--text-secondary)]">No notifications</div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`p-4 border-b border-[#2a2a2a] cursor-pointer hover:bg-[#1a1a1a] transition-colors ${
-                    !notification.is_read ? 'bg-[rgba(191,255,0,0.05)]' : ''
+                  className={`p-4 border-b border-[var(--border-default)] cursor-pointer hover:bg-[var(--bg-tertiary)] transition-colors ${
+                    !notification.is_read ? 'bg-[var(--accent-primary-muted)]' : ''
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-xl">{getNotificationIcon(notification.type)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-white font-medium text-sm">{notification.title}</h4>
+                        <h4 className="text-[var(--text-primary)] font-medium text-sm">{notification.title}</h4>
                         {!notification.is_read && (
-                          <span className="w-2 h-2 bg-[#bfff00] rounded-full"></span>
+                          <span className="w-2 h-2 bg-[var(--accent-primary)] rounded-full"></span>
                         )}
                       </div>
-                      <p className="text-[#888] text-sm truncate">{notification.body}</p>
-                      <p className="text-[#555] text-xs mt-1">{formatTime(notification.created_at)}</p>
+                      <p className="text-[var(--text-secondary)] text-sm truncate">{notification.body}</p>
+                      <p className="text-[var(--text-tertiary)] text-xs mt-1">{formatTime(notification.created_at)}</p>
                     </div>
                   </div>
                 </div>
@@ -226,13 +227,14 @@ export default function NotificationBell({ userRole }: NotificationBellProps) {
             )}
           </div>
           
-          <div className="p-3 border-t border-[#2a2a2a]">
-            <button 
+          <div className="p-3 border-t border-[var(--border-default)]">
+            <button
+              type="button"
               onClick={() => {
                 setShowDropdown(false);
                 navigate('/notifications');
               }}
-              className="w-full text-center text-[#bfff00] text-sm hover:underline"
+              className="w-full text-center text-[var(--accent-primary)] text-sm hover:underline"
             >
               View all notifications
             </button>

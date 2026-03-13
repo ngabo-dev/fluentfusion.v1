@@ -59,8 +59,8 @@ function NavNav({ quiz, currentQuestion, timer }: { quiz: any; currentQuestion: 
   };
 
   return (
-    <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full">
-      <div aria-hidden="true" className="absolute border-[#2a2a2a] border-b border-solid inset-0 pointer-events-none" />
+    <div className="backdrop-blur-[8px] bg-[var(--bg-elevated)] h-[66px] shrink-0 sticky top-0 w-full">
+      <div aria-hidden="true" className="absolute border-[var(--border-default)] border-b border-solid inset-0 pointer-events-none" />
       <div className="flex flex-row items-center size-full">
         <div className="content-stretch flex items-center justify-between pb-px px-[40px] relative size-full">
           <ALogo onClick={() => {}} />
@@ -68,15 +68,15 @@ function NavNav({ quiz, currentQuestion, timer }: { quiz: any; currentQuestion: 
             <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
               {/* Quiz Info */}
               <div className="-translate-y-1/2 absolute content-stretch flex flex-col items-start left-0 pb-[0.8px] top-[calc(50%-0.51px)]">
-                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[#888] text-[13px] whitespace-nowrap">
+                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[var(--text-tertiary)] text-[13px] whitespace-nowrap">
                   <p className="leading-[20.8px]">{quiz?.title || 'Unit 3 Quiz'} · Question {currentQuestion + 1} of {quiz?.total_questions || 5}</p>
                 </div>
               </div>
               
               {/* Timer */}
-              <div className="-translate-y-1/2 absolute bg-[rgba(255,68,68,0.12)] content-stretch flex flex-col items-start left-[179.32px] pb-[7.19px] pt-[6px] px-[15px] rounded-[8px] top-1/2">
-                <div className="absolute border border-[rgba(255,68,68,0.25)] border-solid inset-0 pointer-events-none rounded-[8px]" />
-                <div className="flex flex-col font-['JetBrains_Mono:Bold',sans-serif] font-bold justify-center leading-[0] relative shrink-0 text-[#f44] text-[11.4px] whitespace-nowrap">
+              <div className="-translate-y-1/2 absolute bg-[var(--color-danger-muted)] content-stretch flex flex-col items-start left-[179.32px] pb-[7.19px] pt-[6px] px-[15px] rounded-[8px] top-1/2">
+                <div className="absolute border border-[var(--color-danger-border)] border-solid inset-0 pointer-events-none rounded-[8px]" />
+                <div className="flex flex-col font-['JetBrains_Mono:Bold',sans-serif] font-bold justify-center leading-[0] relative shrink-0 text-[var(--color-danger)] text-[11.4px] whitespace-nowrap">
                   <p className="leading-[19.2px]">⏱ {formatTime(timer)}</p>
                 </div>
               </div>
@@ -89,69 +89,69 @@ function NavNav({ quiz, currentQuestion, timer }: { quiz: any; currentQuestion: 
 }
 
 // Header with quiz info and progress
-function Header({ quiz, currentQuestion, answers, questionStates }: { quiz: any; currentQuestion: number; answers: { [key: number]: any }; questionStates: string[] }) {
-  return (
-    <div className="bg-[#151515] relative rounded-[20px] shrink-0 w-full">
-      <div aria-hidden="true" className="absolute border border-[#2a2a2a] border-solid inset-0 pointer-events-none rounded-[20px]" />
-      <div className="flex flex-row items-center size-full">
-        <div className="content-stretch flex items-center justify-between pb-[25px] pt-[24px] px-[29px] relative w-full">
-          {/* Quiz Title */}
-          <div className="relative shrink-0">
-            <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-px items-start relative">
-              <div className="flex flex-col font-['DM_Sans:Bold',sans-serif] font-bold justify-center leading-[0] relative shrink-0 text-[15px] text-white whitespace-nowrap">
-                <p className="leading-[24px]">{quiz?.title || 'Unit 3'} · {quiz?.subtitle || 'Hotel Check-in Quiz'}</p>
-              </div>
-              <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[#888] text-[12px] whitespace-nowrap">
-                <p className="leading-[19.2px]">{quiz?.course_title || 'English for Tourism'} · {quiz?.total_questions || 5} Questions</p>
+  function Header({ quiz, currentQuestion, answers, questionStates }: { quiz: any; currentQuestion: number; answers: { [key: number]: any }; questionStates: string[] }) {
+    return (
+      <div className="bg-[var(--bg-secondary)] relative rounded-[20px] shrink-0 w-full">
+        <div aria-hidden="true" className="absolute border border-[var(--border-default)] border-solid inset-0 pointer-events-none rounded-[20px]" />
+        <div className="flex flex-row items-center size-full">
+          <div className="content-stretch flex items-center justify-between pb-[25px] pt-[24px] px-[29px] relative w-full">
+            {/* Quiz Title */}
+            <div className="relative shrink-0">
+              <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col gap-px items-start relative">
+                <div className="flex flex-col font-['DM_Sans:Bold',sans-serif] font-bold justify-center leading-[0] relative shrink-0 text-[var(--text-primary)] whitespace-nowrap">
+                  <p className="leading-[24px]">{quiz?.title || 'Unit 3'} · {quiz?.subtitle || 'Hotel Check-in Quiz'}</p>
+                </div>
+                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[var(--text-tertiary)] text-[12px] whitespace-nowrap">
+                  <p className="leading-[19.2px]">{quiz?.course_title || 'English for Tourism'} · {quiz?.total_questions || 5} Questions</p>
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Progress */}
-          <div className="relative shrink-0">
-            <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[16px] items-center relative">
-              {/* Current Question */}
-              <div className="content-stretch flex flex-col items-start pb-px relative shrink-0">
-                <div className="content-stretch flex flex-col items-center mb-[-1px] relative shrink-0 w-full">
-                  <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[#bfff00] text-[22px] text-center whitespace-nowrap">
-                    <p className="leading-[35.2px]">{currentQuestion + 1}/{quiz?.total_questions || 5}</p>
+            
+            {/* Progress */}
+            <div className="relative shrink-0">
+              <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[16px] items-center relative">
+                {/* Current Question */}
+                <div className="content-stretch flex flex-col items-start pb-px relative shrink-0">
+                  <div className="content-stretch flex flex-col items-center mb-[-1px] relative shrink-0 w-full">
+                    <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[var(--accent-primary)] text-[22px] text-center whitespace-nowrap">
+                      <p className="leading-[35.2px]">{currentQuestion + 1}/{quiz?.total_questions || 5}</p>
+                    </div>
+                  </div>
+                  <div className="content-stretch flex flex-col items-center mb-[-1px] pb-[0.59px] relative shrink-0 w-full">
+                    <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[var(--text-tertiary)] text-[11px] text-center whitespace-nowrap">
+                      <p className="leading-[17.6px]">Progress</p>
+                    </div>
                   </div>
                 </div>
-                <div className="content-stretch flex flex-col items-center mb-[-1px] pb-[0.59px] relative shrink-0 w-full">
-                  <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[#888] text-[11px] text-center whitespace-nowrap">
-                    <p className="leading-[17.6px]">Progress</p>
-                  </div>
+                
+                <div className="bg-[var(--bg-tertiary)] h-[40px] shrink-0 w-px" />
+                
+                {/* Question Dots */}
+                <div className="content-stretch flex items-start relative shrink-0">
+                  {(quiz?.questions || []).map((_: any, idx: number) => (
+                    <div 
+                      key={idx}
+                      className={`rounded-[5px] shrink-0 size-[10px] ${
+                        idx === currentQuestion 
+                          ? 'bg-[var(--accent-primary)] shadow-[0px_0px_4px_0px_rgba(var(--accent-primary-rgb),0.5)]' 
+                          : questionStates[idx] === 'correct'
+                            ? 'bg-[var(--color-success)]'
+                            : questionStates[idx] === 'incorrect'
+                              ? 'bg-[var(--color-danger)]'
+                              : answers[idx] !== undefined
+                                ? 'bg-[var(--accent-primary)]'
+                                : 'bg-[var(--bg-tertiary)]'
+                      }`}
+                    />
+                  ))}
                 </div>
-              </div>
-              
-              <div className="bg-[#2a2a2a] h-[40px] shrink-0 w-px" />
-              
-              {/* Question Dots */}
-              <div className="content-stretch flex items-start relative shrink-0">
-                {(quiz?.questions || []).map((_: any, idx: number) => (
-                  <div 
-                    key={idx}
-                    className={`rounded-[5px] shrink-0 size-[10px] ${
-                      idx === currentQuestion 
-                        ? 'bg-[#bfff00] shadow-[0px_0px_4px_0px_rgba(191,255,0,0.5)]' 
-                        : questionStates[idx] === 'correct'
-                          ? 'bg-[#00ff7f]'
-                          : questionStates[idx] === 'incorrect'
-                            ? 'bg-[#ff4444]'
-                            : answers[idx] !== undefined
-                              ? 'bg-[#bfff00]'
-                              : 'bg-[#2a2a2a]'
-                    }`}
-                  />
-                ))}
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 // Multiple Choice Question
 function MultipleChoiceQuestion({ question, currentAnswer, onSelect, disabled }: { 
@@ -675,32 +675,32 @@ export default function Component14Quiz() {
   const answersArray = quiz?.questions?.map((_: any, idx: number) => answers[idx]) || [];
 
   if (isLoading) {
-    return (
-      <div className="bg-[#0a0a0a] content-stretch flex flex-col gap-[48px] items-center pb-[48px] relative min-h-screen">
-        <DivScreenId />
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin text-[32px]">🧠</div>
-        </div>
-      </div>
-    );
-  }
+     return (
+       <div className="bg-[var(--bg-primary)] content-stretch flex flex-col gap-[48px] items-center pb-[48px] relative min-h-screen">
+         <DivScreenId />
+         <div className="flex items-center justify-center h-screen">
+           <div className="animate-spin text-[32px] text-[var(--accent-primary)]">🧠</div>
+         </div>
+       </div>
+     );
+   }
 
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col gap-[48px] items-center pb-[48px] relative min-h-screen">
-      <DivScreenId />
-      <NavNav quiz={quiz} currentQuestion={currentQuestion} timer={timeLeft} />
-      <QuizCard 
-        quiz={quiz}
-        currentQuestion={currentQuestion}
-        currentAnswer={currentAnswer}
-        onAnswerChange={handleAnswerChange}
-        onSelectOption={handleSelectOption}
-        onPrevious={handlePrevious}
-        onSubmit={handleSubmit}
-        isLastQuestion={isLastQuestion}
-        questionStates={questionStates}
-        answers={answersArray}
-      />
-    </div>
-  );
+     <div className="bg-[var(--bg-primary)] content-stretch flex flex-col gap-[48px] items-center pb-[48px] relative min-h-screen">
+       <DivScreenId />
+       <NavNav quiz={quiz} currentQuestion={currentQuestion} timer={timeLeft} />
+       <QuizCard 
+         quiz={quiz}
+         currentQuestion={currentQuestion}
+         currentAnswer={currentAnswer}
+         onAnswerChange={handleAnswerChange}
+         onSelectOption={handleSelectOption}
+         onPrevious={handlePrevious}
+         onSubmit={handleSubmit}
+         isLastQuestion={isLastQuestion}
+         questionStates={questionStates}
+         answers={answersArray}
+       />
+     </div>
+   );
 }

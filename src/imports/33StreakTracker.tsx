@@ -48,17 +48,17 @@ export default function Component33StreakTracker() {
   return (
     <StudentLayout title="Streak Tracker" subtitle="Build your daily learning habit">
       {loading ? (
-        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading...</div>
-      ) : (
+         <div className="flex items-center justify-center min-h-[400px] text-[var(--text-tertiary)]">Loading...</div>
+       ) : (
         <>
           {/* Main streak display */}
-          <div className="bg-gradient-to-r from-[rgba(255,107,53,0.15)] to-[rgba(255,107,53,0.05)] border border-[rgba(255,107,53,0.3)] rounded-2xl p-8 mb-8 text-center">
+          <div className="bg-gradient-to-r from-[rgba(var(--color-warning-rgb),0.15)] to-[rgba(var(--color-warning-rgb),0.05)] border border-[rgba(var(--color-warning-rgb),0.3)] rounded-2xl p-8 mb-8 text-center">
             <div className="text-[72px] mb-2">🔥</div>
-            <div className="text-[64px] font-bold text-[#ff6b35] mb-2">{streak?.current_streak || 0}</div>
+            <div className="text-[64px] font-bold text-[var(--color-warning)] mb-2">{streak?.current_streak || 0}</div>
             <div className="text-white text-[18px] font-semibold mb-1">Day Streak</div>
-            <div className="text-[#888] text-[13px]">
-              {streak?.current_streak ? `Keep it up! You're on a roll.` : `Start your streak by learning today!`}
-            </div>
+            <div className="text-[var(--text-tertiary)] text-[13px]">
+  {streak?.current_streak ? `Keep it up! You're on a roll.` : `Start your streak by learning today!`}
+</div>
             <button
               type="button"
               onClick={recordToday}

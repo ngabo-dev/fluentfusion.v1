@@ -5,8 +5,8 @@ import { authApi } from "../app/api/config";
 
 function BackgroundBorderBackgroundImage({ children }: React.PropsWithChildren<{}>) {
   return (
-    <div className="bg-[#1f1f1f] relative rounded-[8px] shrink-0 w-full">
-      <div aria-hidden="true" className="absolute border border-[#2a2a2a] border-solid inset-0 pointer-events-none rounded-[8px]" />
+    <div className="bg-[var(--bg-elevated)] relative rounded-[8px] shrink-0 w-full">
+      <div aria-hidden="true" className="absolute border border-[var(--border-default)] border-solid inset-0 pointer-events-none rounded-[8px]" />
       <div className="flex flex-row items-center justify-center size-full">{children}</div>
     </div>
   );
@@ -226,26 +226,26 @@ export default function Component02Signup() {
   };
 
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start relative size-full" data-name="02-signup">
+    <div className="bg-[var(--bg-primary)] content-stretch flex flex-col isolate items-start relative size-full" data-name="02-signup">
       <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-[2]" data-name="Nav">
         <div aria-hidden="true" className="absolute border-[#2a2a2a] border-b border-solid inset-0 pointer-events-none" />
         <div className="flex flex-row items-center size-full">
           <div className="content-stretch flex items-center justify-between pb-px px-[40px] relative size-full">
             <div className="relative shrink-0" data-name="Link">
               <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[11px] items-center relative">
-                <div className="bg-[#bfff00] content-stretch flex items-center justify-center pb-[4.91px] pt-[4.09px] relative rounded-[10px] shrink-0 size-[38px]" data-name="Background">
-                  <div className="flex flex-col font-['Noto_Color_Emoji:Regular',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[18px] text-black text-center whitespace-nowrap">
-                    <p className="leading-[28.8px]">🧠</p>
-                  </div>
-                </div>
+  <div className="bg-[var(--accent-primary)] content-stretch flex items-center justify-center pb-[4.91px] pt-[4.09px] relative rounded-[10px] shrink-0 size-[38px]" data-name="Background">
+    <div className="flex flex-col font-['Noto_Color_Emoji:Regular',sans-serif] justify-center leading-[0] not-italic relative shrink-0 text-[18px] text-[var(--text-tertiary)] text-center whitespace-nowrap">
+      <p className="leading-[28.8px]">🧠</p>
+    </div>
+  </div>
                 <div className="content-stretch flex flex-col items-start relative shrink-0" data-name="Container">
-                  <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[18px] text-white tracking-px] uppercase whitespace[-0.36-nowrap">
-                    <p>
-                      <span className="leading-[28.8px]">FLUENT</span>
-                      <span className="leading-[28.8px] text-[#bfff00]">FUSION</span>
-                    </p>
-                  </div>
-                </div>
+  <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[18px] text-[var(--text-primary)] tracking-px] uppercase whitespace[-0.36-nowrap">
+    <p>
+      <span className="leading-[28.8px] text-[var(--text-primary)]">FLUENT</span>
+      <span className="leading-[28.8px] text-[var(--accent-primary)]">FUSION</span>
+    </p>
+  </div>
+</div>
               </div>
             </div>
             <ContainerBackgroundImage>

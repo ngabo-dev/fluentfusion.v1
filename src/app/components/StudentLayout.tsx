@@ -1,6 +1,25 @@
 import { useNavigate, useLocation, Link } from 'react-router';
-import { useEffect, useState } from 'react';
-import { authApi } from '../api/config';
+import { useEffect, useState, useRef } from 'react';
+import { authApi, API_BASE_URL } from '../api/config';
+import ThemeToggle from './ui/ThemeToggle';
+
+interface Notification {
+  id: number;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  type: string;
+}
+
+function getRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
 
 interface StudentLayoutProps {
   children: React.ReactNode;
@@ -13,6 +32,42 @@ export default function StudentLayout({ children, title, subtitle, headerAction 
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('ff_access_token');
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/notifications`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications((data.notifications || []).slice(0, 10));
+        setUnreadCount(data.unread_count ?? 0);
+      }
+    } catch {
+      // silently fail
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      const token = localStorage.getItem('ff_access_token');
+      if (!token) return;
+      await fetch(`${API_BASE_URL}/notifications/read-all`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch {
+      // silently fail
+    }
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('ff_user');
@@ -27,15 +82,25 @@ export default function StudentLayout({ children, title, subtitle, headerAction 
     }
   }, [navigate]);
 
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleLogout = () => {
-    authApi.logout().catch(() => {
-      // Ignore logout API errors, always clear local state
-    }).finally(() => {
-      localStorage.removeItem('ff_access_token');
-      localStorage.removeItem('ff_refresh_token');
-      localStorage.removeItem('ff_user');
-      navigate('/login');
-    });
+    authApi.logout();
+    window.location.href = '/login';
   };
 
   const getInitials = (name: string) => {
@@ -59,6 +124,8 @@ export default function StudentLayout({ children, title, subtitle, headerAction 
     { to: '/progress', icon: '📊', label: 'Progress' },
     { to: '/achievements', icon: '🏆', label: 'Achievements' },
     { to: '/leaderboard', icon: '🥇', label: 'Leaderboard' },
+    { to: '/study-groups', icon: '👥', label: 'Study Groups' },
+    { to: '/placement-test', icon: '🎯', label: 'Placement Test' },
   ];
 
   const accountLinks = [
@@ -67,9 +134,9 @@ export default function StudentLayout({ children, title, subtitle, headerAction 
   ];
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen flex flex-col">
+    <div className="ff-page min-h-screen flex flex-col">
       {/* Top Navigation */}
-      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
+      <nav className="ff-nav h-[66px] shrink-0 sticky top-0 w-full z-50">
         <div className="flex items-center justify-between h-full px-[40px]">
           <Link to="/dashboard" className="flex gap-[11px] items-center no-underline">
             <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
@@ -92,6 +159,52 @@ export default function StudentLayout({ children, title, subtitle, headerAction 
                 <span className="text-white text-[13px] hidden md:block">{user.full_name}</span>
               </div>
             )}
+            {/* Notifications Bell */}
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setShowNotifications(prev => !prev)}
+                type="button"
+                className="relative w-9 h-9 flex items-center justify-center rounded-full bg-[#1a1a1a] hover:bg-[#222] text-white cursor-pointer border-none"
+              >
+                🔔
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full text-[9px] flex items-center justify-center text-white">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 top-[48px] w-[360px] max-h-[420px] overflow-y-auto bg-[#151515] border border-[#2a2a2a] rounded-xl shadow-2xl z-[100]">
+                  <div className="flex justify-between items-center px-4 py-3 border-b border-[#1a1a1a]">
+                    <span className="text-white text-sm font-semibold">Notifications</span>
+                    <button
+                      onClick={markAllRead}
+                      type="button"
+                      className="text-[#bfff00] text-xs hover:underline bg-transparent border-none cursor-pointer"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-[#555] text-sm">No notifications</div>
+                  ) : (
+                    notifications.map(notif => (
+                      <div
+                        key={notif.id}
+                        className="flex gap-3 px-4 py-3 hover:bg-[#1a1a1a] border-b border-[#1a1a1a] last:border-0"
+                      >
+                        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${notif.is_read ? 'bg-[#333]' : 'bg-[#bfff00]'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm leading-snug">{notif.message}</p>
+                          <p className="text-[#555] text-xs mt-1">{getRelativeTime(notif.created_at)}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <ThemeToggle />
             <button
               onClick={handleLogout}
               className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer ml-2 transition-colors"
@@ -104,7 +217,7 @@ export default function StudentLayout({ children, title, subtitle, headerAction 
 
       <div className="flex flex-1 min-h-[calc(100vh-66px)]">
         {/* Sidebar */}
-        <aside className="fixed left-0 top-[66px] w-[240px] h-[calc(100vh-66px)] bg-[#0f0f0f] border-r border-[#2a2a2a] overflow-y-auto">
+        <aside className="ff-sidebar fixed left-0 top-[66px] w-[240px] h-[calc(100vh-66px)] overflow-y-auto">
           <div className="flex flex-col py-5">
             <div className="text-[#555] text-[9px] uppercase tracking-[1.35px] px-6 py-3">Learning</div>
 

@@ -39,13 +39,19 @@ class QuizQuestion(Base):
     id = Column(Integer, primary_key=True, index=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
     
-    question_type = Column(String(50), nullable=False)  # multiple_choice, fill_blank, listening, speaking, translation
+    question_type = Column(String(50), nullable=False)  # multiple_choice, multiple_select, true_false, short_answer, fill_blank, audio, matching, ordering
     question_text = Column(Text, nullable=False)
-    audio_url = Column(String(500))  # For listening questions
+    audio_url = Column(String(500))  # For listening/audio questions
     image_url = Column(String(500))
     order_index = Column(Integer, default=0)
     points = Column(Integer, default=10)
     correct_answer = Column(Text)  # For fill_blank / true_false questions
+    
+    # For matching questions - store as JSON
+    matching_pairs = Column(JSON)  # {"left": ["Apple", "Dog"], "right": ["Fruit", "Animal"], "correct": {"Apple": "Fruit", "Dog": "Animal"}}
+    
+    # For ordering questions - store correct order as JSON
+    correct_order = Column(JSON)  # ["I", "go", "to", "school"]
     
     # Relationships
     quiz = relationship("Quiz", back_populates="questions")

@@ -189,3 +189,59 @@ async def create_lesson(
     db.refresh(lesson)
     
     return {"message": "Lesson created", "lesson_id": lesson.id}
+
+class LessonUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    video_url: Optional[str] = None
+    video_duration_sec: Optional[int] = None
+    order_index: Optional[int] = None
+    is_free_preview: Optional[bool] = None
+    xp_reward: Optional[int] = None
+
+@router.patch("/{lesson_id}")
+async def update_lesson(
+    lesson_id: int,
+    lesson_data: LessonUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update a lesson (instructor only)"""
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    
+    course = db.query(Course).filter(Course.id == lesson.course_id).first()
+    if course.instructor_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Update fields
+    update_dict = lesson_data.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
+        if value is not None:
+            setattr(lesson, key, value)
+    
+    db.commit()
+    db.refresh(lesson)
+    
+    return {"message": "Lesson updated", "lesson_id": lesson.id}
+
+@router.delete("/{lesson_id}")
+async def delete_lesson(
+    lesson_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete a lesson (instructor only)"""
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    
+    course = db.query(Course).filter(Course.id == lesson.course_id).first()
+    if course.instructor_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    db.delete(lesson)
+    db.commit()
+    
+    return {"message": "Lesson deleted"}

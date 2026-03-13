@@ -4,6 +4,97 @@ import { usersApi, gamificationApi, API_BASE_URL } from '../app/api/config';
 import StudentLayout from '../app/components/StudentLayout';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts';
 
+// Build a 12-week × 7-day grid of dates (Mon-Sun columns, week 0 = oldest)
+function buildHeatmapGrid(weeks: number): string[][] {
+  const grid: string[][] = [];
+  // Find the most recent Sunday
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  // Advance to end of current week (Sunday)
+  const endSunday = new Date(today);
+  endSunday.setDate(today.getDate() + (7 - dayOfWeek) % 7);
+
+  for (let w = weeks - 1; w >= 0; w--) {
+    const weekDates: string[] = [];
+    // Monday of this week
+    const monday = new Date(endSunday);
+    monday.setDate(endSunday.getDate() - w * 7 - 6);
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + d);
+      weekDates.push(day.toISOString().slice(0, 10));
+    }
+    grid.push(weekDates);
+  }
+  return grid;
+}
+
+function getHeatmapColor(count: number): string {
+  if (count === 0) return 'var(--bg-tertiary)';
+  if (count <= 2) return 'rgba(191,255,0,0.2)';
+  if (count <= 5) return 'rgba(191,255,0,0.5)';
+  return 'var(--accent-primary)';
+}
+
+function ActivityHeatmap({ activityMap }: { activityMap: Map<string, number> }) {
+  const WEEKS = 12;
+  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const grid = buildHeatmapGrid(WEEKS);
+  const [tooltip, setTooltip] = useState<{ date: string; count: number; x: number; y: number } | null>(null);
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex gap-2">
+        {/* Day labels on Y-axis */}
+        <div className="flex flex-col gap-[2px] pt-[18px]">
+          {DAY_LABELS.map(d => (
+            <div key={d} className="h-[14px] text-[9px] text-[#555] flex items-center pr-1 leading-none">{d}</div>
+          ))}
+        </div>
+        {/* Grid columns (weeks) */}
+        <div className="flex flex-col gap-1">
+          {/* Week number labels */}
+          <div className="flex gap-[2px]">
+            {grid.map((_, wi) => (
+              <div key={wi} className="w-[14px] text-[9px] text-[#555] text-center leading-none">{wi + 1}</div>
+            ))}
+          </div>
+          {/* Day rows */}
+          {DAY_LABELS.map((_, di) => (
+            <div key={di} className="flex gap-[2px]">
+              {grid.map((week, wi) => {
+                const date = week[di];
+                const count = activityMap.get(date) || 0;
+                return (
+                  <div
+                    key={wi}
+                    className="w-[14px] h-[14px] rounded-sm cursor-pointer transition-opacity hover:opacity-80 relative"
+                    style={{ backgroundColor: getHeatmapColor(count) }}
+                    onMouseEnter={(e) => {
+                      const rect = (e.target as HTMLElement).getBoundingClientRect();
+                      setTooltip({ date, count, x: rect.left + rect.width / 2, y: rect.top });
+                    }}
+                    onMouseLeave={() => setTooltip(null)}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Tooltip */}
+      {tooltip && (
+        <div
+          className="fixed z-50 pointer-events-none bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-[11px] text-white shadow-lg"
+          style={{ left: tooltip.x, top: tooltip.y - 44, transform: 'translateX(-50%)' }}
+        >
+          <span className="font-semibold text-[#bfff00]">{tooltip.count}</span> {tooltip.count === 1 ? 'activity' : 'activities'} · {tooltip.date}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Component15Progress() {
   const [stats, setStats] = useState<any>(null);
   const [streak, setStreak] = useState<any>(null);
@@ -11,6 +102,7 @@ export default function Component15Progress() {
   const [xpHistory, setXPHistory] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activityMap, setActivityMap] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     const token = localStorage.getItem('ff_access_token');
@@ -22,7 +114,8 @@ export default function Component15Progress() {
       gamificationApi.getXP(),
       gamificationApi.getXPTransactions(1, 7),
       fetch(`${API_BASE_URL}/courses/enrolled`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-    ]).then(([statsRes, streakRes, xpRes, xpHistRes, coursesRes]) => {
+      fetch(`${API_BASE_URL}/gamification/activity-heatmap?weeks=12`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : { data: [] }),
+    ]).then(([statsRes, streakRes, xpRes, xpHistRes, coursesRes, heatmapRes]) => {
       if (statsRes.status === 'fulfilled') setStats(statsRes.value);
       if (streakRes.status === 'fulfilled') setStreak(streakRes.value);
       if (xpRes.status === 'fulfilled') setXP(xpRes.value);
@@ -40,6 +133,12 @@ export default function Component15Progress() {
         const data = coursesRes.value;
         const list = Array.isArray(data) ? data : (data.courses || []);
         setCourses(list.slice(0, 5));
+      }
+      if (heatmapRes.status === 'fulfilled') {
+        const entries: { date: string; count: number }[] = heatmapRes.value?.data || [];
+        const map = new Map<string, number>();
+        entries.forEach(e => map.set(e.date, e.count));
+        setActivityMap(map);
       }
       setLoading(false);
     });
@@ -130,6 +229,17 @@ export default function Component15Progress() {
                 }}
               />
             </div>
+          </div>
+
+          {/* Activity Heatmap */}
+          <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-white font-semibold">Activity Heatmap</h2>
+                <span className="text-[#555] text-[11px]">Last 12 weeks</span>
+              </div>
+            </div>
+            <ActivityHeatmap activityMap={activityMap} />
           </div>
 
           {/* Courses Progress */}

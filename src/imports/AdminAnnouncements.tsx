@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
-import { adminApi } from '../app/api/config';
+import { adminApi, authApi } from '../app/api/config';
 
 export default function AdminAnnouncements() {
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ export default function AdminAnnouncements() {
               <div className="w-[32px] h-[32px] rounded-[16px] flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgb(191, 255, 0) 0%, rgb(143, 239, 0) 100%)" }}>
                 <span className="text-[13px] font-bold text-black">{getUserInitials()}</span>
               </div>
-              <button onClick={() => { localStorage.clear(); navigate('/login'); }} className="text-[#888] hover:text-white text-sm">Logout</button>
+              <button onClick={() => { authApi.logout(); window.location.href = '/login'; }} className="text-[#888] hover:text-white text-sm">Logout</button>
             </div>
           </div>
         </div>

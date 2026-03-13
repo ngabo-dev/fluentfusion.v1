@@ -372,3 +372,32 @@ async def get_gamification_stats(
         "current_streak": streak.current_streak,
         "longest_streak": streak.longest_streak
     }
+
+# ==================== ACTIVITY HEATMAP ====================
+
+@router.get("/activity-heatmap")
+async def get_activity_heatmap(
+    weeks: int = Query(12, ge=1, le=52),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get activity heatmap data (GitHub-style) for the last N weeks"""
+    from datetime import timedelta, date as date_type
+
+    end_date = date_type.today()
+    start_date = end_date - timedelta(weeks=weeks)
+
+    days = db.query(StreakDay).filter(
+        StreakDay.user_id == current_user.id,
+        StreakDay.activity_date >= start_date,
+        StreakDay.activity_date <= end_date
+    ).all()
+
+    data = []
+    for day in days:
+        d = day.activity_date
+        if isinstance(d, datetime):
+            d = d.date()
+        data.append({"date": d.isoformat(), "count": 1})
+
+    return {"data": data, "weeks": weeks}

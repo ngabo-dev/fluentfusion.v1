@@ -276,3 +276,103 @@ async def get_saved_posts(
         "total": total,
         "page": page
     }
+
+# ==================== STUDY GROUPS ====================
+
+@router.get("/groups")
+async def get_study_groups(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all study groups"""
+    from ...models.extras import StudyGroup, StudyGroupMember
+    groups = db.query(StudyGroup).filter(StudyGroup.is_active == True).order_by(
+        StudyGroup.created_at.desc()
+    ).offset((page - 1) * limit).limit(limit).all()
+    total = db.query(StudyGroup).filter(StudyGroup.is_active == True).count()
+    result = []
+    for g in groups:
+        member_record = db.query(StudyGroupMember).filter(
+            StudyGroupMember.group_id == g.id, StudyGroupMember.user_id == current_user.id
+        ).first()
+        result.append({
+            "id": g.id,
+            "name": g.name,
+            "description": g.description,
+            "language": g.language,
+            "member_count": g.member_count,
+            "is_joined": member_record is not None,
+            "created_at": g.created_at.isoformat() if g.created_at else None,
+        })
+    return {"groups": result, "total": total, "page": page}
+
+
+@router.post("/groups")
+async def create_study_group(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new study group"""
+    from ...models.extras import StudyGroup, StudyGroupMember
+    name = body.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+    group = StudyGroup(
+        name=name,
+        description=body.get("description", ""),
+        language=body.get("language", ""),
+        creator_id=current_user.id,
+        member_count=1,
+    )
+    db.add(group)
+    db.flush()
+    db.add(StudyGroupMember(group_id=group.id, user_id=current_user.id))
+    db.commit()
+    db.refresh(group)
+    return {"message": "Group created", "group_id": group.id}
+
+
+@router.post("/groups/{group_id}/join")
+async def join_study_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Join a study group"""
+    from ...models.extras import StudyGroup, StudyGroupMember
+    group = db.query(StudyGroup).filter(StudyGroup.id == group_id, StudyGroup.is_active == True).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    existing = db.query(StudyGroupMember).filter(
+        StudyGroupMember.group_id == group_id, StudyGroupMember.user_id == current_user.id
+    ).first()
+    if existing:
+        return {"message": "Already a member"}
+    db.add(StudyGroupMember(group_id=group_id, user_id=current_user.id))
+    group.member_count += 1
+    db.commit()
+    return {"message": "Joined group"}
+
+
+@router.post("/groups/{group_id}/leave")
+async def leave_study_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Leave a study group"""
+    from ...models.extras import StudyGroup, StudyGroupMember
+    group = db.query(StudyGroup).filter(StudyGroup.id == group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    member = db.query(StudyGroupMember).filter(
+        StudyGroupMember.group_id == group_id, StudyGroupMember.user_id == current_user.id
+    ).first()
+    if member:
+        db.delete(member)
+        group.member_count = max(0, group.member_count - 1)
+        db.commit()
+    return {"message": "Left group"}

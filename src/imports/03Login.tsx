@@ -122,25 +122,25 @@ export default function Component03Login() {
   };
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen flex flex-col" data-name="03-login">
+    <div className="bg-[var(--bg-primary)] min-h-screen flex flex-col" data-name="03-login">
       {/* Navigation bar - Top */}
-      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
+      <nav className="backdrop-blur-[8px] bg-[rgba(var(--bg-primary-rgb),0.95)] h-[66px] sticky top-0 w-full z-50 border-b border-[var(--border-default)]">
         <div className="flex items-center justify-between px-10 h-full max-w-[1200px] mx-auto">
-          <button onClick={() => navigate('/')} className="flex items-center gap-[11px]">
-            <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
-              <span className="text-[18px]">🧠</span>
-            </div>
-            <div className="font-['Syne:ExtraBold'] text-[18px] uppercase tracking-[-0.36px]">
-              <span className="text-white">FLUENT</span>
-              <span className="text-[#bfff00]">FUSION</span>
-            </div>
-          </button>
-          <button 
-            onClick={() => navigate('/signup')}
-            className="text-white hover:text-[#bfff00] transition-colors"
-          >
-            Sign Up
-          </button>
+           <button onClick={() => navigate('/')} className="flex items-center gap-[11px]">
+             <div className="bg-[var(--accent-primary)] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
+               <span className="text-[18px]">🧠</span>
+             </div>
+             <div className="font-['Syne:ExtraBold'] text-[18px] uppercase tracking-[-0.36px]">
+               <span className="text-[var(--text-primary)]">FLUENT</span>
+               <span className="text-[var(--accent-primary)]">FUSION</span>
+             </div>
+           </button>
+           <button 
+             onClick={() => navigate('/signup')}
+             className="text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors"
+           >
+             Sign Up
+           </button>
         </div>
       </nav>
 
@@ -152,11 +152,11 @@ export default function Component03Login() {
             style={{ backgroundImage: "url('data:image/svg+xml;utf8,<svg viewBox=\\'0 0 600 600\\' xmlns=\\'http://www.w3.org/2000/svg\\' preserveAspectRatio=\\'none\\'><rect x=\\'0\\' y=\\'0\\' height=\\'100%\\' width=\\'100%\\' fill=\\'url(%23grad)\\' opacity=\\'1\\'/><defs><radialGradient id=\\'grad\\' gradientUnits=\\'userSpaceOnUse\\' cx=\\'0\\' cy=\\'0\\' r=\\'10\\' gradientTransform=\\'matrix(42.426 0 0 42.426 300 300)\\'><stop stop-color=\\'rgba(191,255,0,0.06)\\' offset=\\'0\\'/><stop stop-color=\\'rgba(191,255,0,0)\\' offset=\\'0.65\\'/></radialGradient></defs></svg>')" }}
           />
 
-          <div className="bg-[#151515] border border-[#2a2a2a] rounded-[20px] p-8 relative overflow-hidden">
-            {/* Mask gradient overlay */}
-            <div className="absolute inset-0 rounded-[20px] pointer-events-none" 
-              style={{ background: "linear-gradient(145deg, rgba(191, 255, 0, 0.18) 0%, rgba(191, 255, 0, 0) 50%)" }}
-            />
+           <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-[20px] p-8 relative overflow-hidden">
+           {/* Mask gradient overlay */}
+             <div className="absolute inset-0 rounded-[20px] pointer-events-none" 
+               style={{ background: "linear-gradient(145deg, rgba(var(--accent-primary-rgb),0.18) 0%, rgba(var(--accent-primary-rgb),0) 50%)" }}
+             />
 
             {/* Back link */}
             <button 
@@ -166,125 +166,125 @@ export default function Component03Login() {
               ← Back to Home
             </button>
 
-            {/* Logo */}
-            <div className="flex items-center gap-2.5 mb-6">
-              <div className="bg-[#bfff00] w-8 h-8 rounded-lg flex items-center justify-center">
-                <span className="text-[15px]">🧠</span>
-              </div>
-              <div className="font-['Syne:ExtraBold'] text-[15px] uppercase tracking-wide">
-                <span className="text-white">FLUENT</span>
-                <span className="text-[#bfff00]">FUSION</span>
-              </div>
-            </div>
+             {/* Logo */}
+             <div className="flex items-center gap-2.5 mb-6">
+               <div className="bg-[var(--accent-primary)] w-8 h-8 rounded-lg flex items-center justify-center">
+                 <span className="text-[15px]">🧠</span>
+               </div>
+               <div className="font-['Syne:ExtraBold'] text-[15px] uppercase tracking-wide">
+                 <span className="text-[var(--text-primary)]">FLUENT</span>
+                 <span className="text-[var(--accent-primary)]">FUSION</span>
+               </div>
+             </div>
 
-            {/* Title */}
-            <h1 className="font-['Syne:ExtraBold'] text-[26px] font-extrabold uppercase tracking-wide text-white mb-2">
-              Welcome<br />
-              <span className="text-[#bfff00]">Back</span>
-            </h1>
-            <p className="text-[#888] text-[14px] mb-6">
-              Sign in to continue your learning journey
-            </p>
+             {/* Title */}
+             <h1 className="font-['Syne:ExtraBold'] text-[26px] font-extrabold uppercase tracking-wide text-[var(--text-primary)] mb-2">
+               Welcome<br />
+               <span className="text-[var(--accent-primary)]">Back</span>
+             </h1>
+             <p className="text-[var(--text-tertiary)] text-[14px] mb-6">
+               Sign in to continue your learning journey
+             </p>
 
-            {/* Error Message - Above form, no layout shift */}
-            <div 
-              className={clsx(
-                "mb-4 p-3 rounded-lg border transition-all duration-300 ease-in-out",
-                error && errorVisible 
-                  ? "opacity-100 translate-y-0" 
-                  : "opacity-0 -translate-y-2 pointer-events-none",
-                error && errorVisible ? "bg-red-500/10 border-red-500" : ""
-              )}
-            >
-              <p className="text-red-500 text-sm">{error}</p>
-            </div>
+             {/* Error Message - Above form, no layout shift */}
+             <div 
+               className={clsx(
+                 "mb-4 p-3 rounded-lg border transition-all duration-300 ease-in-out",
+                 error && errorVisible 
+                   ? "opacity-100 translate-y-0" 
+                   : "opacity-0 -translate-y-2 pointer-events-none",
+                 error && errorVisible ? "bg-[var(--color-danger)/10] border-[var(--color-danger)]" : ""
+               )}
+             >
+               <p className="text-[var(--color-danger)] text-sm">{error}</p>
+             </div>
 
-            {/* Form - using proper form structure for browser password manager */}
-            <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-[#888] text-[10px] uppercase tracking-wider mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <input
-                    ref={emailInputRef}
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    aria-label="Email address"
-                    value={email}
-                    onChange={(e) => handleEmailChange(e.target.value)}
-                    placeholder="Enter your email"
-                    className="w-full bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg py-3 pl-11 pr-4 text-white text-[15px] placeholder-[#555] outline-none focus:border-[#bfff00] transition-colors"
-                  />
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888]">✉️</span>
-                </div>
-              </div>
+             {/* Form - using proper form structure for browser password manager */}
+             <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4">
+               {/* Email */}
+               <div>
+                 <label htmlFor="email" className="block text-[var(--text-tertiary)] text-[10px] uppercase tracking-wider mb-2">
+                   Email Address
+                 </label>
+                 <div className="relative">
+                   <input
+                     ref={emailInputRef}
+                     id="email"
+                     name="email"
+                     type="email"
+                     autoComplete="email"
+                     aria-label="Email address"
+                     value={email}
+                     onChange={(e) => handleEmailChange(e.target.value)}
+                     placeholder="Enter your email"
+                     className="w-full bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-lg py-3 pl-11 pr-4 text-[var(--text-primary)] text-[15px] placeholder-[var(--text-tertiary)] outline-none focus:border-[var(--accent-primary)] transition-colors"
+                   />
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]">✉️</span>
+                 </div>
+               </div>
 
-              {/* Password */}
-              <div>
-                <label htmlFor="password" className="block text-[#888] text-[10px] uppercase tracking-wider mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    ref={passwordInputRef}
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    aria-label="Password"
-                    value={password}
-                    onChange={(e) => handlePasswordChange(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg py-3 pl-11 pr-12 text-white text-[15px] placeholder-[#555] outline-none focus:border-[#bfff00] transition-colors"
-                  />
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888]">🔒</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#888] hover:text-white transition-colors"
-                  >
-                    {showPassword ? "👁️" : "👁️‍🗨️"}
-                  </button>
-                </div>
-              </div>
+               {/* Password */}
+               <div>
+                 <label htmlFor="password" className="block text-[var(--text-tertiary)] text-[10px] uppercase tracking-wider mb-2">
+                   Password
+                 </label>
+                 <div className="relative">
+                   <input
+                     ref={passwordInputRef}
+                     id="password"
+                     name="password"
+                     type={showPassword ? "text" : "password"}
+                     autoComplete="current-password"
+                     aria-label="Password"
+                     value={password}
+                     onChange={(e) => handlePasswordChange(e.target.value)}
+                     placeholder="Enter your password"
+                     className="w-full bg-[var(--bg-elevated)] border border-[var(--border-default)] rounded-lg py-3 pl-11 pr-12 text-[var(--text-primary)] text-[15px] placeholder-[var(--text-tertiary)] outline-none focus:border-[var(--accent-primary)] transition-colors"
+                   />
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]">🔒</span>
+                   <button
+                     type="button"
+                     onClick={() => setShowPassword(!showPassword)}
+                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                   >
+                     {showPassword ? "👁️" : "👁️‍🗨️"}
+                   </button>
+                 </div>
+               </div>
 
-              {/* Remember me & Forgot password */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <div 
-                    className={clsx(
-                      "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                      rememberMe ? "bg-[#bfff00] border-[#bfff00]" : "border-[#bfff00]"
-                    )}
-                    onClick={() => setRememberMe(!rememberMe)}
-                  >
-                    {rememberMe && <span className="text-black text-[10px]">✓</span>}
-                  </div>
-                  <span className="text-[#888] text-[13px]">Remember me</span>
-                </label>
-                <button 
-                  onClick={() => navigate('/forgot-password')}
-                  className="text-[#bfff00] text-[13px] hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
+               {/* Remember me & Forgot password */}
+               <div className="flex items-center justify-between">
+                 <label className="flex items-center gap-2 cursor-pointer">
+                   <div 
+                     className={clsx(
+                       "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                       rememberMe ? "bg-[var(--accent-primary)] border-[var(--accent-primary)]" : "border-[var(--border-default)]"
+                     )}
+                     onClick={() => setRememberMe(!rememberMe)}
+                   >
+                     {rememberMe && <span className="text-[var(--text-tertiary)] text-[10px]">✓</span>}
+                   </div>
+                   <span className="text-[var(--text-tertiary)] text-[13px]">Remember me</span>
+                 </label>
+                 <button 
+                   onClick={() => navigate('/forgot-password')}
+                   className="text-[var(--accent-primary)] text-[13px] hover:underline"
+                 >
+                   Forgot Password?
+                 </button>
+               </div>
 
-              {/* Sign in button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={clsx(
-                  "w-full bg-[#bfff00] text-black font-semibold py-3 rounded-lg transition-all duration-200",
-                  isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#a8e600] shadow-[0_0_12px_rgba(191,255,0,0.25)]"
-                )}
-              >
-                {isLoading ? 'Signing in...' : 'Sign In →'}
-              </button>
+               {/* Sign in button */}
+               <button
+                 type="submit"
+                 disabled={isLoading}
+                 className={clsx(
+                   "w-full bg-[var(--accent-primary)] text-[var(--text-tertiary)] font-semibold py-3 rounded-lg transition-all duration-200",
+                   isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-[var(--accent-primary-hover)] shadow-[0_0_12px_rgba(var(--accent-primary-rgb),0.25)]"
+                 )}
+               >
+                 {isLoading ? 'Signing in...' : 'Sign In →'}
+               </button>
             </form>
 
             {/* Divider */}

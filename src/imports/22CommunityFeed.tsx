@@ -68,7 +68,7 @@ export default function Component22CommunityFeed() {
   return (
     <StudentLayout title="Community" subtitle="Connect with fellow language learners">
       {/* New Post */}
-      <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl p-5 mb-6">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-xl p-5 mb-6">
         <textarea
           className="w-full bg-transparent text-white text-[14px] resize-none focus:outline-none placeholder-[#555]"
           rows={3}
@@ -81,7 +81,7 @@ export default function Component22CommunityFeed() {
           <button
             onClick={submitPost}
             disabled={posting || !newPost.trim() || newPost.length > 500}
-            className="bg-[#bfff00] text-black px-5 py-2 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="bg-[var(--accent-primary)] text-black px-5 py-2 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {posting ? 'Posting...' : 'Post'}
           </button>
@@ -129,7 +129,7 @@ export default function Component22CommunityFeed() {
                 <p className="text-white text-[14px] leading-relaxed mb-4 whitespace-pre-wrap">{post.body}</p>
 
                 {/* Actions */}
-                <div className="flex items-center gap-4 pt-3 border-t border-[#1a1a1a]">
+                <div className="flex items-center gap-4 pt-3 border-t border-[var(--border-subtle)]">
                   <button
                     onClick={() => handleLike(post.id)}
                     disabled={liking === post.id}

@@ -138,7 +138,7 @@ export default function Component25ManageStudents() {
             onChange={(e) => setSearch(e.target.value)}
             className="bg-[#151515] border border-[#2a2a2a] text-white rounded-lg px-4 py-2 text-[13px] outline-none focus:border-[#bfff00] transition-colors flex-1"
           />
-          <button type="submit" className="bg-[#bfff00] text-black px-5 py-2 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity">
+          <button type="submit" className="bg-[var(--accent-primary)] text-black px-5 py-2 rounded-lg font-semibold text-[13px] hover:opacity-90 transition-opacity">
             Search
           </button>
         </form>
@@ -153,7 +153,7 @@ export default function Component25ManageStudents() {
       </div>
 
       {/* Students Table */}
-      <div className="bg-[#151515] border border-[#2a2a2a] rounded-xl overflow-hidden">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#2a2a2a]">
@@ -254,7 +254,7 @@ export default function Component25ManageStudents() {
                 { label: 'Avg Progress', value: `${getOverallProgress(selectedStudent)}%` },
                 { label: 'Completed', value: selectedStudent.courses?.filter(c => c.completed).length || 0 },
               ].map(s => (
-                <div key={s.label} className="bg-[#0f0f0f] rounded-lg p-3 text-center">
+                <div key={s.label} className="bg-[var(--bg-primary)] rounded-lg p-3 text-center">
                   <div className="text-[#bfff00] font-bold text-[18px]">{s.value}</div>
                   <div className="text-[#555] text-[11px]">{s.label}</div>
                 </div>

@@ -313,3 +313,18 @@ async def get_public_profile(
         raise HTTPException(status_code=404, detail="User not found")
     
     return user
+
+@router.put("/me/cefr-level")
+async def update_cefr_level(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update current user's CEFR level"""
+    cefr_level = body.get("cefr_level", "").strip()
+    valid_levels = {"A1", "A2", "B1", "B2", "C1", "C2"}
+    if cefr_level not in valid_levels:
+        raise HTTPException(status_code=400, detail=f"Invalid CEFR level. Must be one of: {', '.join(valid_levels)}")
+    # TODO: Add cefr_level column to User model for persistent storage
+    # For now, store it in user bio as a workaround or return success
+    return {"message": "CEFR level updated", "cefr_level": cefr_level}

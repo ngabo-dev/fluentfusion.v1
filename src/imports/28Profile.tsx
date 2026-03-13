@@ -48,7 +48,7 @@ export default function Component28Profile() {
   return (
     <StudentLayout title="Profile" subtitle="Manage your public profile">
       {loading ? (
-        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading...</div>
+        <div className="flex items-center justify-center min-h-[400px] text-[var(--text-secondary)]">Loading...</div>
       ) : (
         <div className="max-w-2xl">
           {/* Avatar + Name */}

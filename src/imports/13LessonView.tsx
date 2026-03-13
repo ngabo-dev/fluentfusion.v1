@@ -202,24 +202,24 @@ export default function Component13LessonView() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
+      <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center">
         <div className="animate-spin text-[32px]">🧠</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen flex flex-col">
+    <div className="bg-[var(--bg-primary)] min-h-screen flex flex-col">
       {/* Navigation */}
-      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
+      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50 border-b border-[var(--border-default)]">
         <div className="flex items-center justify-between h-full px-4 md:px-10">
           <div className="flex items-center gap-3">
             <button onClick={handleLogoClick} className="flex gap-3 items-center no-underline cursor-pointer">
-              <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
+              <div className="bg-[var(--accent-primary)] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
                 <span className="text-[18px]">🧠</span>
               </div>
               <span className="text-[18px] text-white font-bold hidden md:block">
-                FLUENT<span className="text-[#bfff00]">FUSION</span>
+                FLUENT<span className="text-[var(--accent-primary)]">FUSION</span>
               </span>
             </button>
           </div>
@@ -237,7 +237,7 @@ export default function Component13LessonView() {
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <span className="text-[#bfff00] text-[12px]">{Math.round(progressPercent)}%</span>
+              <span className="text-[var(--accent-primary)] text-[12px]">{Math.round(progressPercent)}%</span>
             </div>
             
             <Link to="/profile" className="shrink-0">

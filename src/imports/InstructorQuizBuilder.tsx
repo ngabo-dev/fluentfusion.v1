@@ -26,9 +26,10 @@ interface Quiz {
 
 export default function InstructorQuizBuilder() {
   const navigate = useNavigate();
-  const { quizId, courseId } = useParams<{ quizId?: string; courseId?: string }>();
+  const { quizId, courseId: urlCourseId } = useParams<{ quizId?: string; courseId?: string }>();
   const [user, setUser] = useState<any>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [courseId, setCourseId] = useState<number | null>(urlCourseId ? Number(urlCourseId) : null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,6 +88,10 @@ export default function InstructorQuizBuilder() {
       const res = await instructorApi.getQuiz(Number(quizId));
       setQuiz(res.quiz);
       setQuestions(res.questions || []);
+      // Extract course_id from the quiz response
+      if (res.quiz.course_id) {
+        setCourseId(res.quiz.course_id);
+      }
       setQuizSettings({
         title: res.quiz.title,
         description: res.quiz.description || "",
@@ -101,7 +106,7 @@ export default function InstructorQuizBuilder() {
     }
   };
 
-  const handleSaveQuiz = async () => {
+    const handleSaveQuiz = async () => {
     if (!quizSettings.title) {
       toast.error('Please enter a quiz title');
       return;
@@ -117,6 +122,10 @@ export default function InstructorQuizBuilder() {
           allow_retakes: quizSettings.allow_retakes,
         });
         toast.success('Quiz updated successfully');
+        // Redirect to curriculum page after saving
+        if (courseId) {
+          navigate(`/instructor/curriculum/${courseId}`);
+        }
       } else if (courseId) {
         const res = await instructorApi.createQuiz(Number(courseId), {
           title: quizSettings.title,
@@ -201,7 +210,7 @@ export default function InstructorQuizBuilder() {
   return (
     <InstructorLayout
       title={quizId ? 'Edit Quiz' : 'Create Quiz'}
-      subtitle={quizId ? `Editing quiz for course ${courseId}` : `Creating new quiz for course ${courseId}`}
+      subtitle={quizId ? `Editing quiz for course ${courseId || 'loading...'}` : `Creating new quiz${courseId ? ` for course ${courseId}` : ''}`}
       headerAction={headerAction}
     >
       {loading ? (

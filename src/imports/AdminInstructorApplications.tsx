@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { adminApi } from "../app/api/config";
+import { adminApi, authApi } from "../app/api/config";
 
 interface Application {
   id: number;
@@ -49,49 +49,8 @@ export default function AdminInstructorApplications() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call when backend endpoint is ready
-      // const res = await adminApi.getInstructorApplications({});
-      // setApplications(res.applications || []);
-      
-      // Mock data for now
-      setApplications([
-        {
-          id: 1,
-          user_id: 101,
-          user_name: "John Smith",
-          user_email: "john.smith@email.com",
-          bio: "Passionate language teacher with 10 years of experience teaching English and French.",
-          expertise: ["English", "French", "ESL"],
-          submitted_at: "2024-01-15T10:30:00Z",
-          status: "pending",
-          reviewed_at: null,
-          rejection_reason: null
-        },
-        {
-          id: 2,
-          user_id: 102,
-          user_name: "Sarah Johnson",
-          user_email: "sarah.j@email.com",
-          bio: "Native Spanish speaker with a Master's in Linguistics. Love teaching through cultural immersion.",
-          expertise: ["Spanish", "Portuguese"],
-          submitted_at: "2024-01-10T14:20:00Z",
-          status: "approved",
-          reviewed_at: "2024-01-12T09:00:00Z",
-          rejection_reason: null
-        },
-        {
-          id: 3,
-          user_id: 103,
-          user_name: "Mike Davis",
-          user_email: "mike.d@email.com",
-          bio: "New to teaching but very motivated to share my knowledge of Japanese.",
-          expertise: ["Japanese"],
-          submitted_at: "2024-01-08T16:45:00Z",
-          status: "rejected",
-          reviewed_at: "2024-01-09T11:30:00Z",
-          rejection_reason: "Insufficient teaching experience. Please apply again after gaining more experience."
-        }
-      ]);
+      const res = await adminApi.getInstructorApplications({});
+      setApplications(res.applications || []);
     } catch (error) {
       console.error('Failed to fetch applications:', error);
     } finally {
@@ -102,15 +61,9 @@ export default function AdminInstructorApplications() {
   const handleApprove = async (appId: number) => {
     setActionLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // await adminApi.approveInstructorApplication(appId);
-      
-      setApplications(prev => prev.map(app => 
-        app.id === appId 
-          ? { ...app, status: "approved" as const, reviewed_at: new Date().toISOString() }
-          : app
-      ));
+      await adminApi.approveInstructorApplication(appId);
       setSelectedApp(null);
+      await fetchApplications();
     } catch (error) {
       console.error('Failed to approve:', error);
       alert('Failed to approve application');
@@ -123,22 +76,11 @@ export default function AdminInstructorApplications() {
     if (!selectedApp || !rejectReason.trim()) return;
     setActionLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // await adminApi.rejectInstructorApplication(selectedApp.id, rejectReason);
-      
-      setApplications(prev => prev.map(app => 
-        app.id === selectedApp.id 
-          ? { 
-              ...app, 
-              status: "rejected" as const, 
-              reviewed_at: new Date().toISOString(),
-              rejection_reason: rejectReason 
-            }
-          : app
-      ));
+      await adminApi.rejectInstructorApplication(selectedApp.id, rejectReason);
       setShowRejectModal(false);
       setSelectedApp(null);
       setRejectReason("");
+      await fetchApplications();
     } catch (error) {
       console.error('Failed to reject:', error);
       alert('Failed to reject application');
@@ -175,10 +117,8 @@ export default function AdminInstructorApplications() {
               </div>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('ff_access_token');
-                  localStorage.removeItem('ff_refresh_token');
-                  localStorage.removeItem('ff_user');
-                  navigate('/login');
+                  authApi.logout();
+                  window.location.href = '/login';
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"
               >

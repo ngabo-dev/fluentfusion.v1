@@ -53,6 +53,9 @@ export default function Component24CreateCourse() {
   const [newQuizTitle, setNewQuizTitle] = useState("");
   const [selectedUnitForQuiz, setSelectedUnitForQuiz] = useState<number | null>(null);
   
+  // Video preview
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  
   // Languages
   const [languages, setLanguages] = useState<any[]>([]);
 
@@ -250,17 +253,50 @@ export default function Component24CreateCourse() {
     }
     setSaving(true);
     try {
-      // Update pricing if changed
+      // First save pricing
       await instructorApi.updateCourse(courseId, {
-        is_published: true,
         price_usd: pricingOption === 'free' ? 0 : price,
         is_free: pricingOption === 'free'
       });
+      
+      // Then publish
+      const result = await instructorApi.publishCourse(courseId);
       alert("Course published successfully!");
       navigate('/instructor/dashboard');
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to publish", e);
-      alert("Failed to publish course");
+      // Check if it's a validation error
+      const errorMsg = e.message || "Unknown error";
+      if (errorMsg.includes && errorMsg.includes("errors")) {
+        try {
+          // Try to extract validation errors
+          alert("Cannot publish course. Please ensure:\n- Course has a title\n- Course has a description\n- At least one section exists\n- At least one lesson exists");
+        } catch (parseErr) {
+          alert("Failed to publish: " + errorMsg);
+        }
+      } else {
+        alert("Failed to publish: " + errorMsg);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveDraft = async () => {
+    if (!courseId) {
+      alert("Please create a course first");
+      return;
+    }
+    setSaving(true);
+    try {
+      await instructorApi.updateCourse(courseId, {
+        price_usd: pricingOption === 'free' ? 0 : price,
+        is_free: pricingOption === 'free'
+      });
+      alert("Draft saved successfully!");
+    } catch (e: any) {
+      console.error("Failed to save", e);
+      alert("Failed to save: " + (e.message || "Unknown error"));
     } finally {
       setSaving(false);
     }
@@ -274,12 +310,16 @@ export default function Component24CreateCourse() {
     setSaving(true);
     setError(null);
     try {
+      console.log("Creating quiz with:", { courseId: courseId, title: newQuizTitle, unit_id: selectedUnitForQuiz });
+      
       const result = await instructorApi.createQuiz(courseId!, {
         title: newQuizTitle,
         unit_id: selectedUnitForQuiz,
         passing_score: 70,
         order_index: quizzes.length
       });
+      
+      console.log("Quiz created successfully:", result);
       
       // Reload course data to get the updated quizzes list
       await loadCourseData();
@@ -289,6 +329,7 @@ export default function Component24CreateCourse() {
       setSuccess("Quiz created! Now add questions...");
       
       // Navigate to quiz builder to add questions
+      console.log("Navigating to quiz builder:", `/instructor/quiz/${result.quiz_id}`);
       navigate(`/instructor/quiz/${result.quiz_id}`);
     } catch (e: any) {
       console.error("Failed to create quiz", e);
@@ -446,8 +487,8 @@ export default function Component24CreateCourse() {
                   <p className="text-[#888] mt-2">Build your curriculum — upload videos and add content</p>
                 </div>
                 <div className="flex gap-3">
-                  <button className="bg-[#1f1f1f] text-white px-4 py-2 rounded-[8px] border border-[#333]">
-                    Save Draft
+                  <button onClick={saveDraft} disabled={saving} className="bg-[#1f1f1f] text-white px-4 py-2 rounded-[8px] border border-[#333] hover:bg-[#2a2a2a]">
+                    {saving ? 'Saving...' : 'Save Draft'}
                   </button>
                   <button className="bg-[#bfff00] text-black px-4 py-2 rounded-[8px] font-semibold" onClick={publishCourse}>
                     Publish →
@@ -549,13 +590,27 @@ export default function Component24CreateCourse() {
                       
                       {unit.lessons.map((lesson, idx) => (
                         <div key={lesson.id} className="px-4 py-3 border-b border-[#2a2a2a] flex items-center justify-between">
-                          <div>
-                            <div className="text-white text-[14px]">{lesson.title}</div>
-                            {lesson.video_duration_sec && (
-                              <div className="text-[#555] text-xs">
-                                {Math.floor(lesson.video_duration_sec / 60)}:{String(lesson.video_duration_sec % 60).padStart(2, '0')}
+                          <div className="flex items-center gap-3">
+                            {lesson.video_url ? (
+                              <button 
+                                onClick={() => setPreviewLesson(lesson)}
+                                className="w-10 h-10 rounded-full bg-[#bfff00] flex items-center justify-center text-black hover:opacity-80"
+                              >
+                                ▶
+                              </button>
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#555]">
+                                📹
                               </div>
                             )}
+                            <div>
+                              <div className="text-white text-[14px]">{lesson.title}</div>
+                              {lesson.video_duration_sec && (
+                                <div className="text-[#555] text-xs">
+                                  {Math.floor(lesson.video_duration_sec / 60)}:{String(lesson.video_duration_sec % 60).padStart(2, '0')}
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <button className="text-[#555] hover:text-white">✏️</button>
@@ -762,6 +817,13 @@ export default function Component24CreateCourse() {
                   ← Back
                 </button>
                 <button
+                  onClick={saveDraft}
+                  disabled={saving}
+                  className="flex-1 bg-[#1f1f1f] text-white font-semibold py-3 rounded-[8px]"
+                >
+                  {saving ? 'Saving...' : 'Save Draft'}
+                </button>
+                <button
                   onClick={publishCourse}
                   disabled={saving || (pricingOption === 'paid' && price <= 0)}
                   className="flex-1 bg-[#bfff00] text-black font-semibold py-3 rounded-[8px] disabled:opacity-50"
@@ -771,7 +833,45 @@ export default function Component24CreateCourse() {
               </div>
             </div>
           )}
+          
+          {/* Video Preview Modal */}
+          {previewLesson && (
+            <VideoPreviewModal 
+              lesson={previewLesson} 
+              onClose={() => setPreviewLesson(null)} 
+            />
+          )}
         </div>
     </InstructorLayout>
+  );
+}
+
+// Video Preview Modal
+function VideoPreviewModal({ lesson, onClose }: { lesson: Lesson; onClose: () => void }) {
+  // Get the base URL for videos
+  const videoSrc = lesson.video_url?.startsWith('http') 
+    ? lesson.video_url 
+    : `http://localhost:8000${lesson.video_url}`;
+
+  return (
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-4" onClick={onClose}>
+      <div className="bg-[#1a1a1a] rounded-xl p-4 w-full max-w-4xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold">{lesson.title}</h3>
+          <button onClick={onClose} className="text-[#888] hover:text-white text-xl">✕</button>
+        </div>
+        <video 
+          controls 
+          autoPlay 
+          className="w-full rounded-lg"
+          src={videoSrc}
+        >
+          Your browser does not support video playback.
+        </video>
+        {lesson.description && (
+          <p className="text-[#888] mt-4">{lesson.description}</p>
+        )}
+      </div>
+    </div>
   );
 }

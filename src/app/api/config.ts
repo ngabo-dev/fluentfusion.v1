@@ -3,6 +3,67 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 
+// Token & Session Configuration (matching backend)
+const ACCESS_TOKEN_EXPIRE_MINUTES = 480;  // 8 hours
+const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;  // 1 hour of inactivity
+
+// Session Management Functions
+function getTokenExpiry(): number | null {
+  const expiry = localStorage.getItem('ff_token_expiry');
+  return expiry ? parseInt(expiry, 10) : null;
+}
+
+function setTokenExpiry(expiresInSeconds: number): void {
+  const expiryTime = Date.now() + (expiresInSeconds * 1000);
+  localStorage.setItem('ff_token_expiry', expiryTime.toString());
+}
+
+function isTokenExpired(): boolean {
+  const expiry = getTokenExpiry();
+  if (!expiry) return true;
+  return Date.now() >= expiry;
+}
+
+// Inactivity tracking
+let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+let lastActivityTime = Date.now();
+
+function resetInactivityTimer(): void {
+  lastActivityTime = Date.now();
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer);
+  }
+  inactivityTimer = setTimeout(() => {
+    // User has been inactive for 1 hour - logout
+    console.log('Session timed out due to inactivity');
+    authApi.logout();
+    window.location.href = '/login?reason=inactivity';
+  }, INACTIVITY_TIMEOUT_MS);
+}
+
+function setupInactivityListeners(): void {
+  // Reset timer on user activity
+  const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+  events.forEach(event => {
+    document.addEventListener(event, resetInactivityTimer, { passive: true });
+  });
+  resetInactivityTimer();
+}
+
+// Check auth and redirect if needed
+function checkAuthAndRedirect(): void {
+  const token = localStorage.getItem('ff_access_token');
+  const user = localStorage.getItem('ff_user');
+  
+  if (!token || !user || isTokenExpired()) {
+    authApi.logout();
+    // Only redirect if not already on login page
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login?reason=expired';
+    }
+  }
+}
+
 // Helper function for API calls
 async function apiCall<T>(
   endpoint: string,
@@ -20,10 +81,19 @@ async function apiCall<T>(
 
   // Add auth token if available
   const token = localStorage.getItem('ff_access_token');
+  
+  // Check if token is expired before making any request
+  if (token && isTokenExpired()) {
+    console.log('Token expired, logging out...');
+    authApi.logout();
+    window.location.href = '/login?reason=expired';
+    throw new Error('Session expired. Please login again.');
+  }
+  
   if (token) {
     config.headers = {
       ...config.headers,
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`
     };
   }
 
@@ -97,10 +167,17 @@ export const authApi = {
       body: JSON.stringify(data),
     });
     
-    // Store tokens
+    // Store tokens and session info
     localStorage.setItem('ff_access_token', response.access_token);
     localStorage.setItem('ff_refresh_token', response.refresh_token);
     localStorage.setItem('ff_user', JSON.stringify(response.user));
+    
+    // Store token expiry time (backend sends expires_in in seconds)
+    const expiresIn = response.expires_in || (ACCESS_TOKEN_EXPIRE_MINUTES * 60);
+    setTokenExpiry(expiresIn);
+    
+    // Setup inactivity tracking
+    setupInactivityListeners();
     
     return response;
   },
@@ -110,6 +187,11 @@ export const authApi = {
     localStorage.removeItem('ff_access_token');
     localStorage.removeItem('ff_refresh_token');
     localStorage.removeItem('ff_user');
+    localStorage.removeItem('ff_token_expiry');
+    if (inactivityTimer) {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = null;
+    }
   },
 
   // Get current user
@@ -761,6 +843,186 @@ export const adminApi = {
       method: 'POST',
     });
   },
+
+  // === Admin Dashboard Endpoints ===
+
+  // Get KPI data
+  getKpis: async () => {
+    return apiCall<{
+      total_users: number;
+      total_users_delta: number;
+      platform_revenue_mtd: number;
+      revenue_delta_pct: number;
+      active_courses: number;
+      courses_new_this_week: number;
+      retention_rate: number;
+      retention_delta: number;
+      pending_course_reviews: number;
+      pending_reports: number;
+    }>('/admin/kpis');
+  },
+
+  // Get active alerts
+  getActiveAlerts: async () => {
+    return apiCall<{
+      alerts: Array<{
+        id: number;
+        level: 'critical' | 'warning' | 'info';
+        title: string;
+        description: string;
+        action_label: string;
+        created_at: string;
+      }>;
+    }>('/admin/alerts/active');
+  },
+
+  // Get system health status
+  getSystemHealth: async () => {
+    return apiCall<{
+      api: string;
+      db: string;
+      redis_latency_ms: number;
+      pulse: string;
+      cdn: string;
+    }>('/admin/system/health');
+  },
+
+  // Get system logs
+  getSystemLogs: async (params?: { limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{
+      logs: Array<{
+        timestamp: string;
+        level: 'INFO' | 'WARN' | 'ERROR';
+        message: string;
+        highlights: Array<{ text: string; is_highlight: boolean }>;
+      }>;
+    }>(`/admin/system/logs${query ? `?${query}` : ''}`);
+  },
+
+  // Get daily revenue data
+  getRevenueDaily: async (month: string) => {
+    return apiCall<{
+      data: Array<{
+        date: string;
+        gross: number;
+        fees: number;
+      }>;
+    }>(`/admin/revenue/daily?month=${month}`);
+  },
+
+  // Get PULSE distribution
+  getPulseDistribution: async () => {
+    return apiCall<{
+      total_learners: number;
+      thriving: number;
+      coasting: number;
+      struggling: number;
+      burning_out: number;
+      disengaged: number;
+      at_risk_count: number;
+    }>('/admin/pulse/distribution');
+  },
+
+  // Get top languages
+  getTopLanguages: async (params?: { limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{
+      languages: Array<{
+        language: string;
+        flag_emoji: string;
+        learner_count: number;
+        bar_pct: number;
+        color_start: string;
+        color_end: string;
+      }>;
+    }>(`/admin/analytics/languages${query ? `?${query}` : ''}`);
+  },
+
+  // Get geographic distribution
+  getGeography: async (params?: { limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{
+      countries: Array<{
+        country: string;
+        flag_emoji: string;
+        user_count: number;
+        bar_pct: number;
+      }>;
+    }>(`/admin/analytics/geography${query ? `?${query}` : ''}`);
+  },
+
+  // Get platform health metrics
+  getHealthMetrics: async () => {
+    return apiCall<{
+      dau: number;
+      mau: number;
+      avg_session_minutes: number;
+      course_completion_pct: number;
+      premium_conversion_pct: number;
+      churn_rate_pct: number;
+      api_uptime_pct: number;
+      avg_api_latency_ms: number;
+    }>('/admin/platform/health-metrics');
+  },
+
+  // Get moderation queue
+  getModerationQueue: async (params?: { limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{
+      items: Array<{
+        id: number;
+        type: 'course' | 'report' | 'payout' | 'verify';
+        subject: string;
+        description: string;
+        created_at: string;
+        action_data: any;
+      }>;
+    }>(`/admin/moderation/queue${query ? `?${query}` : ''}`);
+  },
+
+  // Approve moderation item
+  approveModeration: async (itemId: number) => {
+    return apiCall<{ message: string }>(`/admin/moderation/${itemId}/approve`, {
+      method: 'POST',
+    });
+  },
+
+  // Reject moderation item
+  rejectModeration: async (itemId: number) => {
+    return apiCall<{ message: string }>(`/admin/moderation/${itemId}/reject`, {
+      method: 'POST',
+    });
+  },
+
+  // Ban user
+  banUser: async (userId: number) => {
+    return apiCall<{ message: string }>(`/admin/users/${userId}/ban`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Unban user
+  unbanUser: async (userId: number) => {
+    return apiCall<{ message: string }>(`/admin/users/${userId}/unban`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Approve user (for pending users)
+  approveUser: async (userId: number) => {
+    return apiCall<{ message: string }>(`/admin/users/${userId}/approve`, {
+      method: 'PATCH',
+    });
+  },
 };
 
 // Instructor API
@@ -822,6 +1084,20 @@ export const instructorApi = {
   deleteCourse: async (courseId: number) => {
     return apiCall<{ message: string }>(`/courses/${courseId}`, {
       method: 'DELETE',
+    });
+  },
+
+  // Publish course
+  publishCourse: async (courseId: number) => {
+    return apiCall<{ message: string; is_published: boolean; status: string }>(`/courses/${courseId}/publish`, {
+      method: 'POST',
+    });
+  },
+
+  // Unpublish course
+  unpublishCourse: async (courseId: number) => {
+    return apiCall<{ message: string; is_published: boolean; status: string }>(`/courses/${courseId}/unpublish`, {
+      method: 'POST',
     });
   },
 
@@ -1357,6 +1633,150 @@ export const instructorApi = {
       `/instructor/meetings/${meetingId}`,
       { method: 'PATCH', body: JSON.stringify(data) }
     );
+  },
+
+  // Get instructor application status
+  getApplicationStatus: async () => {
+    return apiCall<{
+      status: 'pending' | 'rejected' | 'no_application' | 'approved';
+      bio?: string;
+      expertise?: string[];
+      rejection_reason?: string;
+    }>('/instructor/application/status');
+  },
+
+  // Submit instructor application
+  submitApplication: async (data: { bio: string; expertise: string[] }) => {
+    return apiCall<{ message: string }>('/instructor/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // === Dashboard Endpoints ===
+
+  // Get dashboard stats (students, revenue, rating, completion)
+  getDashboardStats: async () => {
+    return apiCall<{
+      total_students: number;
+      students_delta: number;
+      revenue_mtd: number;
+      revenue_delta: number;
+      avg_rating: number;
+      rating_delta: number;
+      completion_rate: number;
+      completion_delta: number;
+    }>('/instructor/dashboard/stats');
+  },
+
+  // Get monthly revenue data for chart
+  getRevenueMonthly: async (year: number) => {
+    return apiCall<{ months: Array<{ month: number; gross: number; net: number }> }>(
+      `/instructor/revenue/monthly?year=${year}`
+    );
+  },
+
+  // Get live/upcoming sessions
+  getSessions: async (params?: { upcoming?: boolean; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.upcoming) queryParams.set('upcoming', 'true');
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{
+      sessions: Array<{
+        id: number;
+        title: string;
+        language: string;
+        start_time: string;
+        enrolled_count: number;
+        status: string;
+        day_label: string;
+      }>;
+    }>(`/instructor/sessions${query ? `?${query}` : ''}`);
+  },
+
+  // Get activity feed / notifications
+  getNotifications: async (params?: { limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const query = queryParams.toString();
+    return apiCall<{
+      notifications: Array<{
+        id: number;
+        type: string;
+        message: string;
+        read: boolean;
+        created_at: string;
+      }>;
+    }>(`/instructor/notifications${query ? `?${query}` : ''}`);
+  },
+
+  // Mark all notifications as read
+  markNotificationsRead: async () => {
+    return apiCall<{ message: string }>('/instructor/notifications/read-all', {
+      method: 'POST',
+    });
+  },
+
+  // Get courses with stats (completion_rate, avg_rating, revenue)
+  getCoursesWithStats: async () => {
+    return apiCall<{
+      courses: Array<{
+        id: number;
+        title: string;
+        language_flag: string;
+        level: string;
+        lesson_count: number;
+        status: string;
+        student_count: number;
+        completion_rate: number;
+        avg_rating: number;
+        revenue_mtd: number;
+      }>;
+    }>('/instructor/courses?include_stats=true');
+  },
+
+  // Get PULSE heatmap data
+  getPulseHeatmap: async () => {
+    return apiCall<{
+      students: Array<{
+        student_id: number;
+        student_name: string;
+        pulse_state: 'thriving' | 'coasting' | 'struggling' | 'burning_out' | 'disengaged';
+      }>;
+    }>('/instructor/pulse/heatmap');
+  },
+
+  // Get student leaderboard
+  getLeaderboard: async (limit: number = 5) => {
+    return apiCall<{
+      students: Array<{
+        rank: number;
+        user_id: number;
+        name: string;
+        course_title: string;
+        xp_total: number;
+        avatar_color_start: string;
+        avatar_color_end: string;
+      }>;
+    }>(`/instructor/students/leaderboard?limit=${limit}`);
+  },
+
+  // Get earnings summary
+  getEarningsSummary: async () => {
+    return apiCall<{
+      mtd_gross: number;
+      mtd_net: number;
+      pending_payout: number;
+      all_time_net: number;
+      platform_fee_rate: number;
+      by_course: Array<{
+        course_id: number;
+        title: string;
+        revenue: number;
+        percentage: number;
+      }>;
+    }>('/instructor/earnings/summary');
   },
 };
 

@@ -72,3 +72,66 @@ class PlatformAnalyticsSnapshot(Base):
     avg_session_min = Column(DECIMAL(6,2), default=0.00)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SystemLog(Base):
+    """System log for admin dashboard - tracks platform events"""
+    __tablename__ = "system_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    level = Column(String(20), nullable=False)  # INFO, WARN, ERROR
+    message = Column(Text, nullable=False)
+    log_data = Column(JSON)  # Optional extra data (user_id, action, etc.)
+    source = Column(String(50))  # api, pulse, payment, cdn, auth, etc.
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (
+        Index('ix_system_logs_level', level),
+        Index('ix_system_logs_created_at', created_at),
+    )
+
+
+class PlatformAlert(Base):
+    """Platform alerts for admin dashboard - critical warnings"""
+    __tablename__ = "platform_alerts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    level = Column(String(20), nullable=False)  # critical, warning, info
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    action_label = Column(String(50))  # INVESTIGATE, REVIEW, etc.
+    is_active = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    resolved_at = Column(DateTime(timezone=True))
+    resolved_by = Column(Integer, ForeignKey("users.id"))
+    
+    __table_args__ = (
+        Index('ix_platform_alerts_level', level),
+        Index('ix_platform_alerts_is_active', is_active),
+    )
+
+
+class ModerationQueueItem(Base):
+    """Moderation queue items for admin dashboard"""
+    __tablename__ = "moderation_queue_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    item_type = Column(String(30), nullable=False)  # course, report, payout, verify
+    subject = Column(String(200), nullable=False)
+    description = Column(Text)
+    status = Column(String(20), default="pending")  # pending, approved, rejected
+    
+    reference_id = Column(Integer)  # ID of the course/report/payout/user being moderated
+    reference_type = Column(String(50))  # course, report, payout, user_verification
+    reference_data = Column(JSON)  # Extra data about the reference
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    resolved_at = Column(DateTime(timezone=True))
+    resolved_by = Column(Integer, ForeignKey("users.id"))
+    
+    __table_args__ = (
+        Index('ix_moderation_queue_item_type', item_type),
+        Index('ix_moderation_queue_status', status),
+    )

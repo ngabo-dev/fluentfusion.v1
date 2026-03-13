@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     # ── JWT
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "dev-secret-key-change-in-production")
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours - professional standard
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30  # 30 days for persistent sessions
 
     @model_validator(mode="after")
     def validate_jwt_key(self) -> "Settings":

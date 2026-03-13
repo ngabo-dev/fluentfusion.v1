@@ -25,6 +25,11 @@ class UnitCreate(BaseModel):
     description: Optional[str] = None
     order_index: int = 0
 
+class UnitUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    order_index: Optional[int] = None
+
 class QuizCreate(BaseModel):
     title: str
     description: Optional[str] = None
@@ -204,6 +209,7 @@ async def get_course(
             "price_usd": float(course.price_usd) if course.price_usd else 0,
             "is_free": course.is_free,
             "is_published": course.is_published,
+            "instructor_id": course.instructor_id,
             "language": {
                 "id": language.id,
                 "name": language.name,
@@ -755,6 +761,60 @@ async def create_unit(
     
     return {"message": "Unit created", "unit_id": unit.id}
 
+@router.patch("/units/{unit_id}")
+async def update_unit(
+    unit_id: int,
+    unit_data: UnitUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update a unit (instructor only)"""
+    if current_user.role not in ["instructor", "admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Only instructors can update units")
+    
+    unit = db.query(CourseUnit).filter(CourseUnit.id == unit_id).first()
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    course = db.query(Course).filter(Course.id == unit.course_id).first()
+    if course.instructor_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to modify this unit")
+    
+    if unit_data.title is not None:
+        unit.title = unit_data.title
+    if unit_data.description is not None:
+        unit.description = unit_data.description
+    if unit_data.order_index is not None:
+        unit.order_index = unit_data.order_index
+    
+    db.commit()
+    db.refresh(unit)
+    
+    return {"message": "Unit updated", "unit_id": unit.id}
+
+@router.delete("/units/{unit_id}")
+async def delete_unit(
+    unit_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete a unit (instructor only)"""
+    if current_user.role not in ["instructor", "admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Only instructors can delete units")
+    
+    unit = db.query(CourseUnit).filter(CourseUnit.id == unit_id).first()
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    course = db.query(Course).filter(Course.id == unit.course_id).first()
+    if course.instructor_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to delete this unit")
+    
+    db.delete(unit)
+    db.commit()
+    
+    return {"message": "Unit deleted"}
+
 @router.get("/{course_id}/units")
 async def get_course_units(
     course_id: int,
@@ -1084,6 +1144,8 @@ class CourseUpdateRequest(BaseModel):
     is_free: Optional[bool] = None
     is_published: Optional[bool] = None
     approval_status: Optional[str] = None
+    requirements: Optional[List[str]] = None
+    learning_outcomes: Optional[List[str]] = None
 
 @router.patch("/{course_id}")
 async def update_course(
@@ -1456,3 +1518,268 @@ async def cancel_request(
     db.commit()
     
     return {"message": "Request cancelled"}
+
+# ==================== WISHLIST ====================
+
+@router.get("/wishlist")
+async def get_wishlist(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get current user's wishlisted courses"""
+    from ...models.extras import CourseWishlist
+    wishlist = db.query(CourseWishlist).filter(CourseWishlist.user_id == current_user.id).all()
+    course_ids = [w.course_id for w in wishlist]
+    courses_list = db.query(Course).filter(Course.id.in_(course_ids)).all() if course_ids else []
+    return {
+        "courses": [
+            {
+                "id": c.id,
+                "title": c.title,
+                "thumbnail_url": c.thumbnail_url,
+                "level": c.level,
+                "is_free": c.is_free,
+                "price_usd": str(c.price_usd),
+            }
+            for c in courses_list
+        ]
+    }
+
+
+@router.post("/{course_id}/wishlist")
+async def toggle_wishlist(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Toggle course in wishlist"""
+    from ...models.extras import CourseWishlist
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    existing = db.query(CourseWishlist).filter(
+        CourseWishlist.user_id == current_user.id,
+        CourseWishlist.course_id == course_id
+    ).first()
+    if existing:
+        db.delete(existing)
+        db.commit()
+        return {"saved": False, "message": "Removed from wishlist"}
+    item = CourseWishlist(user_id=current_user.id, course_id=course_id)
+    db.add(item)
+    db.commit()
+    return {"saved": True, "message": "Added to wishlist"}
+
+
+# ==================== COURSE DISCUSSIONS ====================
+
+@router.get("/{course_id}/discussions")
+async def get_course_discussions(
+    course_id: int,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get discussion threads for a course"""
+    from ...models.extras import CourseDiscussion
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    query = db.query(CourseDiscussion).filter(
+        CourseDiscussion.course_id == course_id
+    ).order_by(CourseDiscussion.is_pinned.desc(), CourseDiscussion.created_at.desc())
+    total = query.count()
+    threads = query.offset((page - 1) * limit).limit(limit).all()
+    result = []
+    for t in threads:
+        author = db.query(User).filter(User.id == t.user_id).first()
+        result.append({
+            "id": t.id,
+            "title": t.title,
+            "body": t.body,
+            "is_pinned": t.is_pinned,
+            "reply_count": t.reply_count,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+            "author": {"id": author.id if author else None, "name": author.full_name if author else "Unknown"},
+        })
+    return {"threads": result, "total": total, "page": page}
+
+
+@router.post("/{course_id}/discussions")
+async def create_discussion_thread(
+    course_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new discussion thread"""
+    from ...models.extras import CourseDiscussion
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    title = body.get("title", "").strip()
+    content = body.get("body", "").strip()
+    if not title or not content:
+        raise HTTPException(status_code=400, detail="Title and body are required")
+    thread = CourseDiscussion(course_id=course_id, user_id=current_user.id, title=title, body=content)
+    db.add(thread)
+    db.commit()
+    db.refresh(thread)
+    return {"message": "Thread created", "thread_id": thread.id}
+
+
+@router.get("/{course_id}/discussions/{thread_id}/replies")
+async def get_discussion_replies(
+    course_id: int,
+    thread_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get replies for a discussion thread"""
+    from ...models.extras import CourseDiscussion, CourseDiscussionReply
+    thread = db.query(CourseDiscussion).filter(
+        CourseDiscussion.id == thread_id, CourseDiscussion.course_id == course_id
+    ).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    replies = db.query(CourseDiscussionReply).filter(
+        CourseDiscussionReply.thread_id == thread_id
+    ).order_by(CourseDiscussionReply.created_at.asc()).all()
+    result = []
+    for r in replies:
+        author = db.query(User).filter(User.id == r.user_id).first()
+        result.append({
+            "id": r.id,
+            "body": r.body,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "author": {"id": author.id if author else None, "name": author.full_name if author else "Unknown"},
+        })
+    return {"replies": result, "thread_id": thread_id}
+
+
+@router.post("/{course_id}/discussions/{thread_id}/replies")
+async def create_discussion_reply(
+    course_id: int,
+    thread_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Add a reply to a discussion thread"""
+    from ...models.extras import CourseDiscussion, CourseDiscussionReply
+    thread = db.query(CourseDiscussion).filter(
+        CourseDiscussion.id == thread_id, CourseDiscussion.course_id == course_id
+    ).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    content = body.get("body", "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="Reply body is required")
+    reply = CourseDiscussionReply(thread_id=thread_id, user_id=current_user.id, body=content)
+    db.add(reply)
+    thread.reply_count += 1
+    db.commit()
+    db.refresh(reply)
+    author = db.query(User).filter(User.id == current_user.id).first()
+    return {
+        "message": "Reply posted",
+        "reply": {
+            "id": reply.id,
+            "body": reply.body,
+            "created_at": reply.created_at.isoformat() if reply.created_at else None,
+            "author": {"id": current_user.id, "name": author.full_name if author else "Unknown"},
+        }
+    }
+
+
+# ==================== INSTRUCTOR PUBLISH / UNPUBLISH ====================
+
+class PublishValidationResult(BaseModel):
+    valid: bool
+    errors: List[str] = []
+
+def validate_course_for_publishing(course: Course, db: Session) -> PublishValidationResult:
+    """Validate that a course is ready for publishing"""
+    errors = []
+    
+    # Check title exists
+    if not course.title or len(course.title.strip()) == 0:
+        errors.append("Course title is required")
+    
+    # Check description exists
+    if not course.description or len(course.description.strip()) == 0:
+        errors.append("Course description is required")
+    
+    # Check at least one unit exists
+    units = db.query(CourseUnit).filter(CourseUnit.course_id == course.id).count()
+    if units == 0:
+        errors.append("Course must have at least one section")
+    
+    # Check at least one lesson exists
+    lessons = db.query(Lesson).filter(Lesson.course_id == course.id).count()
+    if lessons == 0:
+        errors.append("Course must have at least one lesson")
+    
+    return PublishValidationResult(valid=len(errors) == 0, errors=errors)
+
+
+@router.post("/{course_id}/publish")
+async def instructor_publish_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Publish a course (instructor: own courses only; admin: any course)"""
+    from datetime import datetime, timezone as _tz
+    
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if current_user.role not in ("admin", "super_admin") and course.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Validate course before publishing
+    validation = validate_course_for_publishing(course, db)
+    if not validation.valid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Course cannot be published. Please fix the following issues:",
+                "errors": validation.errors
+            }
+        )
+    
+    course.is_published = True
+    course.status = "published"
+    course.published_at = datetime.now(_tz.utc)
+    db.commit()
+    
+    return {
+        "message": "Course published successfully", 
+        "is_published": True, 
+        "status": "published",
+        "published_at": course.published_at.isoformat() if course.published_at else None
+    }
+
+
+@router.post("/{course_id}/unpublish")
+async def instructor_unpublish_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Unpublish a course"""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if current_user.role not in ("admin", "super_admin") and course.instructor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    course.is_published = False
+    course.status = "unpublished"
+    db.commit()
+    return {
+        "message": "Course unpublished", 
+        "is_published": False,
+        "status": "unpublished"
+    }

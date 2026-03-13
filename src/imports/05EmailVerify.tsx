@@ -17,13 +17,13 @@ function InputBackgroundImage1({ text, value, onChange, index, total }: InputBac
       <div className="content-stretch flex flex-col items-start overflow-clip px-px py-[15px] relative rounded-[inherit] size-full">
         <div className="relative shrink-0 w-full">
           <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-center overflow-auto relative w-full">
-            <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[#bfff00] text-[28px] text-center whitespace-nowrap">
+            <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[var(--accent-primary)] text-[28px] text-center whitespace-nowrap">
               <p className="leading-[normal]">{value || text}</p>
             </div>
           </div>
         </div>
       </div>
-      <div aria-hidden="true" className="absolute border border-[#bfff00] border-solid inset-0 pointer-events-none rounded-[10px] shadow-[0px_0px_0px_2px_rgba(191,255,0,0.12)]" />
+      <div aria-hidden="true" className="absolute border border-[var(--accent-primary)] border-solid inset-0 pointer-events-none rounded-[10px] shadow-[0px_0px_0px_2px_rgba(var(--accent-primary-rgb),0.12)]" />
     </div>
   );
 }
@@ -34,13 +34,13 @@ function InputBackgroundImage({ value, onChange, index }: { value: string; onCha
       <div className="content-stretch flex flex-col items-start overflow-clip px-px py-[15px] relative rounded-[inherit] size-full">
         <div className="relative shrink-0 w-full">
           <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-center overflow-clip relative rounded-[inherit] w-full">
-            <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[#757575] text-[28px] text-center whitespace-nowrap">
+            <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[var(--text-tertiary)] text-[28px] text-center whitespace-nowrap">
               <p className="leading-[normal]">{value || "—"}</p>
             </div>
           </div>
         </div>
       </div>
-      <div aria-hidden="true" className="absolute border border-[#2a2a2a] border-solid inset-0 pointer-events-none rounded-[10px]" />
+      <div aria-hidden="true" className="absolute border border-[var(--border-subtle)] border-solid inset-0 pointer-events-none rounded-[10px]" />
     </div>
   );
 }
@@ -194,23 +194,23 @@ export default function Component05EmailVerify() {
   };
 
   return (
-    <div className="bg-[#0a0a0a] content-stretch flex flex-col isolate items-start pointer-events-auto relative size-full" data-name="05-email-verify">
-      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-[2]" data-name="Nav">
-        <div aria-hidden="true" className="absolute border-[#2a2a2a] border-b border-solid inset-0 pointer-events-none" />
+    <div className="bg-[var(--bg-primary)] content-stretch flex flex-col isolate items-start pointer-events-auto relative size-full" data-name="05-email-verify">
+      <div className="backdrop-blur-[8px] bg-[rgba(var(--bg-primary-rgb),0.95)] h-[66px] shrink-0 sticky top-0 w-full z-[2]" data-name="Nav">
+        <div aria-hidden="true" className="absolute border-[var(--border-subtle)] border-b border-solid inset-0 pointer-events-none" />
         <div className="flex flex-row items-center size-full">
           <div className="content-stretch flex items-center pb-px px-[40px] relative size-full">
             <div className="relative shrink-0" data-name="Link">
               <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[11px] items-center relative">
-                <div className="bg-[#bfff00] content-stretch flex items-center justify-center pb-[4.91px] pt-[4.09px] relative rounded-[10px] shrink-0 size-[38px]" data-name="Background">
-                  <div className="flex flex-col font-['Noto_Color_Emoji:Regular','Noto_Sans:Regular',sans-serif] justify-center leading-[0] relative shrink-0 text-[18px] text-black text-center whitespace-nowrap" style={{ fontVariationSettings: "'CTGR' 0, 'wdth' 100, 'wght' 400" }}>
+                <div className="bg-[var(--accent-primary)] content-stretch flex items-center justify-center pb-[4.91px] pt-[4.09px] relative rounded-[10px] shrink-0 size-[38px]" data-name="Background">
+                  <div className="flex flex-col font-['Noto_Color_Emoji:Regular','Noto_Sans:Regular',sans-serif] justify-center leading-[0] relative shrink-0 text-[18px] text-center text-black whitespace-nowrap" style={{ fontVariationSettings: "'CTGR' 0, 'wdth' 100, 'wght' 400" }}>
                     <p className="leading-[28.8px]">🧠</p>
                   </div>
                 </div>
                 <div className="content-stretch flex flex-col items-start relative shrink-0" data-name="Container">
-                  <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[0px] text-white tracking-[-0.36px] uppercase whitespace-nowrap">
+                  <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[0] relative shrink-0 text-[0px] text-[var(--text-primary)] tracking-[-0.36px] uppercase whitespace-nowrap">
                     <p className="text-[18px]">
-                      <span className="leading-[28.8px] text-white">FLUENT</span>
-                      <span className="leading-[28.8px] text-[#bfff00]">FUSION</span>
+                      <span className="leading-[28.8px] text-[var(--text-primary)]">FLUENT</span>
+                      <span className="leading-[28.8px] text-[var(--accent-primary)]">FUSION</span>
                     </p>
                   </div>
                 </div>
@@ -223,26 +223,26 @@ export default function Component05EmailVerify() {
         <div className="flex flex-row items-center justify-center min-h-[inherit] overflow-clip pointer-events-auto rounded-[inherit] size-full z-[5]">
           <div className="content-stretch flex items-center justify-center min-h-[inherit] px-[40px] py-[111.31px] relative w-full">
             <div className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute left-1/2 size-[600px] top-1/2 z-[0]" data-name="Gradient" style={{ backgroundImage: "url('data:image/svg+xml;utf8,<svg viewBox=\\'0 0 600 600\\' xmlns=\\'http://www.w3.org/2000/svg\\' preserveAspectRatio=\\'none\\'><rect x=\\'0\\' y=\\'0\\' height=\\'100%\\' width=\\'100%\\' fill=\\'url(%23grad)\\' opacity=\\'1\\'/><defs><radialGradient id=\\'grad\\' gradientUnits=\\'userSpaceOnUse\\' cx=\\'0\\' cy=\\'0\\' r=\\'10\\' gradientTransform=\\'matrix(42.426 0 0 42.426 300 300)\\'><stop stop-color=\\'rgba(191,255,0,0.06)\\' offset=\\'0\\'/><stop stop-color=\\'rgba(191,255,0,0)\\' offset=\\'0.65\\'/></radialGradient></defs></svg>')" }} />
-            <div className="bg-[#151515] h-[611.38px] max-w-[460px] pointer-events-auto relative rounded-[20px] shrink-0 w-[460px] z-[10]" data-name="Background+Border">
-              <div aria-hidden="true" className="absolute border border-[#2a2a2a] border-solid inset-0 pointer-events-none rounded-[20px]" />
-              <div className="-translate-x-1/2 absolute bg-[rgba(191,255,0,0.1)] content-stretch flex items-center justify-center left-1/2 p-px rounded-[48px] size-[96px] top-[49px]" data-name="Overlay+Border+Shadow">
-                <div aria-hidden="true" className="absolute border border-[rgba(191,255,0,0.2)] border-solid inset-0 pointer-events-none rounded-[48px] shadow-[0px_0px_12px_0px_rgba(191,255,0,0.25)]" />
-                <div className="flex flex-col font-['Noto_Color_Emoji:Regular','Noto_Sans:Regular',sans-serif] justify-center leading-[0] relative shrink-0 text-[40px] text-center text-white whitespace-nowrap" style={{ fontVariationSettings: "'CTGR' 0, 'wdth' 100, 'wght' 400" }}>
+            <div className="bg-[var(--bg-secondary)] h-[611.38px] max-w-[460px] pointer-events-auto relative rounded-[20px] shrink-0 w-[460px] z-[10]" data-name="Background+Border">
+              <div aria-hidden="true" className="absolute border border-[var(--border-subtle)] border-solid inset-0 pointer-events-none rounded-[20px]" />
+              <div className="-translate-x-1/2 absolute bg-[rgba(var(--accent-primary-rgb),0.1)] content-stretch flex items-center justify-center left-1/2 p-px rounded-[48px] size-[96px] top-[49px]" data-name="Overlay+Border+Shadow">
+                <div aria-hidden="true" className="absolute border border-[rgba(var(--accent-primary-rgb),0.2)] border-solid inset-0 pointer-events-none rounded-[48px] shadow-[0px_0px_12px_0px_rgba(var(--accent-primary-rgb),0.25)]" />
+                <div className="flex flex-col font-['Noto_Color_Emoji:Regular','Noto_Sans:Regular',sans-serif] justify-center leading-[0] relative shrink-0 text-[40px] text-center text-[var(--text-primary)] whitespace-nowrap" style={{ fontVariationSettings: "'CTGR' 0, 'wdth' 100, 'wght' 400" }}>
                   <p className="leading-[64px]">📧</p>
                 </div>
               </div>
               <div className="absolute content-stretch flex flex-col items-center left-[49px] right-[49px] top-[172.3px]" data-name="Container">
-                <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[41.6px] relative shrink-0 text-[26px] text-center text-white tracking-[-0.52px] uppercase whitespace-nowrap">
+                <div className="flex flex-col font-['Syne:ExtraBold',sans-serif] font-extrabold justify-center leading-[41.6px] relative shrink-0 text-[26px] text-center text-[var(--text-primary)] tracking-[-0.52px] uppercase whitespace-nowrap">
                   <p className="mb-0">Check Your</p>
                   <p>Email</p>
                 </div>
               </div>
               <div className="absolute content-stretch flex flex-col items-center left-[49px] pb-[0.69px] right-[49px] top-[265.09px]" data-name="Container">
-                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[23.8px] relative shrink-0 text-[#888] text-[0px] text-[14px] text-center whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 9" }}>
+                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[23.8px] relative shrink-0 text-[var(--text-tertiary)] text-[0px] text-[14px] text-center whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 9" }}>
                   <p className="mb-0" style={{ fontVariationSettings: "'opsz' 9" }}>
                     We sent a verification code to
                   </p>
-                  <p className="font-['DM_Sans:Bold',sans-serif] font-bold text-white" style={{ fontVariationSettings: "'opsz' 14" }}>
+                  <p className="font-['DM_Sans:Bold',sans-serif] font-bold text-[var(--text-primary)]" style={{ fontVariationSettings: "'opsz' 14" }}>
                     {email || "your email"}
                   </p>
                 </div>
@@ -251,13 +251,13 @@ export default function Component05EmailVerify() {
               {/* Error/Success Messages - show only one at a time */}
               <div className="absolute content-stretch flex flex-col items-center left-[49px] right-[49px] top-[310px] z-[15]">
                 {error && (
-                  <div className="bg-[rgba(255,0,0,0.1)] border border-red-500 border-solid px-[12px] py-[8px] rounded-[8px] w-full">
-                    <p className="text-red-500 text-[13px] leading-[20px] text-center">{error}</p>
+                  <div className="bg-[rgba(var(--color-danger-rgb),0.1)] border border-[var(--color-danger)] border-solid px-[12px] py-[8px] rounded-[8px] w-full">
+                    <p className="text-[var(--color-danger)] text-[13px] leading-[20px] text-center">{error}</p>
                   </div>
                 )}
                 {success && !error && (
-                  <div className="bg-[rgba(0,255,0,0.1)] border border-green-500 border-solid px-[12px] py-[8px] rounded-[8px] w-full">
-                    <p className="text-green-500 text-[13px] leading-[20px] text-center">{success}</p>
+                  <div className="bg-[rgba(var(--color-success-rgb),0.1)] border border-[var(--color-success)] border-solid px-[12px] py-[8px] rounded-[8px] w-full">
+                    <p className="text-[var(--color-success)] text-[13px] leading-[20px] text-center">{success}</p>
                   </div>
                 )}
               </div>
@@ -312,7 +312,7 @@ export default function Component05EmailVerify() {
                           }, 0);
                         }
                       }}
-                      className="otp-input bg-[#1f1f1f] h-[64px] rounded-[10px] shrink-0 w-[56px] text-[#bfff00] text-[28px] text-center font-['Syne:ExtraBold'] font-extrabold outline-none border border-[#2a2a2a] focus:border-[#bfff00] cursor-pointer placeholder:text-[#555]"
+                      className="otp-input bg-[var(--bg-tertiary)] h-[64px] rounded-[10px] shrink-0 w-[56px] text-[var(--accent-primary)] text-[28px] text-center font-['Syne:ExtraBold'] font-extrabold outline-none border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] cursor-pointer placeholder:text-[var(--text-tertiary)]"
                       style={{ fontFamily: "'Syne:ExtraBold', sans-serif" }}
                     />
                   ))}
@@ -323,19 +323,19 @@ export default function Component05EmailVerify() {
                 onClick={() => !isLoading && handleVerify()}
                 style={{ pointerEvents: isLoading ? 'none' : 'auto' }}
               >
-                <div className="flex flex-col font-['DM_Sans:SemiBold',sans-serif] font-semibold justify-center leading-[0] relative shrink-0 text-[#0a0a0a] text-[16px] text-center tracking-[0.16px] whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 14" }}>
+                <div className="flex flex-col font-['DM_Sans:SemiBold',sans-serif] font-semibold justify-center leading-[0] relative shrink-0 text-[var(--bg-primary)] text-[16px] text-center tracking-[0.16px] whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 14" }}>
                   <p className="leading-[normal]">{isLoading ? 'Verifying...' : 'Verify Email →'}</p>
                 </div>
               </div>
               <div className="absolute content-stretch flex gap-[5.99px] items-start left-[49px] pb-[0.8px] pl-[57.88px] pr-[57.89px] right-[49px] top-[507.78px] z-[20]" data-name="Container">
-                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[#888] text-[13px] text-center whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 9" }}>
+                <div className="flex flex-col font-['DM_Sans:9pt_Regular',sans-serif] font-normal justify-center leading-[0] relative shrink-0 text-[var(--text-tertiary)] text-[13px] text-center whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 9" }}>
                   <p className="leading-[20.8px]">{`Didn't receive the code? `}</p>
                 </div>
                 <div 
                   className={`content-stretch flex items-start justify-center relative shrink-0 cursor-pointer z-[20] ${resendTimer > 0 ? 'opacity-50' : ''}`}
                   onClick={handleResend}
                 >
-                  <div className="flex flex-col font-['DM_Sans:SemiBold',sans-serif] font-semibold justify-center leading-[0] relative shrink-0 text-[#bfff00] text-[13px] text-center whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 14" }}>
+                  <div className="flex flex-col font-['DM_Sans:SemiBold',sans-serif] font-semibold justify-center leading-[0] relative shrink-0 text-[var(--accent-primary)] text-[13px] text-center whitespace-nowrap" style={{ fontVariationSettings: "'opsz' 14" }}>
                     <p className="leading-[20.8px]">{resendTimer > 0 ? `Resend in 0:${resendTimer.toString().padStart(2, '0')}` : 'Resend Code'}</p>
                   </div>
                 </div>
@@ -347,8 +347,8 @@ export default function Component05EmailVerify() {
                   onClick={handleChangeEmail}
                 >
                   <p className="text-[13px]">
-                    <span className="font-['DM_Sans:9pt_Regular',sans-serif] font-normal leading-[20.8px] text-[#888]" style={{ fontVariationSettings: "'opsz' 9" }}>Wrong email? </span>
-                    <span className="font-['DM_Sans:SemiBold',sans-serif] font-semibold leading-[20.8px] text-[#bfff00]" style={{ fontVariationSettings: "'opsz' 14" }}>
+                    <span className="font-['DM_Sans:9pt_Regular',sans-serif] font-normal leading-[20.8px] text-[var(--text-tertiary)]" style={{ fontVariationSettings: "'opsz' 9" }}>Wrong email? </span>
+                    <span className="font-['DM_Sans:SemiBold',sans-serif] font-semibold leading-[20.8px] text-[var(--accent-primary)]" style={{ fontVariationSettings: "'opsz' 14" }}>
                       Change it
                     </span>
                   </p>
@@ -364,51 +364,51 @@ export default function Component05EmailVerify() {
 
       {/* Change Email Modal */}
       {showChangeEmail && (
-        <div className="absolute inset-0 z-[50] flex items-center justify-center bg-[rgba(0,0,0,0.8)]">
-          <div className="bg-[#151515] p-[24px] rounded-[20px] w-[360px] border border-[#2a2a2a]">
+        <div className="absolute inset-0 z-[50] flex items-center justify-center bg-[rgba(var(--bg-primary-rgb),0.8)]">
+          <div className="bg-[var(--bg-secondary)] p-[24px] rounded-[20px] w-[360px] border border-[var(--border-subtle)]">
             <div className="text-center mb-[20px]">
-              <h3 className="text-white text-[20px] font-['Syne:ExtraBold'] font-bold">Change Email</h3>
-              <p className="text-[#888] text-[14px] mt-[8px]">Enter your correct email to receive a new verification code</p>
+              <h3 className="text-[var(--text-primary)] text-[20px] font-['Syne:ExtraBold'] font-bold">Change Email</h3>
+              <p className="text-[var(--text-tertiary)] text-[14px] mt-[8px]">Enter your correct email to receive a new verification code</p>
             </div>
             
             <div className="mb-[16px]">
-              <label className="text-[#888] text-[12px] block mb-[8px]">Current Email</label>
+              <label className="text-[var(--text-tertiary)] text-[12px] block mb-[8px]">Current Email</label>
               <input
                 type="email"
                 value={email}
                 disabled
-                className="w-full bg-[#1f1f1f] border border-[#2a2a2a] rounded-[10px] px-[12px] py-[12px] text-[#555] text-[14px]"
+                className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[10px] px-[12px] py-[12px] text-[var(--text-tertiary)] text-[14px]"
               />
             </div>
 
             <div className="mb-[20px]">
-              <label className="text-[#888] text-[12px] block mb-[8px]">New Email</label>
+              <label className="text-[var(--text-tertiary)] text-[12px] block mb-[8px]">New Email</label>
               <input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="Enter your correct email"
-                className="w-full bg-[#1f1f1f] border border-[#2a2a2a] rounded-[10px] px-[12px] py-[12px] text-white text-[14px] focus:border-[#bfff00] outline-none"
+                className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[10px] px-[12px] py-[12px] text-[var(--text-primary)] text-[14px] focus:border-[var(--accent-primary)] outline-none"
               />
             </div>
 
             {error && (
-              <div className="mb-[16px] bg-[rgba(255,0,0,0.1)] border border-red-500 border-solid px-[12px] py-[8px] rounded-[8px]">
-                <p className="text-red-500 text-[13px] text-center">{error}</p>
+              <div className="mb-[16px] bg-[rgba(var(--color-danger-rgb),0.1)] border border-[var(--color-danger)] border-solid px-[12px] py-[8px] rounded-[8px]">
+                <p className="text-[var(--color-danger)] text-[13px] text-center">{error}</p>
               </div>
             )}
 
             <div className="flex gap-[12px]">
               <button
                 onClick={handleCancelChangeEmail}
-                className="flex-1 bg-[#2a2a2a] text-white py-[12px] rounded-[10px] text-[14px] font-semibold hover:bg-[#333]"
+                className="flex-1 bg-[var(--border-default)] text-[var(--text-primary)] py-[12px] rounded-[10px] text-[14px] font-semibold hover:bg-[var(--border-subtle)]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleChangeEmailSubmit}
                 disabled={isLoading}
-                className={`flex-1 bg-[#bfff00] text-[#0a0a0a] py-[12px] rounded-[10px] text-[14px] font-semibold ${isLoading ? 'opacity-50' : 'hover:bg-[#a3e600]'}`}
+                className={`flex-1 bg-[var(--accent-primary)] text-[var(--bg-primary)] py-[12px] rounded-[10px] text-[14px] font-semibold ${isLoading ? 'opacity-50' : 'hover:bg-[var(--accent-primary-hover)]'}`}
               >
                 {isLoading ? 'Sending...' : 'Send Code'}
               </button>

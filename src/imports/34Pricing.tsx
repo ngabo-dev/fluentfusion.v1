@@ -17,9 +17,9 @@ export default function Component34Pricing() {
   };
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen" data-name="34-pricing">
+    <div className="bg-[var(--bg-primary)] min-h-screen" data-name="34-pricing">
       {/* Navigation */}
-      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
+      <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] sticky top-0 w-full z-50 border-b border-[var(--border-default)]">
         <div className="flex items-center justify-between px-[40px] h-full max-w-[1200px] mx-auto">
           <Link to="/" className="flex items-center gap-[11px]">
             <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">

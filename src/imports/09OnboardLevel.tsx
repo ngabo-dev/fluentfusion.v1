@@ -56,18 +56,18 @@ export default function Component09OnboardLevel() {
   const isSelected = (id: string) => selectedLevel === id;
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen flex flex-col">
+    <div className="bg-[var(--bg-primary)] min-h-screen flex flex-col">
       {/* Navigation */}
-      <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
-        <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
+      <div className="backdrop-blur-[8px] bg-[rgba(var(--bg-primary-rgb),0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
+        <div className="absolute border-b border-[var(--border-subtle)] inset-0 pointer-events-none" />
         <div className="flex flex-row items-center size-full">
           <div className="flex items-center justify-between px-[40px] w-full">
             <Link to="/" className="flex gap-[11px] items-center no-underline">
-              <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
+              <div className="bg-[var(--accent-primary)] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
                 <span className="text-[18px]">🧠</span>
               </div>
-              <span className="text-[18px] text-white font-bold">
-                FLUENT<span className="text-[#bfff00]">FUSION</span>
+              <span className="text-[18px] text-[var(--text-primary)] font-bold">
+                FLUENT<span className="text-[var(--accent-primary)]">FUSION</span>
               </span>
             </Link>
             <div className="text-[#888] text-[13px]">
@@ -79,25 +79,25 @@ export default function Component09OnboardLevel() {
 
       {/* Main Content */}
       <div className="flex items-center justify-center flex-1 p-[40px]">
-        <div className="bg-[#151515] w-full max-w-[560px] rounded-[20px] border border-[#2a2a2a] p-8">
+        <div className="bg-[var(--bg-secondary)] w-full max-w-[560px] rounded-[20px] border border-[var(--border-subtle)] p-8">
           {/* Progress Dots */}
           <div className="flex gap-2 mb-6">
             <div className="bg-[#bfff00] h-[4px] rounded-[99px] w-[20px] shadow-[0px_0px_8px_0px_rgba(191,255,0,0.4)]" />
             <div className="bg-[#bfff00] h-[4px] rounded-[99px] w-[20px] shadow-[0px_0px_8px_0px_rgba(191,255,0,0.4)]" />
             <div className="bg-[#bfff00] h-[4px] rounded-[99px] w-[20px] shadow-[0px_0px_8px_0px_rgba(191,255,0,0.4)]" />
-            <div className="bg-[#bfff00] h-[4px] rounded-[99px] w-[32px] shadow-[0px_0px_8px_0px_rgba(191,255,0,0.4)]" />
+            <div className="bg-[var(--accent-primary)] h-[4px] rounded-[99px] w-[32px] shadow-[0px_0px_8px_0px_rgba(var(--accent-primary-rgb),0.4)]" />
           </div>
 
           {/* Badge */}
-          <div className="bg-[rgba(191,255,0,0.1)] inline-block px-[13px] py-[5px] rounded-[99px] mb-4">
-            <span className="text-[#bfff00] text-[11px] font-semibold uppercase">Step 4 of 4</span>
+          <div className="bg-[rgba(var(--accent-primary-rgb),0.1)] inline-block px-[13px] py-[5px] rounded-[99px] mb-4">
+            <span className="text-[var(--accent-primary)] text-[11px] font-semibold uppercase">Step 4 of 4</span>
           </div>
 
           {/* Title */}
-          <h1 className="text-[28px] text-white font-bold mb-2">
-            What's your <span className="text-[#bfff00]">Current Level?</span>
+          <h1 className="text-[28px] text-[var(--text-primary)] font-bold mb-2">
+            What's your <span className="text-[var(--accent-primary)]">Current Level?</span>
           </h1>
-          <p className="text-[#888] text-[14px] mb-8">
+          <p className="text-[var(--text-tertiary)] text-[14px] mb-8">
             Be honest — we'll create the perfect starting point for you.
           </p>
 
@@ -110,8 +110,8 @@ export default function Component09OnboardLevel() {
                 className={`
                   w-full p-[26px] rounded-[14px] text-left transition-all flex items-center justify-between
                   ${isSelected(level.id) 
-                    ? "bg-[rgba(191,255,0,0.1)] border-2 border-[#bfff00]" 
-                    : "bg-[#1f1f1f] border-2 border-[#2a2a2a] hover:border-[#444]"
+                    ? "bg-[rgba(var(--accent-primary-rgb),0.1)] border-2 border-[var(--accent-primary)]" 
+                    : "bg-[var(--bg-tertiary)] border-2 border-[var(--border-subtle)] hover:border-[var(--border-default)]"
                   }
                 `}
               >
@@ -134,8 +134,8 @@ export default function Component09OnboardLevel() {
                       className={`
                         w-[10px] h-[10px] rounded-[5px]
                         ${filled 
-                          ? "bg-[#bfff00] shadow-[0px_0px_4px_0px_rgba(191,255,0,0.5)]" 
-                          : "bg-[#333]"
+                          ? "bg-[var(--accent-primary)] shadow-[0px_0px_4px_0px_rgba(var(--accent-primary-rgb),0.5)]" 
+                          : "bg-[var(--border-default)]"
                         }
                       `}
                     />
@@ -149,7 +149,7 @@ export default function Component09OnboardLevel() {
           <div className="flex justify-between">
             <button
               onClick={handleBack}
-              className="px-[24px] py-[11px] rounded-[8px] text-[#888] hover:text-white transition-colors"
+              className="px-[24px] py-[11px] rounded-[8px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
             >
               ← Back
             </button>
@@ -159,8 +159,8 @@ export default function Component09OnboardLevel() {
               className={`
                 px-[36px] py-[15px] rounded-[10px] font-semibold transition-all
                 ${selectedLevel 
-                  ? "bg-[#bfff00] text-[#0a0a0a] hover:opacity-90 shadow-[0px_0px_12px_0px_rgba(191,255,0,0.25)]" 
-                  : "bg-[#2a2a2a] text-[#555] cursor-not-allowed"
+                  ? "bg-[var(--accent-primary)] text-[var(--bg-primary)] hover:opacity-90 shadow-[0px_0px_12px_0px_rgba(var(--accent-primary-rgb),0.25)]" 
+                  : "bg-[var(--border-subtle)] text-[var(--text-tertiary)] cursor-not-allowed"
                 }
               `}
             >

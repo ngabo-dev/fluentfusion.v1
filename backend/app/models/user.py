@@ -109,6 +109,9 @@ class User(Base):
     activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
 
+    # Instructor Application
+    instructor_application = relationship("InstructorApplication", foreign_keys="InstructorApplication.user_id", back_populates="user", uselist=False)
+
 class UserSettings(Base):
     __tablename__ = "user_settings"
     

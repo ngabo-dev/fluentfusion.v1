@@ -40,17 +40,17 @@ export default function Component32DailyChallenge() {
   return (
     <StudentLayout title="Daily Challenge" subtitle="Complete today's tasks to earn bonus XP">
       {loading ? (
-        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading...</div>
-      ) : !challenge ? (
-        <div className="text-center py-24">
-          <div className="text-[64px] mb-4">🌙</div>
-          <h2 className="text-white font-bold text-[20px] mb-2">No Challenge Today</h2>
-          <p className="text-[#888] text-[14px]">Check back tomorrow for new challenges!</p>
-        </div>
-      ) : (
+         <div className="flex items-center justify-center min-h-[400px] text-[var(--text-tertiary)]">Loading...</div>
+       ) : !challenge ? (
+         <div className="text-center py-24">
+           <div className="text-[64px] mb-4">🌙</div>
+           <h2 className="text-[var(--text-primary)] font-bold text-[20px] mb-2">No Challenge Today</h2>
+           <p className="text-[var(--text-tertiary)] text-[14px]">Check back tomorrow for new challenges!</p>
+         </div>
+       ) : (
         <>
           {/* Challenge Header */}
-          <div className="bg-gradient-to-r from-[rgba(255,184,0,0.15)] to-[rgba(255,184,0,0.05)] border border-[rgba(255,184,0,0.3)] rounded-2xl p-6 mb-8">
+          <div className="bg-gradient-to-r from-[rgba(var(--accent-warning-rgb),0.15)] to-[rgba(var(--accent-warning-rgb),0.05)] border border-[rgba(var(--accent-warning-rgb),0.3)] rounded-2xl p-6 mb-8">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <span className="text-[#ffb800] text-[10px] uppercase tracking-widest">TODAY'S CHALLENGE</span>
@@ -58,18 +58,17 @@ export default function Component32DailyChallenge() {
                 {challenge.description && <p className="text-[#888] text-[13px] mt-1">{challenge.description}</p>}
               </div>
               {challenge.xp_reward && (
-                <div className="text-right flex-shrink-0 ml-4">
-                  <div className="text-[#ffb800] text-[11px] mb-1">Reward</div>
-                  <div className="text-[#bfff00] font-bold text-[20px]">+{challenge.bonus_xp || challenge.xp_reward} XP</div>
-                </div>
-              )}
+                 <div className="text-right flex-shrink-0 ml-4">
+                   <div className="text-[var(--accent-primary)] text-[11px] mb-1">Reward</div>
+                   <div className="text-[var(--accent-primary)] font-bold text-[20px]">+{challenge.bonus_xp || challenge.xp_reward} XP</div>
+                 </div>
+               )}
             </div>
 
             {/* Overall Progress */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 bg-[#2a2a2a] h-[8px] rounded-[99px] overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-[#ffb800] to-[#ff6b35] h-full rounded-[99px] transition-all"
+              <div className="flex-1 bg-[var(--bg-tertiary)] h-[8px] rounded-[99px] overflow-hidden">
+                <div className="bg-gradient-to-r from-[var(--accent-warning)] to-[var(--accent-warning-hover)] h-full rounded-[99px] transition-all"
                   style={{ width: total > 0 ? `${Math.round((progress / total) * 100)}%` : '0%' }}
                 />
               </div>

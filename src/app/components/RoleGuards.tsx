@@ -111,6 +111,12 @@ export function InstructorRoute({ children }: { children: React.ReactNode }) {
       navigate('/login', { replace: true });
     } else if (!loading && isAuthenticated && !['instructor', 'admin', 'super_admin'].includes(user?.role)) {
       navigate(getRoleBasedRedirect(user.role), { replace: true });
+    } else if (!loading && isAuthenticated && user?.role === 'instructor') {
+      // Check cached application status — admins/super_admins bypass this check
+      const instructorStatus = localStorage.getItem('ff_instructor_status');
+      if (instructorStatus === 'pending' || instructorStatus === 'rejected') {
+        navigate('/instructor/application-status', { replace: true });
+      }
     }
   }, [isAuthenticated, user, loading, navigate]);
 
@@ -124,6 +130,14 @@ export function InstructorRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated || !['instructor', 'admin', 'super_admin'].includes(user?.role)) {
     return null;
+  }
+
+  // Block instructors with pending/rejected status from accessing protected pages
+  if (user?.role === 'instructor') {
+    const instructorStatus = localStorage.getItem('ff_instructor_status');
+    if (instructorStatus === 'pending' || instructorStatus === 'rejected') {
+      return null;
+    }
   }
 
   return <>{children}</>;

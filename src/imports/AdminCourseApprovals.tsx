@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { adminApi } from "../app/api/config";
+import { adminApi, authApi } from "../app/api/config";
 
 interface CourseRequest {
   id: number;
@@ -97,39 +97,37 @@ export default function AdminCourseApprovals() {
 
   if (loading) {
     return (
-      <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
-        <div className="text-[#bfff00]">Loading...</div>
+      <div className="bg-[var(--bg-primary)] min-h-screen flex items-center justify-center">
+        <div className="text-[var(--accent-primary)]">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0a0a0a] min-h-screen">
+    <div className="bg-[var(--bg-primary)] min-h-screen">
       {/* Navigation */}
       <div className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50">
-        <div className="absolute border-b border-[#2a2a2a] inset-0 pointer-events-none" />
+        <div className="absolute border-b border-[var(--border-default)] inset-0 pointer-events-none" />
         <div className="flex flex-row items-center size-full">
           <div className="flex items-center justify-between px-[40px] w-full">
             <Link to="/admin/dashboard" className="flex gap-[11px] items-center no-underline">
-              <div className="bg-[#bfff00] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
+              <div className="bg-[var(--accent-primary)] flex items-center justify-center w-[38px] h-[38px] rounded-[10px]">
                 <span className="text-[18px]">🧠</span>
               </div>
-              <span className="text-[18px] text-white font-bold">
-                FLUENT<span className="text-[#bfff00]">FUSION</span>
+              <span className="text-[18px] text-[var(--text-primary)] font-bold">
+                FLUENT<span className="text-[var(--accent-primary)]">FUSION</span>
               </span>
             </Link>
             <div className="flex items-center gap-[12px]">
               <div className="bg-[rgba(255,0,0,0.1)] px-[13px] py-[5px] rounded-[99px]">
-                <span className="text-[#ff4444] text-[11px] font-semibold">👑 Admin</span>
+                <span className="text-[var(--color-danger)] text-[11px] font-semibold">👑 Admin</span>
               </div>
-              <button 
+              <button
                 onClick={() => {
-                  localStorage.removeItem('ff_access_token');
-                  localStorage.removeItem('ff_refresh_token');
-                  localStorage.removeItem('ff_user');
-                  navigate('/login');
+                  authApi.logout();
+                  window.location.href = '/login';
                 }}
-                className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm bg-transparent border-none cursor-pointer"
               >
                 Logout
               </button>
@@ -140,29 +138,29 @@ export default function AdminCourseApprovals() {
 
       <div className="flex min-h-[calc(100vh-66px)]">
         {/* Sidebar */}
-        <div className="fixed left-0 top-[66px] w-[260px] h-[calc(100vh-66px)] bg-[#0f0f0f] border-r border-[#2a2a2a] overflow-y-auto">
+        <div className="fixed left-0 top-[66px] w-[260px] h-[calc(100vh-66px)] bg-[var(--bg-primary)] border-r border-[var(--border-default)] overflow-y-auto">
           <div className="flex flex-col py-5 px-0">
-            <div className="text-[#555] text-[9px] uppercase tracking-[1.35px] px-6 py-3">Management</div>
-            
-            <Link to="/admin/users" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+            <div className="text-[var(--text-disabled)] text-[9px] uppercase tracking-[1.35px] px-6 py-3">Management</div>
+
+            <Link to="/admin/users" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <span>👥</span>
               <span className="text-[14px]">Users</span>
             </Link>
-            
-            <Link to="/admin/courses" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+
+            <Link to="/admin/courses" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <span>📚</span>
               <span className="text-[14px]">Courses</span>
             </Link>
-            
-            <Link to="/admin/course-approvals" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center bg-[rgba(191,255,0,0.1)] border-l-2 border-[#bfff00]">
-              <span className="text-[#bfff00]">✅</span>
-              <span className="text-[#bfff00] text-[14px]">Course Approvals</span>
+
+            <Link to="/admin/course-approvals" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center bg-[var(--accent-primary-muted)] border-l-2 border-[var(--accent-primary)]">
+              <span className="text-[var(--accent-primary)]">✅</span>
+              <span className="text-[var(--accent-primary)] text-[14px]">Course Approvals</span>
               {pendingCount > 0 && (
                 <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{pendingCount}</span>
               )}
             </Link>
-            
-            <Link to="/admin/instructor-applications" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[#888] hover:text-white">
+
+            <Link to="/admin/instructor-applications" className="w-full py-3 pl-6 pr-4 flex gap-3 items-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
               <span>📝</span>
               <span className="text-[14px]">Instructor Apps</span>
             </Link>
@@ -172,13 +170,13 @@ export default function AdminCourseApprovals() {
         {/* Main Content */}
         <div className="ml-[260px] flex-1 p-9">
           <div className="mb-8">
-            <h1 className="text-[32px] text-white font-bold">
-              <span className="text-[#bfff00]">Course Approvals</span>
+            <h1 className="text-[32px] text-[var(--text-primary)] font-bold">
+              <span className="text-[var(--accent-primary)]">Course Approvals</span>
             </h1>
-            <p className="text-[#888] text-[14px] mt-1">
+            <p className="text-[var(--text-secondary)] text-[14px] mt-1">
               Review and approve instructor requests to edit or delete courses
               {pendingCount > 0 && (
-                <span className="ml-2 text-orange-400">
+                <span className="ml-2 text-[var(--color-warning)]">
                   • {pendingCount} pending request{pendingCount !== 1 ? 's' : ''}
                 </span>
               )}
@@ -190,9 +188,9 @@ export default function AdminCourseApprovals() {
             <button
               onClick={() => setFilter("all")}
               className={`px-4 py-2 rounded-[8px] text-sm ${
-                filter === "all" 
-                  ? "bg-[#bfff00] text-black" 
-                  : "bg-[#1f1f1f] text-[#888] border border-[#2a2a2a]"
+                filter === "all"
+                  ? "bg-[var(--accent-primary)] text-black"
+                  : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-default)]"
               }`}
             >
               All ({requests.length})
@@ -200,9 +198,9 @@ export default function AdminCourseApprovals() {
             <button
               onClick={() => setFilter("pending")}
               className={`px-4 py-2 rounded-[8px] text-sm ${
-                filter === "pending" 
-                  ? "bg-[#bfff00] text-black" 
-                  : "bg-[#1f1f1f] text-[#888] border border-[#2a2a2a]"
+                filter === "pending"
+                  ? "bg-[var(--accent-primary)] text-black"
+                  : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-default)]"
               }`}
             >
               Pending ({pendingCount})
@@ -210,9 +208,9 @@ export default function AdminCourseApprovals() {
             <button
               onClick={() => setFilter("approved")}
               className={`px-4 py-2 rounded-[8px] text-sm ${
-                filter === "approved" 
-                  ? "bg-[#bfff00] text-black" 
-                  : "bg-[#1f1f1f] text-[#888] border border-[#2a2a2a]"
+                filter === "approved"
+                  ? "bg-[var(--accent-primary)] text-black"
+                  : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-default)]"
               }`}
             >
               Approved ({requests.filter(r => r.status === "approved").length})
@@ -220,9 +218,9 @@ export default function AdminCourseApprovals() {
             <button
               onClick={() => setFilter("rejected")}
               className={`px-4 py-2 rounded-[8px] text-sm ${
-                filter === "rejected" 
-                  ? "bg-[#bfff00] text-black" 
-                  : "bg-[#1f1f1f] text-[#888] border border-[#2a2a2a]"
+                filter === "rejected"
+                  ? "bg-[var(--accent-primary)] text-black"
+                  : "bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border-default)]"
               }`}
             >
               Rejected ({requests.filter(r => r.status === "rejected").length})
@@ -231,84 +229,84 @@ export default function AdminCourseApprovals() {
 
           {/* Requests List */}
           {filteredRequests.length === 0 ? (
-            <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-8 text-center">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-[14px] p-8 text-center">
               <div className="text-[48px] mb-4">✅</div>
-              <p className="text-[#888]">No requests found</p>
+              <p className="text-[var(--text-secondary)]">No requests found</p>
             </div>
           ) : (
             <div className="space-y-4">
               {filteredRequests.map((request) => (
-                <div 
+                <div
                   key={request.id}
-                  className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6"
+                  className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-[14px] p-6"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`px-2 py-1 rounded-[4px] text-xs ${
-                          request.request_type === 'edit' 
-                            ? 'bg-[rgba(0,191,255,0.1)] text-[#00bfff]' 
-                            : 'bg-[rgba(255,0,0,0.1)] text-red-500'
+                          request.request_type === 'edit'
+                            ? 'bg-[rgba(0,191,255,0.1)] text-[var(--color-info)]'
+                            : 'bg-[rgba(255,0,0,0.1)] text-[var(--color-danger)]'
                         }`}>
                           {request.request_type === 'edit' ? '✏️ Edit Request' : '🗑️ Delete Request'}
                         </span>
                         <span className={`px-2 py-1 rounded-[4px] text-xs ${
-                          request.status === 'pending' ? 'bg-orange-500/10 text-orange-400' :
-                          request.status === 'approved' ? 'bg-[rgba(0,255,127,0.1)] text-[#00ff7f]' :
-                          'bg-[rgba(255,0,0,0.1)] text-red-500'
+                          request.status === 'pending' ? 'bg-orange-500/10 text-[var(--color-warning)]' :
+                          request.status === 'approved' ? 'bg-[rgba(0,255,127,0.1)] text-[var(--color-success)]' :
+                          'bg-[rgba(255,0,0,0.1)] text-[var(--color-danger)]'
                         }`}>
                           {request.status}
                         </span>
                       </div>
-                      <h3 className="text-white font-bold text-lg">{request.course_title}</h3>
-                      <p className="text-[#888] text-sm">by {request.instructor_name}</p>
+                      <h3 className="text-[var(--text-primary)] font-bold text-lg">{request.course_title}</h3>
+                      <p className="text-[var(--text-secondary)] text-sm">by {request.instructor_name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[#555] text-sm">
+                      <p className="text-[var(--text-tertiary)] text-sm">
                         {new Date(request.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Request Details */}
-                  <div className="bg-[#1f1f1f] rounded-[8px] p-4 mb-4">
-                    <h4 className="text-[#888] text-xs uppercase mb-2">Reason</h4>
-                    <p className="text-white">{request.reason}</p>
+                  <div className="bg-[var(--bg-elevated)] rounded-[8px] p-4 mb-4">
+                    <h4 className="text-[var(--text-secondary)] text-xs uppercase mb-2">Reason</h4>
+                    <p className="text-[var(--text-primary)]">{request.reason}</p>
                   </div>
-                  
+
                   {request.request_type === 'edit' && (
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="bg-[#1f1f1f] rounded-[8px] p-4">
-                        <h4 className="text-[#888] text-xs uppercase mb-2">Current Values</h4>
-                        <pre className="text-white text-sm whitespace-pre-wrap">
+                      <div className="bg-[var(--bg-elevated)] rounded-[8px] p-4">
+                        <h4 className="text-[var(--text-secondary)] text-xs uppercase mb-2">Current Values</h4>
+                        <pre className="text-[var(--text-primary)] text-sm whitespace-pre-wrap">
                           {JSON.stringify(request.old_values, null, 2)}
                         </pre>
                       </div>
-                      <div className="bg-[rgba(191,255,0,0.05)] border border-[#bfff00]/20 rounded-[8px] p-4">
-                        <h4 className="text-[#bfff00] text-xs uppercase mb-2">New Values</h4>
-                        <pre className="text-white text-sm whitespace-pre-wrap">
+                      <div className="bg-[rgba(191,255,0,0.05)] border border-[var(--accent-primary-border)] rounded-[8px] p-4">
+                        <h4 className="text-[var(--accent-primary)] text-xs uppercase mb-2">New Values</h4>
+                        <pre className="text-[var(--text-primary)] text-sm whitespace-pre-wrap">
                           {JSON.stringify(request.new_values, null, 2)}
                         </pre>
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Admin Response */}
                   {request.admin_comment && (
                     <div className={`rounded-[8px] p-4 mb-4 ${
-                      request.status === 'approved' 
-                        ? 'bg-[rgba(0,255,127,0.05)] border border-[#00ff7f]/20'
-                        : 'bg-[rgba(255,0,0,0.05)] border border-red-500/20'
+                      request.status === 'approved'
+                        ? 'bg-[rgba(0,255,127,0.05)] border border-[rgba(0,255,127,0.2)]'
+                        : 'bg-[rgba(255,0,0,0.05)] border border-[rgba(255,0,0,0.2)]'
                     }`}>
                       <h4 className={`text-xs uppercase mb-2 ${
-                        request.status === 'approved' ? 'text-[#00ff7f]' : 'text-red-500'
+                        request.status === 'approved' ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'
                       }`}>
                         Admin Comment
                       </h4>
-                      <p className="text-white">{request.admin_comment}</p>
+                      <p className="text-[var(--text-primary)]">{request.admin_comment}</p>
                     </div>
                   )}
-                  
+
                   {/* Action Buttons */}
                   {request.status === 'pending' && (
                     <div className="flex gap-3">
@@ -319,7 +317,7 @@ export default function AdminCourseApprovals() {
                           setAdminComment("");
                           setShowReviewModal(true);
                         }}
-                        className="flex-1 bg-[#00ff7f] text-black py-2 rounded-[8px] font-semibold"
+                        className="flex-1 bg-[var(--color-success)] text-black py-2 rounded-[8px] font-semibold"
                       >
                         ✓ Approve
                       </button>
@@ -346,43 +344,43 @@ export default function AdminCourseApprovals() {
       {/* Review Modal */}
       {showReviewModal && selectedRequest && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100]" onClick={() => setShowReviewModal(false)}>
-          <div className="bg-[#151515] border border-[#2a2a2a] rounded-[14px] p-6 w-[500px]" onClick={e => e.stopPropagation()}>
-            <h2 className="text-white text-[20px] font-bold mb-2">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-[14px] p-6 w-[500px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-[var(--text-primary)] text-[20px] font-bold mb-2">
               {reviewAction === "approve" ? "Approve" : "Reject"} Request
             </h2>
-            <p className="text-[#888] text-sm mb-4">
+            <p className="text-[var(--text-secondary)] text-sm mb-4">
               You're {reviewAction === "approve" ? "approving" : "rejecting"} the {selectedRequest.request_type} request for "{selectedRequest.course_title}"
             </p>
-            
+
             <div className="mb-4">
-              <label className="text-[#888] text-xs uppercase block mb-2">
+              <label className="text-[var(--text-secondary)] text-xs uppercase block mb-2">
                 Admin Comment *
               </label>
               <textarea
                 value={adminComment}
                 onChange={(e) => setAdminComment(e.target.value)}
-                placeholder={reviewAction === "approve" 
-                  ? "Add a comment (optional)..." 
+                placeholder={reviewAction === "approve"
+                  ? "Add a comment (optional)..."
                   : "Explain why you're rejecting this request..."
                 }
                 rows={4}
-                className="w-full bg-[#1f1f1f] text-white rounded-[8px] px-4 py-3 outline-none border border-[#2a2a2a] resize-none"
+                className="w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] rounded-[8px] px-4 py-3 outline-none border border-[var(--border-default)] resize-none"
               />
             </div>
-            
+
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => setShowReviewModal(false)}
-                className="flex-1 bg-[#1f1f1f] text-[#888] py-3 rounded-[8px]"
+                className="flex-1 bg-[var(--bg-elevated)] text-[var(--text-secondary)] py-3 rounded-[8px]"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleReview}
                 disabled={submitting || (reviewAction === "reject" && !adminComment.trim())}
                 className={`flex-1 py-3 rounded-[8px] font-semibold disabled:opacity-50 ${
-                  reviewAction === "approve" 
-                    ? "bg-[#00ff7f] text-black" 
+                  reviewAction === "approve"
+                    ? "bg-[var(--color-success)] text-black"
                     : "bg-red-500 text-white"
                 }`}
               >

@@ -63,6 +63,10 @@ import InstructorMyCourses from '../imports/InstructorMyCourses';
 import InstructorLiveSessions from '../imports/InstructorLiveSessions';
 import InstructorProfile from '../imports/InstructorProfile';
 import InstructorSettings from '../imports/InstructorSettings';
+import InstructorApplicationStatus from '../imports/InstructorApplicationStatus';
+import StudyGroups from '../imports/StudyGroups';
+import PlacementTest from '../imports/PlacementTest';
+import CourseDiscussion from '../imports/CourseDiscussion';
 
 // Session configuration - 30 minutes inactive timeout (matches backend ACCESS_TOKEN_EXPIRE_MINUTES)
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -368,7 +372,8 @@ function AppRoutes() {
         {/* Core Platform - Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/courses" element={<ProtectedRoute><Component11CourseCatalog /></ProtectedRoute>} />
-        <Route path="/course/:id" element={<ProtectedRoute><Component12CourseDetails /></ProtectedRoute>} />
+        <Route path="/course/:courseId" element={<ProtectedRoute><Component12CourseDetails /></ProtectedRoute>} />
+        <Route path="/course/:courseId/discussion" element={<ProtectedRoute><CourseDiscussion /></ProtectedRoute>} />
         <Route path="/lesson/:id" element={<ProtectedRoute><Component13LessonView /></ProtectedRoute>} />
         <Route path="/quiz/:id" element={<ProtectedRoute><Component14Quiz /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><Component15Progress /></ProtectedRoute>} />
@@ -387,6 +392,8 @@ function AppRoutes() {
         
         {/* Community - Public for viewing, protected for posting */}
         <Route path="/community" element={<Component22CommunityFeed />} />
+        <Route path="/study-groups" element={<ProtectedRoute><StudyGroups /></ProtectedRoute>} />
+        <Route path="/placement-test" element={<ProtectedRoute><PlacementTest /></ProtectedRoute>} />
         
         {/* Instructor Routes */}
         <Route path="/instructor/dashboard" element={<InstructorRoute><Component23InstructorDashboard /></InstructorRoute>} />
@@ -404,7 +411,9 @@ function AppRoutes() {
         <Route path="/instructor/live-sessions" element={<InstructorRoute><InstructorLiveSessions /></InstructorRoute>} />
         <Route path="/instructor/profile" element={<InstructorRoute><InstructorProfile /></InstructorRoute>} />
         <Route path="/instructor/settings" element={<InstructorRoute><InstructorSettings /></InstructorRoute>} />
-        
+        <Route path="/instructor/earnings" element={<InstructorRoute><InstructorMyCourses /></InstructorRoute>} />
+        <Route path="/instructor/application-status" element={<InstructorApplicationStatus />} />
+
         {/* Admin Routes */}
         <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin/course-approvals" element={<AdminRoute><AdminCourseApprovals /></AdminRoute>} />
@@ -418,6 +427,16 @@ function AppRoutes() {
         <Route path="/admin/audit-log" element={<AdminRoute><AdminAuditLog /></AdminRoute>} />
         <Route path="/admin/revenue" element={<AdminRoute><AdminRevenue /></AdminRoute>} />
         <Route path="/admin/instructor-applications" element={<AdminRoute><AdminInstructorApplications /></AdminRoute>} />
+        {/* Additional Admin Routes - Redirect to existing pages */}
+        <Route path="/admin/geographic" element={<Navigate to="/admin/analytics" replace />} />
+        <Route path="/admin/students" element={<Navigate to="/admin/users?role=student" replace />} />
+        <Route path="/admin/instructors" element={<Navigate to="/admin/users?role=instructor" replace />} />
+        <Route path="/admin/admins" element={<Navigate to="/admin/users?role=admin" replace />} />
+        <Route path="/admin/live-sessions" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/payments" element={<Navigate to="/admin/revenue" replace />} />
+        <Route path="/admin/payouts" element={<Navigate to="/admin/revenue" replace />} />
+        <Route path="/admin/notifications" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/settings" element={<Navigate to="/admin/dashboard" replace />} />
         
         {/* Super Admin Routes */}
         <Route path="/superadmin/dashboard" element={<SuperAdminRoute><AdminDashboard /></SuperAdminRoute>} />
@@ -431,6 +450,16 @@ function AppRoutes() {
         <Route path="/superadmin/audit-log" element={<SuperAdminRoute><AdminAuditLog /></SuperAdminRoute>} />
         <Route path="/superadmin/revenue" element={<SuperAdminRoute><AdminRevenue /></SuperAdminRoute>} />
         <Route path="/superadmin/instructor-applications" element={<SuperAdminRoute><AdminInstructorApplications /></SuperAdminRoute>} />
+        {/* Additional Super Admin Routes - Redirect to existing pages */}
+        <Route path="/superadmin/geographic" element={<Navigate to="/superadmin/analytics" replace />} />
+        <Route path="/superadmin/students" element={<Navigate to="/superadmin/users?role=student" replace />} />
+        <Route path="/superadmin/instructors" element={<Navigate to="/superadmin/users?role=instructor" replace />} />
+        <Route path="/superadmin/admins" element={<Navigate to="/superadmin/users?role=admin" replace />} />
+        <Route path="/superadmin/live-sessions" element={<Navigate to="/superadmin/dashboard" replace />} />
+        <Route path="/superadmin/payments" element={<Navigate to="/superadmin/revenue" replace />} />
+        <Route path="/superadmin/payouts" element={<Navigate to="/superadmin/revenue" replace />} />
+        <Route path="/superadmin/notifications" element={<Navigate to="/superadmin/dashboard" replace />} />
+        <Route path="/superadmin/settings" element={<Navigate to="/superadmin/dashboard" replace />} />
         
         {/* User Profile & Settings */}
         <Route path="/profile" element={<ProtectedRoute><Component28Profile /></ProtectedRoute>} />

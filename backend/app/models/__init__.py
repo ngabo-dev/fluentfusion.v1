@@ -31,3 +31,4 @@ from .report import Report, ReportComment
 from .pulse_prediction import PulsePrediction
 from .assignment import Assignment, AssignmentSubmission
 from .meeting import Meeting
+from .extras import InstructorApplication, CourseWishlist, CourseDiscussion, CourseDiscussionReply, StudyGroup, StudyGroupMember

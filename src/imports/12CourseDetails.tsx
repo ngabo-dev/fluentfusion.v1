@@ -23,27 +23,27 @@ function NavNav({ user, onBackClick }: { user: any; onBackClick: () => void }) {
   };
 
   return (
-    <nav className="backdrop-blur-[8px] bg-[rgba(10,10,10,0.95)] h-[66px] shrink-0 sticky top-0 w-full z-50 border-b border-[#2a2a2a]">
+    <nav className="backdrop-blur-[8px] bg-[var(--bg-elevated)] h-[66px] shrink-0 sticky top-0 w-full z-50 border-b border-[var(--border-default)]">
       <div className="flex flex-row items-center h-full px-10">
         <Link to="/dashboard" className="flex gap-3 items-center no-underline">
-          <div className="bg-[#bfff00] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
+          <div className="bg-[var(--accent-primary)] w-[38px] h-[38px] rounded-[10px] flex items-center justify-center">
             <span className="text-[18px]">🧠</span>
           </div>
-          <span className="text-[18px] text-white font-bold">
-            FLUENT<span className="text-[#bfff00]">FUSION</span>
+          <span className="text-[18px] text-[var(--text-primary)] font-bold">
+            FLUENT<span className="text-[var(--accent-primary)]">FUSION</span>
           </span>
         </Link>
         <div className="ml-auto flex gap-16 items-center">
-          <button 
+          <button
             onClick={onBackClick}
-            className="text-[#888] text-[13px] hover:text-white transition-colors cursor-pointer"
+            className="text-[var(--text-secondary)] text-[13px] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
           >
             ← Back to Catalog
           </button>
           <Link to="/profile">
             <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold text-black"
-              style={{ background: 'linear-gradient(135deg, rgb(191, 255, 0) 0%, rgb(143, 239, 0) 100%)' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold text-[var(--text-primary)]"
+              style={{ background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
             >
               {user ? getInitials(user.full_name) : 'U'}
             </div>
@@ -57,9 +57,9 @@ function NavNav({ user, onBackClick }: { user: any; onBackClick: () => void }) {
 function CourseHero({ course }: { course: any }) {
   const flag = course?.language?.flag_emoji || languageFlags[course?.language_name] || '📚';
   const levelColors: { [key: string]: string } = {
-    'beginner': 'bg-[rgba(191,255,0,0.1)] text-[#bfff00]',
-    'intermediate': 'bg-[rgba(255,200,0,0.1)] text-[#ffc800]',
-    'advanced': 'bg-[rgba(255,68,68,0.1)] text-[#f44]',
+    'beginner': 'bg-[var(--accent-primary-muted)] text-[var(--accent-primary)]',
+    'intermediate': 'bg-[var(--accent-warning-muted)] text-[var(--accent-warning)]',
+    'advanced': 'bg-[var(--color-danger-muted)] text-[var(--color-danger)]',
   };
   const level = course?.level?.toLowerCase() || 'beginner';
   const instructorInitials = course?.instructor_name 
@@ -67,31 +67,31 @@ function CourseHero({ course }: { course: any }) {
     : 'I';
 
   return (
-    <div className="w-full" style={{ background: 'linear-gradient(135deg, #1a2a1a 0%, #0a0a0a 60%)' }}>
-      <div className="border-b border-[#2a2a2a]" />
+    <div className="w-full" style={{ background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 60%)' }}>
+      <div className="border-b border-[var(--border-default)]" />
       <div className="px-10 py-12 max-w-[700px]">
         {/* Badges */}
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${course?.is_bestseller ? 'bg-[rgba(255,184,0,0.1)] text-[#ffc800]' : 'bg-[rgba(191,255,0,0.1)] text-[#bfff00]'}`}>
+          <span className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${course?.is_bestseller ? 'bg-[var(--accent-warning-muted)] text-[var(--accent-warning)]' : 'bg-[var(--accent-primary-muted)] text-[var(--accent-primary)]'}`}>
             {flag} {course?.language?.name || course?.language_name || 'Language'}
           </span>
           <span className={`px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${levelColors[level]}`}>
             {course?.level || 'Beginner'}
           </span>
           {course?.is_bestseller && (
-            <span className="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-[rgba(255,184,0,0.1)] text-[#ffc800]">
+            <span className="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-[var(--accent-warning-muted)] text-[var(--accent-warning)]">
               ⭐ Bestseller
             </span>
           )}
         </div>
         
         {/* Title */}
-        <h1 className="text-[32px] font-extrabold text-white uppercase tracking-tight mb-3" style={{ fontFamily: "'Syne', sans-serif" }}>
+        <h1 className="text-[32px] font-extrabold text-[var(--text-primary)] uppercase tracking-tight mb-3" style={{ fontFamily: "'Syne', sans-serif" }}>
           {course?.title || 'Course Title'}
         </h1>
         
         {/* Description */}
-        <p className="text-[#888] text-[15px] leading-relaxed mb-5">
+        <p className="text-[var(--text-tertiary)] text-[15px] leading-relaxed mb-5">
           {course?.description || 'Course description...'}
         </p>
         
@@ -99,19 +99,19 @@ function CourseHero({ course }: { course: any }) {
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold text-black"
-              style={{ background: 'linear-gradient(135deg, rgb(191, 255, 0) 0%, rgb(143, 239, 0) 100%)' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold text-[var(--text-primary)]"
+              style={{ background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
             >
               {instructorInitials}
             </div>
-            <span className="text-white text-[14px] font-medium">{course?.instructor_name || 'Instructor'}</span>
+            <span className="text-[var(--text-primary)] text-[14px] font-medium">{course?.instructor_name || 'Instructor'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[#ffc800]">{'★'.repeat(5)}</span>
-            <span className="text-white font-bold">{course?.rating?.toFixed(1) || '4.9'}</span>
-            <span className="text-[#888]">({course?.review_count?.toLocaleString() || '2,147'} reviews)</span>
+            <span className="text-[var(--accent-primary)]">{'★'.repeat(5)}</span>
+            <span className="text-[var(--text-primary)] font-bold">{course?.rating?.toFixed(1) || '4.9'}</span>
+            <span className="text-[var(--text-tertiary)]">({course?.review_count?.toLocaleString() || '2,147'} reviews)</span>
           </div>
-          <span className="text-[#888] text-[13px]">
+          <span className="text-[var(--text-tertiary)] text-[13px]">
             {course?.student_count?.toLocaleString() || '12,500'} students · {course?.unit_count || 8} units · {course?.lesson_count || 48} lessons
           </span>
         </div>
@@ -122,20 +122,20 @@ function CourseHero({ course }: { course: any }) {
 
 function Tabs({ activeTab, onTabChange }: { activeTab: string; onTabChange: (tab: string) => void }) {
   const tabs = ['Overview', 'Curriculum', 'Instructor', 'Reviews'];
-  
+   
   return (
-    <div className="flex border-b border-[#2a2a2a] mb-8">
+    <div className="flex border-b border-[var(--border-default)] mb-8">
       {tabs.map((tab) => (
         <button
           key={tab}
           onClick={() => onTabChange(tab)}
           className={`px-5 py-3 text-[14px] font-medium transition-colors cursor-pointer relative ${
-            activeTab === tab ? 'text-[#bfff00]' : 'text-[#888] hover:text-white'
+            activeTab === tab ? 'text-[var(--accent-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
           }`}
         >
           {tab}
           {activeTab === tab && (
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#bfff00]" />
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-primary)]" />
           )}
         </button>
       ))}
@@ -168,34 +168,34 @@ function CurriculumTab({ course }: { course: any }) {
 
   return (
     <div className="max-w-[720px]">
-      <h2 className="text-white text-[16px] font-bold mb-4">
+      <h2 className="text-[var(--text-primary)] text-[16px] font-bold mb-4">
         Curriculum · {units.length} Units · {units.reduce((sum: number, u: any) => sum + u.lessons, 0)} Lessons
       </h2>
       
-      <div className="bg-[#151515] rounded-[14px] border border-[#2a2a2a] overflow-hidden">
+      <div className="bg-[var(--bg-secondary)] rounded-[14px] border border-[var(--border-default)] overflow-hidden">
         {units.map((unit: any, idx: number) => (
           <div key={unit.id}>
             {/* Unit Header */}
-            <div className={`bg-[rgba(191,255,0,0.04)] px-5 py-4 font-bold text-[14px] text-white border-b border-[#2a2a2a] flex justify-between items-center`}>
+            <div className={`bg-[var(--accent-primary-muted)] px-5 py-4 font-bold text-[var(--accent-primary)] border-b border-[var(--border-default)] flex justify-between items-center`}>
               <span>Unit {unit.id} · {unit.title}</span>
-              <span className="text-[#888] font-normal text-[13px]">{unit.lessons} lessons</span>
+              <span className="text-[var(--text-tertiary)] font-normal text-[13px]">{unit.lessons} lessons</span>
             </div>
             
             {/* Lessons */}
             {Array.from({ length: Math.min(unit.lessons, 3) }).map((_, lIdx) => (
               <div 
                 key={lIdx} 
-                className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+                className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[var(--bg-tertiary)] transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className={`font-mono text-[11px] ${lIdx < unit.completed ? 'text-[#bfff00]' : 'text-[#555]'}`}>
+                  <span className={`font-mono text-[11px] ${lIdx < unit.completed ? 'text-[var(--accent-primary)]' : 'text-[var(--text-tertiary)]'}`}>
                     {(lIdx + 1).toString().padStart(2, '0')}
                   </span>
-                  <span className="text-white text-[14px]">
+                  <span className="text-[var(--text-primary)] text-[14px]">
                     {lIdx === 0 ? 'Introduction' : lIdx === 1 ? 'Core Vocabulary' : 'Practice Session'}
                   </span>
                 </div>
-                <span className={`text-[12px] ${lIdx < unit.completed ? 'text-[#00ff7f]' : 'text-[#888]'}`}>
+                <span className={`text-[12px] ${lIdx < unit.completed ? 'text-[var(--color-success)]' : 'text-[var(--text-tertiary)]'}`}>
                   {lIdx < unit.completed ? '✓ Done' : `${15 + lIdx * 5} min`}
                 </span>
               </div>
@@ -219,25 +219,25 @@ function InstructorTab({ course }: { course: any }) {
 
   return (
     <div className="max-w-[720px]">
-      <div className="bg-[#151515] p-6 rounded-[14px] border border-[#2a2a2a]">
+      <div className="bg-[var(--bg-secondary)] p-6 rounded-[14px] border border-[var(--border-default)]">
         <div className="flex gap-4">
           <div 
-            className="w-20 h-20 rounded-[16px] flex items-center justify-center text-2xl font-bold text-black shrink-0"
-            style={{ background: 'linear-gradient(135deg, rgb(191, 255, 0) 0%, rgb(143, 239, 0) 100%)' }}
+            className="w-20 h-20 rounded-[16px] flex items-center justify-center text-2xl font-bold text-[var(--text-primary)] shrink-0"
+            style={{ background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
           >
             {instructor.name.split(' ').map((n: string) => n[0]).join('')}
           </div>
           <div className="flex-1">
-            <h3 className="text-white text-lg font-bold">{instructor.name}</h3>
-            <p className="text-[#888] text-sm mb-2">{instructor.title}</p>
+            <h3 className="text-[var(--text-primary)] text-lg font-bold">{instructor.name}</h3>
+            <p className="text-[var(--text-tertiary)] text-sm mb-2">{instructor.title}</p>
             <div className="flex gap-4 text-sm">
-              <span className="text-[#bfff00]">{instructor.students?.toLocaleString() || '45,000'} students</span>
-              <span className="text-[#bfff00]">{instructor.courses || 12} courses</span>
-              <span className="text-[#ffc800]">★ {instructor.rating || 4.9}</span>
+              <span className="text-[var(--accent-primary)]">{instructor.students?.toLocaleString() || '45,000'} students</span>
+              <span className="text-[var(--accent-primary)]">{instructor.courses || 12} courses</span>
+              <span className="text-[var(--accent-primary)]">★ {instructor.rating || 4.9}</span>
             </div>
           </div>
         </div>
-        <p className="text-[#888] mt-4 text-[15px] leading-relaxed">{instructor.bio}</p>
+        <p className="text-[var(--text-tertiary)] mt-4 text-[15px] leading-relaxed">{instructor.bio}</p>
       </div>
     </div>
   );
@@ -252,39 +252,40 @@ function ReviewsTab({ course }: { course: any }) {
 
   return (
     <div className="max-w-[720px]">
-      <h2 className="text-white text-[16px] font-bold mb-4">Student Reviews</h2>
+      <h2 className="text-[var(--text-primary)] text-[16px] font-bold mb-4">Student Reviews</h2>
       
       {reviews.map((review: any) => (
-        <div key={review.id} className="border-b border-[#2a2a2a] py-4">
+        <div key={review.id} className="border-b border-[var(--border-default)] py-4">
           <div className="flex items-center gap-3 mb-2">
             <div 
-              className="w-8 h-8 rounded-[12px] flex items-center justify-center text-xs font-bold text-black shrink-0"
-              style={{ background: 'linear-gradient(135deg, rgb(191, 255, 0) 0%, rgb(143, 239, 0) 100%)' }}
+              className="w-8 h-8 rounded-[12px] flex items-center justify-center text-xs font-bold text-[var(--text-primary)] shrink-0"
+              style={{ background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)' }}
             >
               {review.initials}
             </div>
             <div>
-              <p className="text-white text-sm font-semibold">{review.name}</p>
-              <p className="text-[#888] text-xs">{review.date}</p>
+              <p className="text-[var(--text-primary)] text-sm font-semibold">{review.name}</p>
+              <p className="text-[var(--text-tertiary)] text-xs">{review.date}</p>
             </div>
-            <div className="ml-auto text-[#ffc800] text-sm">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
+            <div className="ml-auto text-[var(--accent-primary)] text-sm">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
           </div>
-          <p className="text-[#888] text-[14px] leading-relaxed">{review.comment}</p>
+          <p className="text-[var(--text-tertiary)] text-[14px] leading-relaxed">{review.comment}</p>
         </div>
       ))}
     </div>
   );
 }
 
-function EnrollCard({ course, isEnrolled, onEnroll, onPreview, isEnrolling }: { 
+function EnrollCard({ course, isEnrolled, onEnroll, onPreview, isEnrolling, isInstructor }: { 
   course: any; 
   isEnrolled: boolean; 
   onEnroll: () => void;
   onPreview: () => void;
   isEnrolling: boolean;
+  isInstructor?: boolean;
 }) {
   const flag = course?.language?.flag_emoji || languageFlags[course?.language_name] || '📚';
-  const priceDisplay = course?.is_free ? 'FREE' : (course?.price ? `$${course.price}` : 'Contact');
+  const priceDisplay = course?.is_free ? 'FREE' : (course?.price ? `${course.price}` : 'Contact');
   const priceColor = course?.is_free ? 'text-[#bfff00]' : 'text-[#ffc800]';
 
   return (
@@ -306,25 +307,37 @@ function EnrollCard({ course, isEnrolled, onEnroll, onPreview, isEnrolling }: {
           {course?.is_free ? 'Full access · No credit card needed' : 'Full access to all materials'}
         </p>
         
-        {/* Enroll Button */}
-        <button 
-          onClick={isEnrolled ? onPreview : onEnroll}
-          disabled={isEnrolling}
-          className={`w-full py-3 rounded-[10px] font-semibold text-[16px] text-center transition-all cursor-pointer ${
-            isEnrolling ? 'opacity-50 cursor-not-allowed' : 
-            isEnrolled ? 'bg-[#333] text-white' : 
-            'bg-[#bfff00] text-black shadow-[0_0_12px_rgba(191,255,0,0.25)] hover:shadow-[0_0_20px_rgba(191,255,0,0.4)]'
-          }`}
-        >
-          {isEnrolling ? 'Enrolling...' : isEnrolled ? 'Continue Learning →' : (course?.is_free ? 'Enroll Now — Free →' : 'Enroll Now →')}
-        </button>
+        {/* Instructor: Edit Course Button */}
+        {isInstructor ? (
+          <button 
+            onClick={() => window.location.href = `/instructor/course/${course?.id}/edit`}
+            className="w-full py-3 rounded-[10px] font-semibold text-[16px] text-center transition-all cursor-pointer bg-[var(--accent-primary)] text-black"
+          >
+            Edit Course →
+          </button>
+        ) : (
+          <>
+            {/* Enroll Button */}
+            <button 
+              onClick={isEnrolled ? onPreview : onEnroll}
+              disabled={isEnrolling}
+              className={`w-full py-3 rounded-[10px] font-semibold text-[16px] text-center transition-all cursor-pointer ${
+                isEnrolling ? 'opacity-50 cursor-not-allowed' : 
+                isEnrolled ? 'bg-[#333] text-white' : 
+                'bg-[#bfff00] text-black shadow-[0_0_12px_rgba(191,255,0,0.25)] hover:shadow-[0_0_20px_rgba(191,255,0,0.4)]'
+              }`}
+            >
+              {isEnrolling ? 'Enrolling...' : isEnrolled ? 'Continue Learning →' : (course?.is_free ? 'Enroll Now — Free →' : 'Enroll Now →')}
+            </button>
+          </>
+        )}
         
         {/* Preview Button */}
         <button 
           onClick={onPreview}
           className="w-full py-2 rounded-[8px] border border-[#333] text-white text-[13px] font-semibold mt-3 hover:bg-[#1f1f1f] transition-colors cursor-pointer"
         >
-          Preview Course
+          {isInstructor ? 'Preview as Student' : 'Preview Course'}
         </button>
         
         {/* Features */}
@@ -358,8 +371,8 @@ function EnrollCard({ course, isEnrolled, onEnroll, onPreview, isEnrolling }: {
 function LoadingState() {
   return (
     <div className="flex flex-col items-center justify-center h-[400px]">
-      <div className="animate-spin text-[32px] mb-4">🧠</div>
-      <p className="text-[#888]">Loading course...</p>
+      <div className="animate-spin text-[32px] mb-4 text-[var(--accent-primary)]">🧠</div>
+      <p className="text-[var(--text-tertiary)]">Loading course...</p>
     </div>
   );
 }
@@ -403,9 +416,18 @@ export default function Component12CourseDetails() {
   }, [courseId, isLoading]);
 
   const fetchCourse = async () => {
+    if (!courseId) {
+      setCourseError('No course ID provided');
+      setIsLoading(false);
+      return;
+    }
     try {
       setCourseError(null);
-      const id = parseInt(courseId || '1');
+      const id = parseInt(courseId);
+      if (isNaN(id)) {
+        setCourseError('Invalid course ID');
+        return;
+      }
       const response = await coursesApi.getCourse(id);
       setCourse(response.course || response);
       setIsEnrolled(response.is_enrolled || false);
@@ -440,6 +462,13 @@ export default function Component12CourseDetails() {
     }
   };
 
+  // Check if current user is the course instructor (compare both object and direct ID)
+  const isInstructor = user && (
+    course?.instructor?.id === user.id || 
+    course?.instructor_id === user.id ||
+    course?.instructor_id === user.id?.toString()
+  );
+
   const handlePreview = () => {
     // Navigate to first lesson using course ID
     navigate(`/lesson/${courseId || '1'}`);
@@ -450,52 +479,53 @@ export default function Component12CourseDetails() {
   };
 
   if (isLoading) {
-    return (
-      <div className="bg-[#0a0a0a] min-h-screen flex flex-col">
-        <NavNav user={null} onBackClick={handleBack} />
-        <div className="flex flex-1">
-          <Sidebar />
-          <div className="flex-1 ml-[240px] flex items-center justify-center">
-            <LoadingState />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-[#0a0a0a] min-h-screen flex flex-col">
-      <NavNav user={user} onBackClick={handleBack} />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 ml-[240px] overflow-auto">
-          <CourseHero course={course} />
-          
-          {/* Content */}
-          <div className="px-10 py-10">
-            <div className="flex gap-10">
-              {/* Left: Details */}
-              <div className="flex-1">
-                <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
-                
-                {activeTab === 'Overview' && <OverviewTab course={course} />}
-                {activeTab === 'Curriculum' && <CurriculumTab course={course} />}
-                {activeTab === 'Instructor' && <InstructorTab course={course} />}
-                {activeTab === 'Reviews' && <ReviewsTab course={course} />}
-              </div>
-              
-              {/* Right: Enroll Card */}
-              <EnrollCard 
-                course={course} 
-                isEnrolled={isEnrolled} 
-                onEnroll={handleEnroll} 
-                onPreview={handlePreview}
-                isEnrolling={isEnrolling}
-              />
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+     return (
+       <div className="bg-[var(--bg-primary)] min-h-screen flex flex-col">
+         <NavNav user={null} onBackClick={handleBack} />
+         <div className="flex flex-1">
+           <Sidebar />
+           <div className="flex-1 ml-[240px] flex items-center justify-center">
+             <LoadingState />
+           </div>
+         </div>
+       </div>
+     );
+   }
+   
+   return (
+     <div className="bg-[var(--bg-primary)] min-h-screen flex flex-col">
+       <NavNav user={user} onBackClick={handleBack} />
+       <div className="flex flex-1">
+         <Sidebar />
+         <main className="flex-1 ml-[240px] overflow-auto">
+           <CourseHero course={course} />
+           
+           {/* Content */}
+           <div className="px-10 py-10">
+             <div className="flex gap-10">
+               {/* Left: Details */}
+               <div className="flex-1">
+                 <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
+                 
+                 {activeTab === 'Overview' && <OverviewTab course={course} />}
+                 {activeTab === 'Curriculum' && <CurriculumTab course={course} />}
+                 {activeTab === 'Instructor' && <InstructorTab course={course} />}
+                 {activeTab === 'Reviews' && <ReviewsTab course={course} />}
+               </div>
+               
+               {/* Right: Enroll Card */}
+               <EnrollCard 
+                 course={course} 
+                 isEnrolled={isEnrolled} 
+                 onEnroll={handleEnroll} 
+                 onPreview={handlePreview}
+                 isEnrolling={isEnrolling}
+                 isInstructor={isInstructor}
+               />
+             </div>
+           </div>
+         </main>
+       </div>
+     </div>
+   );
 }

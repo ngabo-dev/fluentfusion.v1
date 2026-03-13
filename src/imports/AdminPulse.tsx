@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
+import { authApi } from "../app/api/config";
 
 export default function AdminPulse() {
   const navigate = useNavigate();
@@ -55,10 +56,8 @@ export default function AdminPulse() {
               </div>
               <button 
                 onClick={() => {
-                  localStorage.removeItem('ff_access_token');
-                  localStorage.removeItem('ff_refresh_token');
-                  localStorage.removeItem('ff_user');
-                  navigate('/login');
+                  authApi.logout();
+                  window.location.href = '/login';
                 }}
                 className="text-[#888] hover:text-white text-sm bg-transparent border-none cursor-pointer"
               >

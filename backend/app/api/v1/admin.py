@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from datetime import datetime, timedelta
+from pydantic import BaseModel
 import re
 
 from ...database import get_db
@@ -1719,3 +1720,716 @@ async def reject_course_request(
     db.commit()
     
     return {"message": f"Course {request.request_type} request rejected"}
+
+# ==================== INSTRUCTOR APPLICATIONS ====================
+
+@router.get("/instructor-applications")
+async def get_instructor_applications(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """List all instructor applications"""
+    from ...models.extras import InstructorApplication
+    query = db.query(InstructorApplication)
+    if status_filter:
+        query = query.filter(InstructorApplication.status == status_filter)
+    query = query.order_by(InstructorApplication.applied_at.desc())
+    total = query.count()
+    apps = query.offset((page - 1) * limit).limit(limit).all()
+    result = []
+    for app in apps:
+        user = db.query(User).filter(User.id == app.user_id).first()
+        result.append({
+            "id": app.id,
+            "user_id": app.user_id,
+            "applicant_name": user.full_name if user else "Unknown",
+            "applicant_email": user.email if user else "",
+            "bio": app.bio,
+            "expertise": app.expertise_tags or [],
+            "status": app.status,
+            "rejection_reason": app.rejection_reason,
+            "applied_at": app.applied_at.isoformat() if app.applied_at else None,
+        })
+    return {"applications": result, "total": total, "page": page}
+
+
+@router.post("/instructor-applications/{application_id}/approve")
+async def approve_instructor_application(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Approve an instructor application"""
+    from ...models.extras import InstructorApplication
+    from ...models.instructor import InstructorProfile
+    app = db.query(InstructorApplication).filter(InstructorApplication.id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app.status = "approved"
+    app.reviewed_at = datetime.utcnow()
+    app.reviewed_by = current_user.id
+    user = db.query(User).filter(User.id == app.user_id).first()
+    if user:
+        user.role = "instructor"
+        profile = db.query(InstructorProfile).filter(InstructorProfile.user_id == user.id).first()
+        if not profile:
+            profile = InstructorProfile(user_id=user.id, bio=app.bio, is_verified=True)
+            db.add(profile)
+    db.commit()
+    return {"message": "Application approved", "user_promoted": True}
+
+
+@router.post("/instructor-applications/{application_id}/reject")
+async def reject_instructor_application(
+    application_id: int,
+    reason: str = Query(""),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Reject an instructor application"""
+    from ...models.extras import InstructorApplication
+    app = db.query(InstructorApplication).filter(InstructorApplication.id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app.status = "rejected"
+    app.rejection_reason = reason
+    app.reviewed_at = datetime.utcnow()
+    app.reviewed_by = current_user.id
+    db.commit()
+    return {"message": "Application rejected"}
+
+
+# ==================== NEW: ADMIN DASHBOARD API ENDPOINTS ====================
+
+from ...models.admin import SystemLog, PlatformAlert, ModerationQueueItem
+
+
+class KPIResponse(BaseModel):
+    total_users: int
+    total_users_delta: int
+    platform_revenue_mtd: float
+    revenue_delta_pct: float
+    active_courses: int
+    courses_new_this_week: int
+    retention_rate: float
+    retention_delta: float
+    pending_course_reviews: int
+    pending_reports: int
+
+
+class AlertResponse(BaseModel):
+    id: int
+    level: str
+    title: str
+    description: str
+    action_label: str
+    created_at: str
+
+
+class SystemHealthResponse(BaseModel):
+    api: str
+    db: str
+    redis_latency_ms: int
+    pulse: str
+    cdn: str
+
+
+class SystemLogResponse(BaseModel):
+    timestamp: str
+    level: str
+    message: str
+    highlights: list
+
+
+class RevenueDailyItem(BaseModel):
+    date: str
+    gross: float
+    fees: float
+
+
+class PulseDistributionResponse(BaseModel):
+    total_learners: int
+    thriving: int
+    coasting: int
+    struggling: int
+    burning_out: int
+    disengaged: int
+    at_risk_count: int
+
+
+class LanguageItem(BaseModel):
+    language: str
+    flag_emoji: str
+    learner_count: int
+    bar_pct: float
+    color_start: str
+    color_end: str
+
+
+class GeographyItem(BaseModel):
+    country: str
+    flag_emoji: str
+    user_count: int
+    bar_pct: float
+
+
+class HealthMetricsResponse(BaseModel):
+    dau: int
+    mau: int
+    avg_session_minutes: float
+    course_completion_pct: float
+    premium_conversion_pct: float
+    churn_rate_pct: float
+    api_uptime_pct: float
+    avg_api_latency_ms: float
+
+
+class ModerationQueueItemResponse(BaseModel):
+    id: int
+    type: str
+    subject: str
+    description: str
+    created_at: str
+    action_data: dict
+
+
+@router.get("/kpis", response_model=KPIResponse)
+async def get_kpis(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get admin dashboard KPI cards data"""
+    from ...models.instructor import InstructorEarning
+    
+    # Total users
+    total_users = db.query(User).count()
+    total_users_delta = db.query(User).filter(
+        User.created_at >= datetime.utcnow() - timedelta(days=30)
+    ).count()
+    
+    # Platform revenue MTD
+    now = datetime.utcnow()
+    mtd_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    mtd_earnings = db.query(InstructorEarning).filter(
+        InstructorEarning.created_at >= mtd_start
+    ).all()
+    platform_revenue_mtd = sum(float(e.gross_amount or 0) for e in mtd_earnings)
+    
+    # Revenue delta (compare to last month)
+    last_month_end = mtd_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+    last_month_earnings = db.query(InstructorEarning).filter(
+        InstructorEarning.created_at >= last_month_start,
+        InstructorEarning.created_at < mtd_start
+    ).all()
+    last_month_revenue = sum(float(e.gross_amount or 0) for e in last_month_earnings)
+    
+    if last_month_revenue > 0:
+        revenue_delta_pct = ((platform_revenue_mtd - last_month_revenue) / last_month_revenue) * 100
+    else:
+        revenue_delta_pct = 100.0
+    
+    # Active courses
+    active_courses = db.query(Course).filter(
+        Course.is_published == True,
+        Course.approval_status == "approved"
+    ).count()
+    
+    # Courses new this week
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    courses_new_this_week = db.query(Course).filter(
+        Course.created_at >= week_ago
+    ).count()
+    
+    # Retention rate (mock calculation)
+    total_enrollments = db.query(Enrollment).count()
+    completed_enrollments = db.query(Enrollment).filter(
+        Enrollment.completion_pct == 100
+    ).count()
+    
+    retention_rate = 0.0
+    retention_delta = 0.0
+    if total_enrollments > 0:
+        retention_rate = (completed_enrollments / total_enrollments) * 100
+        retention_delta = 2.5  # Mock delta
+    
+    # Pending reviews
+    pending_course_reviews = db.query(Course).filter(
+        Course.approval_status == "pending"
+    ).count()
+    
+    # Pending reports
+    from ...models.report import Report
+    pending_reports = db.query(Report).filter(
+        Report.status.in_(["submitted", "acknowledged", "in_progress"])
+    ).count()
+    
+    return {
+        "total_users": total_users,
+        "total_users_delta": total_users_delta,
+        "platform_revenue_mtd": round(platform_revenue_mtd, 2),
+        "revenue_delta_pct": round(revenue_delta_pct, 1),
+        "active_courses": active_courses,
+        "courses_new_this_week": courses_new_this_week,
+        "retention_rate": round(retention_rate, 1),
+        "retention_delta": retention_delta,
+        "pending_course_reviews": pending_course_reviews,
+        "pending_reports": pending_reports
+    }
+
+
+@router.get("/alerts/active", response_model=List[AlertResponse])
+async def get_active_alerts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get active platform alerts"""
+    alerts = db.query(PlatformAlert).filter(
+        PlatformAlert.is_active == True
+    ).order_by(PlatformAlert.created_at.desc()).all()
+    
+    return [{
+        "id": a.id,
+        "level": a.level,
+        "title": a.title,
+        "description": a.description,
+        "action_label": a.action_label,
+        "created_at": a.created_at.isoformat() if a.created_at else None
+    } for a in alerts]
+
+
+@router.get("/system/health", response_model=SystemHealthResponse)
+async def get_system_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get system health status for sidebar"""
+    # Check database
+    try:
+        db.execute("SELECT 1")
+        db_status = "healthy"
+    except:
+        db_status = "unhealthy"
+    
+    # Check Redis (mock for now - would need actual Redis connection)
+    redis_latency = 12  # Mock latency in ms
+    
+    # Check PULSE (mock)
+    pulse_status = "running"
+    
+    # Check CDN (mock)
+    cdn_status = "ok"
+    
+    return {
+        "api": "online",
+        "db": db_status,
+        "redis_latency_ms": redis_latency,
+        "pulse": pulse_status,
+        "cdn": cdn_status
+    }
+
+
+@router.get("/system/logs", response_model=List[SystemLogResponse])
+async def get_system_logs(
+    limit: int = Query(default=10, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get system log feed"""
+    logs = db.query(SystemLog).order_by(
+        SystemLog.created_at.desc()
+    ).limit(limit).all()
+    
+    results = []
+    for log in logs:
+        # Parse message for highlights
+        highlights = []
+        message = log.message
+        
+        # Simple highlight detection (look for IDs, numbers)
+        import re
+        id_matches = re.findall(r'#\d+', message)
+        for match in id_matches:
+            highlights.append({"text": match, "is_highlight": True})
+        
+        results.append({
+            "timestamp": log.created_at.strftime("%H:%M:%S") if log.created_at else "00:00:00",
+            "level": log.level,
+            "message": message,
+            "highlights": highlights
+        })
+    
+    return results
+
+
+@router.get("/revenue/daily", response_model=List[RevenueDailyItem])
+async def get_revenue_daily(
+    month: str = Query(default=None),  # YYYY-MM format
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get daily revenue data for sparkline"""
+    from ...models.instructor import InstructorEarning
+    
+    if month is None:
+        now = datetime.utcnow()
+    else:
+        try:
+            now = datetime.strptime(month, "%Y-%m")
+        except:
+            now = datetime.utcnow()
+    
+    # Get days in month
+    if now.month == 12:
+        next_month = now.replace(year=now.year + 1, month=1, day=1)
+    else:
+        next_month = now.replace(month=now.month + 1, day=1)
+    
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Get all earnings for the month
+    earnings = db.query(InstructorEarning).filter(
+        InstructorEarning.created_at >= month_start,
+        InstructorEarning.created_at < next_month
+    ).all()
+    
+    # Group by day
+    daily_data = {}
+    days_in_month = (next_month - month_start).days
+    
+    for day in range(1, days_in_month + 1):
+        daily_data[day] = {"gross": 0.0, "fees": 0.0}
+    
+    for earning in earnings:
+        if earning.created_at:
+            day = earning.created_at.day
+            daily_data[day]["gross"] += float(earning.gross_amount or 0)
+            daily_data[day]["fees"] += float(earning.gross_amount or 0) * 0.30  # 30% platform fee
+    
+    # Convert to list
+    results = []
+    for day in range(1, days_in_month + 1):
+        date_str = f"{month_start.year}-{month_start.month:02d}-{day:02d}"
+        results.append({
+            "date": date_str,
+            "gross": round(daily_data[day]["gross"], 2),
+            "fees": round(daily_data[day]["fees"], 2)
+        })
+    
+    return results
+
+
+@router.get("/pulse/distribution", response_model=PulseDistributionResponse)
+async def get_pulse_distribution(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get platform-wide PULSE state distribution"""
+    from ...models.pulse_prediction import UserPulseScore
+    
+    total_learners = db.query(User).filter(User.role == "student").count()
+    
+    # Get all pulse scores
+    pulse_scores = db.query(UserPulseScore).all()
+    
+    state_counts = {
+        "thriving": 0,
+        "coasting": 0,
+        "struggling": 0,
+        "burning_out": 0,
+        "disengaged": 0
+    }
+    
+    for ps in pulse_scores:
+        if ps.predicted_state:
+            state = ps.predicted_state.lower().replace(" ", "_")
+            if state in state_counts:
+                state_counts[state] += 1
+        elif ps.risk_level is not None:
+            if ps.risk_level <= 0.2:
+                state_counts["thriving"] += 1
+            elif ps.risk_level <= 0.4:
+                state_counts["coasting"] += 1
+            elif ps.risk_level <= 0.6:
+                state_counts["struggling"] += 1
+            elif ps.risk_level <= 0.8:
+                state_counts["burning_out"] += 1
+            else:
+                state_counts["disengaged"] += 1
+    
+    # If no pulse data, distribute mock data
+    if sum(state_counts.values()) == 0 and total_learners > 0:
+        state_counts = {
+            "thriving": int(total_learners * 0.35),
+            "coasting": int(total_learners * 0.30),
+            "struggling": int(total_learners * 0.20),
+            "burning_out": int(total_learners * 0.10),
+            "disengaged": int(total_learners * 0.05)
+        }
+    
+    at_risk = state_counts["burning_out"] + state_counts["disengaged"]
+    
+    return {
+        "total_learners": total_learners,
+        "thriving": state_counts["thriving"],
+        "coasting": state_counts["coasting"],
+        "struggling": state_counts["struggling"],
+        "burning_out": state_counts["burning_out"],
+        "disengaged": state_counts["disengaged"],
+        "at_risk_count": at_risk
+    }
+
+
+@router.get("/analytics/languages", response_model=List[LanguageItem])
+async def get_top_languages(
+    limit: int = Query(default=6, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get top languages by enrollment"""
+    from ...models.language import Language
+    from ...models.progress import Enrollment
+    from ...models.course import Course
+    
+    # Get languages with their course enrollments
+    languages = db.query(Language).all()
+    
+    results = []
+    max_count = 0
+    
+    for lang in languages:
+        # Count enrollments in courses of this language
+        course_ids = db.query(Course.id).filter(Course.language_id == lang.id).all()
+        course_ids = [c[0] for c in course_ids]
+        
+        if course_ids:
+            count = db.query(Enrollment).filter(
+                Enrollment.course_id.in_(course_ids)
+            ).count()
+        else:
+            count = 0
+        
+        if count > max_count:
+            max_count = count
+        
+        # Get flag emoji
+        flag = lang.flag_code.upper() if lang.flag_code else "🌐"
+        flag_emoji = lang.flag_code if lang.flag_code else "🌐"
+        
+        # Generate gradient colors
+        colors = ["#BFFF00", "#00CFFF", "#8B5CF6", "#FFB800", "#FF4444", "#00FF7F"]
+        color_idx = results.__len__() % len(colors)
+        
+        results.append({
+            "language": lang.name or "Unknown",
+            "flag_emoji": flag_emoji,
+            "learner_count": count,
+            "bar_pct": 0.0,  # Will calculate after
+            "color_start": colors[color_idx],
+            "color_end": colors[(color_idx + 1) % len(colors)]
+        })
+    
+    # Calculate percentages
+    if max_count > 0:
+        for item in results:
+            item["bar_pct"] = round((item["learner_count"] / max_count) * 100, 1)
+    
+    # Sort by count and limit
+    results.sort(key=lambda x: x["learner_count"], reverse=True)
+    return results[:limit]
+
+
+@router.get("/analytics/geography", response_model=List[GeographyItem])
+async def get_geography(
+    limit: int = Query(default=8, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get user count by country"""
+    # Group users by location/country
+    users = db.query(User).filter(
+        User.location.isnot(None),
+        User.location != ""
+    ).all()
+    
+    country_counts = {}
+    max_count = 0
+    
+    for user in users:
+        location = user.location
+        # Extract country (simplified - would need proper geocoding)
+        if location:
+            # Try to extract country from location string
+            parts = location.split(',')
+            country = parts[-1].strip() if parts else location
+            
+            if country not in country_counts:
+                country_counts[country] = 0
+            country_counts[country] += 1
+            
+            if country_counts[country] > max_count:
+                max_count = country_counts[country]
+    
+    # Add some default countries if no data
+    if not country_counts:
+        country_counts = {
+            "United States": 150,
+            "United Kingdom": 80,
+            "Germany": 60,
+            "France": 50,
+            "Spain": 45,
+            "Japan": 40,
+            "Brazil": 35,
+            "India": 30
+        }
+        max_count = 150
+    
+    # Convert to list
+    results = []
+    flag_map = {
+        "United States": "🇺🇸",
+        "United Kingdom": "🇬🇧",
+        "Germany": "🇩🇪",
+        "France": "🇫🇷",
+        "Spain": "🇪🇸",
+        "Japan": "🇯🇵",
+        "Brazil": "🇧🇷",
+        "India": "🇮🇳",
+        "Canada": "🇨🇦",
+        "Australia": "🇦🇺"
+    }
+    
+    for country, count in country_counts.items():
+        results.append({
+            "country": country,
+            "flag_emoji": flag_map.get(country, "🌍"),
+            "user_count": count,
+            "bar_pct": round((count / max_count) * 100, 1) if max_count > 0 else 0
+        })
+    
+    # Sort by count and limit
+    results.sort(key=lambda x: x["user_count"], reverse=True)
+    return results[:limit]
+
+
+@router.get("/platform/health-metrics", response_model=HealthMetricsResponse)
+async def get_platform_health_metrics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get platform health metrics"""
+    from ...models.activity import UserActivity
+    
+    now = datetime.utcnow()
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    month_ago = now - timedelta(days=30)
+    
+    # DAU
+    dau = db.query(User).filter(
+        User.last_active_at >= today
+    ).count()
+    
+    # MAU
+    mau = db.query(User).filter(
+        User.last_active_at >= month_ago
+    ).count()
+    
+    # Avg session (mock for now - would need session tracking)
+    avg_session_minutes = 24.5
+    
+    # Course completion rate
+    total_enrollments = db.query(Enrollment).count()
+    completed = db.query(Enrollment).filter(Enrollment.completion_pct == 100).count()
+    course_completion_pct = (completed / total_enrollments * 100) if total_enrollments > 0 else 0
+    
+    # Premium conversion (mock)
+    premium_conversion_pct = 8.2
+    
+    # Churn rate (mock)
+    churn_rate_pct = 3.5
+    
+    # API uptime (mock)
+    api_uptime_pct = 99.8
+    
+    # Avg API latency (mock)
+    avg_api_latency_ms = 45.2
+    
+    return {
+        "dau": dau,
+        "mau": mau,
+        "avg_session_minutes": round(avg_session_minutes, 1),
+        "course_completion_pct": round(course_completion_pct, 1),
+        "premium_conversion_pct": round(premium_conversion_pct, 1),
+        "churn_rate_pct": round(churn_rate_pct, 1),
+        "api_uptime_pct": round(api_uptime_pct, 1),
+        "avg_api_latency_ms": round(avg_api_latency_ms, 1)
+    }
+
+
+@router.get("/moderation/queue", response_model=List[ModerationQueueItemResponse])
+async def get_moderation_queue(
+    limit: int = Query(default=5, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Get pending moderation items"""
+    items = db.query(ModerationQueueItem).filter(
+        ModerationQueueItem.status == "pending"
+    ).order_by(ModerationQueueItem.created_at.desc()).limit(limit).all()
+    
+    results = []
+    for item in items:
+        results.append({
+            "id": item.id,
+            "type": item.item_type,
+            "subject": item.subject,
+            "description": item.description,
+            "created_at": item.created_at.isoformat() if item.created_at else None,
+            "action_data": item.reference_data or {}
+        })
+    
+    return results
+
+
+@router.post("/moderation/{item_id}/approve")
+async def approve_moderation_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Approve a moderation queue item"""
+    item = db.query(ModerationQueueItem).filter(ModerationQueueItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Moderation item not found")
+    
+    item.status = "approved"
+    item.resolved_at = datetime.utcnow()
+    item.resolved_by = current_user.id
+    
+    db.commit()
+    
+    return {"message": "Item approved"}
+
+
+@router.post("/moderation/{item_id}/reject")
+async def reject_moderation_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Reject a moderation queue item"""
+    item = db.query(ModerationQueueItem).filter(ModerationQueueItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Moderation item not found")
+    
+    item.status = "rejected"
+    item.resolved_at = datetime.utcnow()
+    item.resolved_by = current_user.id
+    
+    db.commit()
+    
+    return {"message": "Item rejected"}

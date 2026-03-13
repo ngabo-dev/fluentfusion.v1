@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../app/api/config';
 import StudentLayout from '../app/components/StudentLayout';
+import ThemeToggle from '../app/components/ui/ThemeToggle';
 
 interface Settings {
   notif_daily_streak: boolean;
@@ -71,9 +72,15 @@ export default function Component29Settings() {
   const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
     <button
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? 'bg-[#bfff00]' : 'bg-[#2a2a2a]'}`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+        checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--border-default)]'
+      }`}
     >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-[#0a0a0a] transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-primary)] transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
     </button>
   );
 
@@ -101,18 +108,30 @@ export default function Component29Settings() {
   return (
     <StudentLayout title="Settings" subtitle="Manage your preferences">
       {loading ? (
-        <div className="flex items-center justify-center min-h-[400px] text-[#888]">Loading...</div>
+        <div className="flex items-center justify-center min-h-[400px] text-[var(--text-secondary)]">Loading...</div>
       ) : (
         <div className="max-w-2xl">
+          {/* Accessibility / Appearance */}
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl p-6 mb-6">
+            <h3 className="text-[var(--text-primary)] font-semibold mb-5">Accessibility</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[var(--text-primary)] text-[14px]">Color theme</p>
+                <p className="text-[var(--text-disabled)] text-[12px]">Switch between light and dark mode</p>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
+
           {sections.map(section => (
-            <div key={section.title} className="bg-[#151515] border border-[#2a2a2a] rounded-2xl p-6 mb-6">
-              <h3 className="text-white font-semibold mb-5">{section.title}</h3>
+            <div key={section.title} className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl p-6 mb-6">
+              <h3 className="text-[var(--text-primary)] font-semibold mb-5">{section.title}</h3>
               <div className="space-y-4">
                 {section.items.map(item => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div>
-                      <p className="text-white text-[14px]">{item.label}</p>
-                      <p className="text-[#555] text-[12px]">{item.sub}</p>
+                      <p className="text-[var(--text-primary)] text-[14px]">{item.label}</p>
+                      <p className="text-[var(--text-disabled)] text-[12px]">{item.sub}</p>
                     </div>
                     <Toggle checked={!!settings[item.key]} onChange={() => toggle(item.key)} />
                   </div>
@@ -122,15 +141,16 @@ export default function Component29Settings() {
           ))}
 
           <button
+            type="button"
             onClick={saveSettings}
             disabled={saving}
-            className="w-full bg-[#bfff00] text-black py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full bg-[var(--accent-primary)] text-[var(--text-inverse)] py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
 
           {message && (
-            <p className={`mt-4 text-center text-[13px] ${message.includes('saved') ? 'text-[#bfff00]' : 'text-red-400'}`}>
+            <p className={`mt-4 text-center text-[13px] ${message.includes('saved') ? 'text-[var(--accent-primary)]' : 'text-[var(--color-danger)]'}`}>
               {message}
             </p>
           )}

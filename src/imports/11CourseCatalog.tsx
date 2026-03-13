@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
-import { coursesApi, authApi } from '../app/api/config';
+import { coursesApi, authApi, API_BASE_URL } from '../app/api/config';
 import StudentLayout from '../app/components/StudentLayout';
 
 // Language filter options with counts (for sidebar)
@@ -67,20 +67,20 @@ function SearchSection({
   return (
     <div className="flex items-center gap-3 mb-6">
       <div className="relative flex-1 max-w-[480px]">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#888] text-[16px]">🔍</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-[16px]">🔍</span>
         <input
           type="text"
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search courses, instructors, topics..."
-          className="bg-[#1f1f1f] w-full rounded-[8px] pl-12 pr-4 py-3 text-[#fff] text-[15px] outline-none border border-[#2a2a2a] focus:border-[#bfff00] transition-colors"
+          className="bg-[var(--bg-tertiary)] w-full rounded-[8px] pl-12 pr-4 py-3 text-[var(--text-primary)] text-[15px] outline-none border border-[var(--border-default)] focus:border-[var(--accent-primary)] transition-colors"
         />
       </div>
       <select
         title="Sort courses"
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value)}
-        className="bg-[#1f1f1f] text-[#fff] text-[15px] px-4 py-3 rounded-[8px] border border-[#2a2a2a] outline-none cursor-pointer min-w-[160px] hover:border-[#444] transition-colors"
+        className="bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-[15px] px-4 py-3 rounded-[8px] border border-[var(--border-default)] outline-none cursor-pointer min-w-[160px] hover:border-[var(--border-strong)] transition-colors"
       >
         {sortOptions.map(opt => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -273,7 +273,7 @@ function FilterSidebar({
   );
 }
 
-function CourseCard({ course, onClick }: { course: any; onClick: () => void }) {
+function CourseCard({ course, onClick, isSaved, onWishlistToggle }: { course: any; onClick: () => void; isSaved: boolean; onWishlistToggle: (e: React.MouseEvent) => void }) {
   const languageFlags: { [key: string]: string } = {
     'English': '🇬🇧',
     'Kinyarwanda': '🇷🇼',
@@ -307,8 +307,16 @@ function CourseCard({ course, onClick }: { course: any; onClick: () => void }) {
       className="bg-[#151515] rounded-[14px] border border-[#2a2a2a] overflow-hidden cursor-pointer hover:border-[#bfff00] transition-all hover:shadow-[0_0_20px_rgba(191,255,0,0.1)]"
     >
       {/* Course Thumbnail */}
-      <div className="h-[160px] bg-gradient-to-br from-[#1a2a1a] to-[#0d1f0d] flex items-center justify-center text-[48px]">
+      <div className="h-[160px] bg-gradient-to-br from-[#1a2a1a] to-[#0d1f0d] flex items-center justify-center text-[48px] relative">
         {flag}
+        <button
+          type="button"
+          onClick={onWishlistToggle}
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-[rgba(0,0,0,0.5)] hover:bg-[rgba(0,0,0,0.75)] transition-colors cursor-pointer text-[16px] border-none"
+          title={isSaved ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          {isSaved ? '❤️' : '♡'}
+        </button>
       </div>
       
       {/* Course Body */}
@@ -358,7 +366,7 @@ function CourseCard({ course, onClick }: { course: any; onClick: () => void }) {
   );
 }
 
-function CourseGrid({ courses, onCourseClick, total }: { courses: any[]; onCourseClick: (courseId: number) => void; total: number }) {
+function CourseGrid({ courses, onCourseClick, total, wishlist, onWishlistToggle }: { courses: any[]; onCourseClick: (courseId: number) => void; total: number; wishlist: Set<number>; onWishlistToggle: (courseId: number, e: React.MouseEvent) => void }) {
   if (courses.length === 0) {
     return (
       <div className="flex-1">
@@ -371,16 +379,18 @@ function CourseGrid({ courses, onCourseClick, total }: { courses: any[]; onCours
       </div>
     );
   }
-  
+
   return (
     <div className="flex-1">
       <div className="text-[#888] text-[13px] mb-4">Showing {total} courses</div>
       <div className="grid grid-cols-3 gap-[18px]">
         {courses.map((course) => (
-          <CourseCard 
-            key={course.id} 
-            course={course} 
-            onClick={() => onCourseClick(course.id)} 
+          <CourseCard
+            key={course.id}
+            course={course}
+            onClick={() => onCourseClick(course.id)}
+            isSaved={wishlist.has(course.id)}
+            onWishlistToggle={(e) => onWishlistToggle(course.id, e)}
           />
         ))}
       </div>
@@ -400,8 +410,8 @@ function Pagination({ page, totalPages, onPageChange }: { page: number; totalPag
   };
 
   return (
-    <div className="flex items-center justify-between mt-8 pt-4 border-t border-[#2a2a2a]">
-      <div className="text-[#888] text-[13px]">Page {page} of {totalPages}</div>
+    <div className="flex items-center justify-between mt-8 pt-4 border-t border-[var(--border-default)]">
+      <div className="text-[var(--text-secondary)] text-[13px]">Page {page} of {totalPages}</div>
       <div className="flex gap-2">
         <button 
           onClick={() => page > 1 && onPageChange(page - 1)}
@@ -475,6 +485,9 @@ export default function Component11CourseCatalog() {
   const [selectedPrices, setSelectedPrices] = useState<string[]>([]);
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
   
+  // Wishlist
+  const [wishlist, setWishlist] = useState<Set<number>>(new Set());
+
   // Pagination
   const [page, setPage] = useState(1);
   const limit = 6;
@@ -492,6 +505,19 @@ export default function Component11CourseCatalog() {
     
     setUser(userData);
     setIsLoading(false);
+
+    // Fetch saved wishlist courses
+    if (token) {
+      fetch(`${API_BASE_URL}/courses/wishlist`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : { courses: [] })
+        .then(data => {
+          const ids = (data.courses || []).map((c: any) => c.id as number);
+          setWishlist(new Set(ids));
+        })
+        .catch(() => {});
+    }
   }, [navigate]);
 
   // Fetch courses when filters change
@@ -601,6 +627,31 @@ export default function Component11CourseCatalog() {
     setPage(1);
   };
 
+  const handleWishlistToggle = async (courseId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const wasSaved = wishlist.has(courseId);
+    // Optimistic update
+    setWishlist(prev => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(courseId); else next.add(courseId);
+      return next;
+    });
+    try {
+      const token = localStorage.getItem('ff_access_token');
+      await fetch(`${API_BASE_URL}/courses/${courseId}/wishlist`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token || ''}`, 'Content-Type': 'application/json' },
+      });
+    } catch {
+      // Revert on error
+      setWishlist(prev => {
+        const next = new Set(prev);
+        if (wasSaved) next.add(courseId); else next.delete(courseId);
+        return next;
+      });
+    }
+  };
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -649,10 +700,12 @@ export default function Component11CourseCatalog() {
           onClearFilters={handleClearFilters}
         />
         <div className="flex-1">
-          <CourseGrid 
-            courses={courses} 
+          <CourseGrid
+            courses={courses}
             onCourseClick={handleCourseClick}
             total={totalCourses}
+            wishlist={wishlist}
+            onWishlistToggle={handleWishlistToggle}
           />
           <Pagination 
             page={page} 

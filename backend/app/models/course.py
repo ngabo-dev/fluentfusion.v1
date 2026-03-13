@@ -21,10 +21,16 @@ class Course(Base):
     is_free = Column(Boolean, default=False)
     
     # Status
+    status = Column(String(20), default="draft")  # draft, published, archived, unpublished
     is_published = Column(Boolean, default=False)
+    published_at = Column(DateTime(timezone=True))
     approval_status = Column(String(50), default="pending")  # pending, approved, rejected
     rejection_reason = Column(Text)
     is_deleted = Column(Boolean, default=False)  # Soft delete for course deletion requests
+    
+    # Course metadata
+    requirements = Column(JSON)  # Array of strings for prerequisites
+    learning_outcomes = Column(JSON)  # Array of strings for what students will learn
     
     # Features
     has_certificate = Column(Boolean, default=False)
@@ -61,6 +67,7 @@ class Course(Base):
         Index('ix_courses_instructor_id', instructor_id),
         Index('ix_courses_language_id', language_id),
         Index('ix_courses_level', level),
+        Index('ix_courses_status', status),
         Index('ix_courses_is_published', is_published),
         Index('ix_courses_approval_status', approval_status),
     )

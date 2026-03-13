@@ -335,3 +335,81 @@ async def submit_listening_attempt(
         "accuracy_pct": attempt.accuracy_pct,
         "transcript": exercise.transcript if is_correct else None
     }
+
+# ==================== PLACEMENT TEST ====================
+
+PLACEMENT_QUESTIONS = [
+    {"id": 1, "question": "How do you say 'Hello' in French?", "options": ["Bonjour", "Hola", "Ciao", "Hallo"], "correct": "Bonjour", "level": "A1"},
+    {"id": 2, "question": "What does 'merci' mean?", "options": ["Please", "Sorry", "Thank you", "Excuse me"], "correct": "Thank you", "level": "A1"},
+    {"id": 3, "question": "Which article is used with 'maison' (house) in French?", "options": ["le", "la", "les", "un"], "correct": "la", "level": "A1"},
+    {"id": 4, "question": "What is 'I am' in French?", "options": ["Je suis", "Tu es", "Il est", "Nous sommes"], "correct": "Je suis", "level": "A1"},
+    {"id": 5, "question": "How do you say 'goodbye' in French?", "options": ["Bonjour", "Merci", "Au revoir", "S'il vous plaît"], "correct": "Au revoir", "level": "A1"},
+    {"id": 6, "question": "Conjugate 'avoir' (to have) for 'nous' (we)", "options": ["avons", "avez", "ont", "ai"], "correct": "avons", "level": "A2"},
+    {"id": 7, "question": "What is the feminine form of 'beau' (beautiful)?", "options": ["beaux", "belle", "bel", "belles"], "correct": "belle", "level": "A2"},
+    {"id": 8, "question": "What does 'Je ne parle pas français' mean?", "options": ["I speak French", "I don't speak French", "Do you speak French?", "He speaks French"], "correct": "I don't speak French", "level": "A2"},
+    {"id": 9, "question": "Which preposition means 'in front of' in French?", "options": ["derrière", "entre", "devant", "sous"], "correct": "devant", "level": "A2"},
+    {"id": 10, "question": "What is 80 in French?", "options": ["huitante", "octante", "quatre-vingts", "quatre-vingt"], "correct": "quatre-vingts", "level": "B1"},
+    {"id": 11, "question": "What tense is 'j'ai mangé'?", "options": ["Imperfect", "Future", "Passé composé", "Present"], "correct": "Passé composé", "level": "B1"},
+    {"id": 12, "question": "What does 'se lever' mean?", "options": ["to sleep", "to wake up", "to get up", "to get dressed"], "correct": "to get up", "level": "B1"},
+    {"id": 13, "question": "Which connector means 'however' in French?", "options": ["donc", "pourtant", "aussi", "puis"], "correct": "pourtant", "level": "B1"},
+    {"id": 14, "question": "What is the subjunctive of 'être' for 'que je'?", "options": ["suis", "sois", "serai", "étais"], "correct": "sois", "level": "B2"},
+    {"id": 15, "question": "What does 'à condition que' require?", "options": ["indicative", "infinitive", "subjunctive", "conditional"], "correct": "subjunctive", "level": "B2"},
+    {"id": 16, "question": "Translate: 'Had I known, I would have come.'", "options": ["Si je savais, je venais", "Si j'avais su, je serais venu", "Si je sais, je viens", "Si je saurais, je vendrais"], "correct": "Si j'avais su, je serais venu", "level": "B2"},
+    {"id": 17, "question": "What literary tense replaces passé composé in formal writing?", "options": ["Imperfect", "Passé simple", "Pluperfect", "Future anterior"], "correct": "Passé simple", "level": "C1"},
+    {"id": 18, "question": "What is the meaning of 'nonobstant'?", "options": ["therefore", "notwithstanding", "furthermore", "meanwhile"], "correct": "notwithstanding", "level": "C1"},
+    {"id": 19, "question": "Which verb form is used in 'Qu'il vienne ou non'?", "options": ["Indicative", "Infinitive", "Subjunctive", "Conditional"], "correct": "Subjunctive", "level": "C2"},
+    {"id": 20, "question": "What stylistic device is 'La vie est un long fleuve tranquille'?", "options": ["Metaphor", "Simile", "Metonymy", "Synecdoche"], "correct": "Metaphor", "level": "C2"},
+]
+
+@router.get("/placement-test")
+async def get_placement_test(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get placement test questions"""
+    questions = [
+        {"id": q["id"], "question": q["question"], "options": q["options"], "level": q["level"]}
+        for q in PLACEMENT_QUESTIONS
+    ]
+    return {"questions": questions}
+
+
+@router.post("/placement-test/submit")
+async def submit_placement_test(
+    answers: dict,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Submit placement test and get CEFR level result"""
+    user_answers = answers.get("answers", {})
+    correct = 0
+    total = len(PLACEMENT_QUESTIONS)
+    level_scores = {"A1": 0, "A2": 0, "B1": 0, "B2": 0, "C1": 0, "C2": 0}
+    level_totals = {"A1": 0, "A2": 0, "B1": 0, "B2": 0, "C1": 0, "C2": 0}
+    for q in PLACEMENT_QUESTIONS:
+        qid = str(q["id"])
+        level_totals[q["level"]] += 1
+        if user_answers.get(qid) == q["correct"]:
+            correct += 1
+            level_scores[q["level"]] += 1
+    score_pct = (correct / total) * 100 if total > 0 else 0
+    if score_pct >= 90:
+        cefr_level = "C2"
+    elif score_pct >= 75:
+        cefr_level = "C1"
+    elif score_pct >= 60:
+        cefr_level = "B2"
+    elif score_pct >= 45:
+        cefr_level = "B1"
+    elif score_pct >= 30:
+        cefr_level = "A2"
+    else:
+        cefr_level = "A1"
+    return {
+        "cefr_level": cefr_level,
+        "score": correct,
+        "total": total,
+        "score_pct": round(score_pct, 1),
+        "level_breakdown": {
+            level: {"correct": level_scores[level], "total": level_totals[level]}
+            for level in level_scores
+        }
+    }

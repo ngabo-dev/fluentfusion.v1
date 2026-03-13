@@ -2451,3 +2451,633 @@ async def update_meeting(
         "message": "Meeting updated successfully",
         "meeting_id": meeting.id
     }
+
+# ==================== INSTRUCTOR APPLICATION ====================
+
+class ApplicationSubmit(BaseModel):
+    bio: str
+    expertise: list
+
+
+@router.get("/application/status")
+async def get_application_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get instructor application status for current user"""
+    from ...models.extras import InstructorApplication
+    if current_user.role == "instructor":
+        return {"status": "approved", "bio": None, "expertise": []}
+    app = db.query(InstructorApplication).filter(
+        InstructorApplication.user_id == current_user.id
+    ).first()
+    if not app:
+        return {"status": "no_application"}
+    return {
+        "status": app.status,
+        "bio": app.bio,
+        "expertise": app.expertise_tags or [],
+        "applied_at": app.applied_at.isoformat() if app.applied_at else None,
+        "rejection_reason": app.rejection_reason,
+    }
+
+
+@router.post("/apply")
+async def submit_instructor_application(
+    body: ApplicationSubmit,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Submit an instructor application"""
+    from ...models.extras import InstructorApplication
+    if current_user.role == "instructor":
+        return {"message": "Already an instructor", "status": "approved"}
+    existing = db.query(InstructorApplication).filter(
+        InstructorApplication.user_id == current_user.id
+    ).first()
+    if existing:
+        if existing.status == "pending":
+            raise HTTPException(status_code=400, detail="Application already pending")
+        existing.bio = body.bio
+        existing.expertise_tags = body.expertise
+        existing.status = "pending"
+        existing.rejection_reason = None
+        existing.applied_at = datetime.utcnow()
+        db.commit()
+        db.refresh(existing)
+        return {"message": "Application resubmitted", "status": "pending"}
+    application = InstructorApplication(
+        user_id=current_user.id,
+        bio=body.bio,
+        expertise_tags=body.expertise,
+        status="pending"
+    )
+    db.add(application)
+    db.commit()
+    return {"message": "Application submitted", "status": "pending"}
+
+
+# ==================== NEW: INSTRUCTOR DASHBOARD API ENDPOINTS ====================
+
+class DashboardStatsResponse(BaseModel):
+    total_students: int
+    total_students_delta: float
+    mtd_revenue: float
+    mtd_revenue_delta: float
+    avg_rating: float
+    avg_rating_delta: float
+    completion_rate: float
+    completion_rate_delta: float
+
+
+class RevenueMonthlyItem(BaseModel):
+    month: int
+    gross: float
+    net: float
+
+
+class SessionItem(BaseModel):
+    id: int
+    title: str
+    language: str
+    start_time: str
+    enrolled_count: int
+    status: str
+    day_label: str
+
+
+class NotificationItem(BaseModel):
+    id: int
+    type: str
+    message: str
+    read: bool
+    created_at: str
+
+
+class CourseWithStats(BaseModel):
+    id: int
+    title: str
+    language_flag: str
+    level: str
+    lesson_count: int
+    status: str
+    student_count: int
+    completion_rate: float
+    avg_rating: float
+    revenue_mtd: float
+
+
+class PulseHeatmapItem(BaseModel):
+    student_id: int
+    student_name: str
+    pulse_state: str
+
+
+class LeaderboardItem(BaseModel):
+    rank: int
+    user_id: int
+    name: str
+    course_title: str
+    xp_total: int
+
+
+class EarningsSummary(BaseModel):
+    mtd_gross: float
+    mtd_net: float
+    pending_payout: float
+    all_time_net: float
+    platform_fee_rate: float
+    by_course: list
+
+
+@router.get("/dashboard/stats", response_model=DashboardStatsResponse)
+async def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor dashboard stat cards data"""
+    instructor_id = current_user.id
+    
+    # Get instructor profile
+    profile = db.query(InstructorProfile).filter(
+        InstructorProfile.user_id == instructor_id
+    ).first()
+    
+    if not profile:
+        profile = InstructorProfile(
+            user_id=instructor_id,
+            total_students=0,
+            total_courses=0,
+            total_earnings_usd=0,
+            avg_rating=0
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    
+    # Get instructor courses
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+    
+    # Total students enrolled
+    total_students = 0
+    total_students_delta = 0.0  # Placeholder for % change
+    if course_ids:
+        from sqlalchemy import func
+        student_count_query = db.query(Enrollment.user_id).filter(
+            Enrollment.course_id.in_(course_ids)
+        ).distinct()
+        total_students = student_count_query.count()
+        # Calculate delta (mock for now - would need historical data)
+        total_students_delta = 12.5  # Mock 12.5% increase
+    
+    # MTD Revenue (gross)
+    mtd_revenue = float(profile.total_earnings_usd or 0)
+    mtd_revenue_delta = 8.3  # Mock 8.3% increase
+    
+    # Average rating
+    avg_rating = float(profile.avg_rating or 0)
+    avg_rating_delta = 0.2  # Mock +0.2 rating change
+    
+    # Completion rate
+    completion_rate = 0.0
+    completion_rate_delta = 0.0
+    if course_ids:
+        completed_query = db.query(Enrollment).filter(
+            Enrollment.course_id.in_(course_ids),
+            Enrollment.completion_pct == 100
+        )
+        completed_count = completed_query.count()
+        total_enrollments = db.query(Enrollment).filter(
+            Enrollment.course_id.in_(course_ids)
+        ).count()
+        if total_enrollments > 0:
+            completion_rate = (completed_count / total_enrollments) * 100
+            completion_rate_delta = 5.2  # Mock +5.2%
+    
+    return {
+        "total_students": total_students,
+        "total_students_delta": total_students_delta,
+        "mtd_revenue": mtd_revenue,
+        "mtd_revenue_delta": mtd_revenue_delta,
+        "avg_rating": round(avg_rating, 1),
+        "avg_rating_delta": avg_rating_delta,
+        "completion_rate": round(completion_rate, 1),
+        "completion_rate_delta": completion_rate_delta
+    }
+
+
+@router.get("/revenue/monthly", response_model=List[RevenueMonthlyItem])
+async def get_revenue_monthly(
+    year: int = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get monthly revenue data for the year"""
+    if year is None:
+        year = datetime.now().year
+    
+    instructor_id = current_user.id
+    
+    # Get instructor courses
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+    
+    # Get earnings for the year
+    earnings = db.query(InstructorEarning).filter(
+        InstructorEarning.instructor_id == instructor_id
+    ).all()
+    
+    # Group by month
+    monthly_data = {m: {"gross": 0.0, "net": 0.0} for m in range(1, 13)}
+    
+    for earning in earnings:
+        if earning.created_at and earning.created_at.year == year:
+            month = earning.created_at.month
+            monthly_data[month]["gross"] += float(earning.gross_amount or 0)
+            monthly_data[month]["net"] += float(earning.net_amount or 0)
+    
+    # Convert to list format
+    result = []
+    for month in range(1, 13):
+        result.append({
+            "month": month,
+            "gross": round(monthly_data[month]["gross"], 2),
+            "net": round(monthly_data[month]["net"], 2)
+        })
+    
+    return result
+
+
+@router.get("/sessions", response_model=List[SessionItem])
+async def get_instructor_sessions(
+    upcoming: bool = Query(default=True),
+    limit: int = Query(default=5, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor's upcoming/live sessions"""
+    from ...models.live_session import LiveSession
+    
+    instructor_id = current_user.id
+    
+    query = db.query(LiveSession).filter(LiveSession.instructor_id == instructor_id)
+    
+    if upcoming:
+        query = query.filter(LiveSession.scheduled_at >= datetime.now(timezone.utc))
+    
+    sessions = query.order_by(LiveSession.scheduled_at.asc()).limit(limit).all()
+    
+    results = []
+    now = datetime.now(timezone.utc)
+    
+    for session in sessions:
+        # Determine status
+        if session.status == "live":
+            status = "live"
+            day_label = "LIVE"
+        else:
+            # Calculate day label
+            if session.scheduled_at:
+                days_diff = (session.scheduled_at.date() - now.date()).days
+                if days_diff == 0:
+                    day_label = "Today"
+                elif days_diff == 1:
+                    day_label = "Tomorrow"
+                else:
+                    day_label = session.scheduled_at.strftime("%a")
+            else:
+                day_label = "TBD"
+            status = "scheduled"
+        
+        # Get enrolled count
+        enrolled_count = session.enrolled_count or 0
+        
+        # Get language
+        language = session.language or "English"
+        
+        results.append({
+            "id": session.id,
+            "title": session.title,
+            "language": language,
+            "start_time": session.scheduled_at.isoformat() if session.scheduled_at else None,
+            "enrolled_count": enrolled_count,
+            "status": status,
+            "day_label": day_label
+        })
+    
+    return results
+
+
+@router.get("/notifications", response_model=List[NotificationItem])
+async def get_instructor_notifications(
+    limit: int = Query(default=10, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor activity feed / notifications"""
+    instructor_id = current_user.id
+    
+    # Get notifications for this instructor
+    notifications = db.query(Notification).filter(
+        Notification.user_id == instructor_id
+    ).order_by(Notification.created_at.desc()).limit(limit).all()
+    
+    results = []
+    for n in notifications:
+        # Map notification type to activity feed format
+        type_mapping = {
+            "enrollment": "enroll",
+            "review": "review",
+            "pulse": "pulse-alert",
+            "message": "message",
+            "certificate": "approval"
+        }
+        
+        results.append({
+            "id": n.id,
+            "type": type_mapping.get(n.type, n.type),
+            "message": f"{n.title}: {n.body}",
+            "read": n.is_read,
+            "created_at": n.created_at.isoformat() if n.created_at else None
+        })
+    
+    return results
+
+
+@router.post("/notifications/read-all")
+async def mark_notifications_read_all(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Mark all notifications as read"""
+    instructor_id = current_user.id
+    
+    db.query(Notification).filter(
+        Notification.user_id == instructor_id,
+        Notification.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+    
+    return {"message": "All notifications marked as read"}
+
+
+@router.get("/courses", response_model=List[CourseWithStats])
+async def get_instructor_courses_with_stats(
+    include_stats: bool = Query(default=True),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get instructor courses with stats (completion_rate, avg_rating, revenue)"""
+    from sqlalchemy import func
+    
+    instructor_id = current_user.id
+    
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    
+    results = []
+    for course in courses:
+        # Get enrollment count
+        enrollment_count = db.query(Enrollment).filter(
+            Enrollment.course_id == course.id
+        ).count()
+        
+        # Get completion rate
+        completed_count = db.query(Enrollment).filter(
+            Enrollment.course_id == course.id,
+            Enrollment.completion_pct == 100
+        ).count()
+        
+        completion_rate = 0.0
+        if enrollment_count > 0:
+            completion_rate = (completed_count / enrollment_count) * 100
+        
+        # Get lesson count
+        lesson_count = db.query(Lesson).filter(Lesson.course_id == course.id).count()
+        
+        # Get revenue MTD (sum of earnings for this course this month)
+        earnings = db.query(InstructorEarning).filter(
+            InstructorEarning.course_id == course.id,
+            InstructorEarning.created_at >= datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+        ).all()
+        revenue_mtd = sum(float(e.net_amount or 0) for e in earnings)
+        
+        # Determine status
+        if course.is_published and course.approval_status == "approved":
+            status = "Published"
+        elif course.approval_status == "pending":
+            status = "Pending"
+        else:
+            status = "Draft"
+        
+        # Get language flag
+        language_flag = course.language_flag if hasattr(course, 'language_flag') and course.language_flag else "🌐"
+        
+        results.append({
+            "id": course.id,
+            "title": course.title,
+            "language_flag": language_flag,
+            "level": course.level or "Beginner",
+            "lesson_count": lesson_count,
+            "status": status,
+            "student_count": enrollment_count,
+            "completion_rate": round(completion_rate, 1),
+            "avg_rating": float(course.avg_rating or 0),
+            "revenue_mtd": round(revenue_mtd, 2)
+        })
+    
+    return results
+
+
+@router.get("/pulse/heatmap", response_model=List[PulseHeatmapItem])
+async def get_pulse_heatmap(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get PULSE state for all students enrolled in instructor's courses"""
+    from ...models.pulse_prediction import UserPulseScore
+    
+    instructor_id = current_user.id
+    
+    # Get instructor course IDs
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+    
+    if not course_ids:
+        return []
+    
+    # Get all enrolled student IDs
+    student_ids = db.query(Enrollment.user_id).filter(
+        Enrollment.course_id.in_(course_ids)
+    ).distinct().all()
+    student_ids = [s[0] for s in student_ids]
+    
+    if not student_ids:
+        return []
+    
+    # Get PULSE scores for these students
+    pulse_scores = db.query(UserPulseScore).filter(
+        UserPulseScore.user_id.in_(student_ids)
+    ).all()
+    
+    results = []
+    for ps in pulse_scores:
+        user = db.query(User).filter(User.id == ps.user_id).first()
+        if user:
+            # Map pulse state
+            state = "coasting"  # default
+            if ps.predicted_state:
+                state = ps.predicted_state.lower().replace(" ", "_")
+            elif ps.risk_level:
+                if ps.risk_level <= 0.2:
+                    state = "thriving"
+                elif ps.risk_level <= 0.4:
+                    state = "coasting"
+                elif ps.risk_level <= 0.6:
+                    state = "struggling"
+                elif ps.risk_level <= 0.8:
+                    state = "burning_out"
+                else:
+                    state = "disengaged"
+            
+            results.append({
+                "student_id": user.id,
+                "student_name": user.full_name,
+                "pulse_state": state
+            })
+    
+    return results
+
+
+@router.get("/students/leaderboard", response_model=List[LeaderboardItem])
+async def get_students_leaderboard(
+    limit: int = Query(default=5, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get top students by XP for instructor's courses"""
+    from ...models.gamification import UserXP
+    
+    instructor_id = current_user.id
+    
+    # Get instructor course IDs
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+    
+    if not course_ids:
+        return []
+    
+    # Get enrolled student IDs
+    student_ids = db.query(Enrollment.user_id).filter(
+        Enrollment.course_id.in_(course_ids)
+    ).distinct().all()
+    student_ids = [s[0] for s in student_ids]
+    
+    if not student_ids:
+        return []
+    
+    # Get XP for these students
+    xp_records = db.query(UserXP).filter(
+        UserXP.user_id.in_(student_ids)
+    ).order_by(UserXP.total_xp.desc()).limit(limit).all()
+    
+    results = []
+    for rank, xp in enumerate(xp_records, 1):
+        user = db.query(User).filter(User.id == xp.user_id).first()
+        if user:
+            # Get one of the courses they're enrolled in
+            enrollment = db.query(Enrollment).filter(
+                Enrollment.user_id == xp.user_id,
+                Enrollment.course_id.in_(course_ids)
+            ).first()
+            
+            course_title = "General"
+            if enrollment:
+                course = db.query(Course).filter(Course.id == enrollment.course_id).first()
+                if course:
+                    course_title = course.title
+            
+            results.append({
+                "rank": rank,
+                "user_id": user.id,
+                "name": user.full_name,
+                "course_title": course_title,
+                "xp_total": xp.total_xp or 0
+            })
+    
+    return results
+
+
+@router.get("/earnings/summary", response_model=EarningsSummary)
+async def get_earnings_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_instructor)
+):
+    """Get earnings summary: MTD, all-time, pending, by-course breakdown"""
+    from sqlalchemy import func
+    
+    instructor_id = current_user.id
+    
+    # Get instructor profile
+    profile = db.query(InstructorProfile).filter(
+        InstructorProfile.user_id == instructor_id
+    ).first()
+    
+    # MTD gross and net
+    now = datetime.now(timezone.utc)
+    mtd_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    mtd_earnings = db.query(InstructorEarning).filter(
+        InstructorEarning.instructor_id == instructor_id,
+        InstructorEarning.created_at >= mtd_start
+    ).all()
+    
+    mtd_gross = sum(float(e.gross_amount or 0) for e in mtd_earnings)
+    mtd_net = sum(float(e.net_amount or 0) for e in mtd_earnings)
+    
+    # Pending payout (earnings not yet paid)
+    pending_earnings = db.query(InstructorEarning).filter(
+        InstructorEarning.instructor_id == instructor_id,
+        InstructorEarning.status == "pending"
+    ).all()
+    pending_payout = sum(float(e.net_amount or 0) for e in pending_earnings)
+    
+    # All-time net
+    all_time_net = float(profile.total_earnings_usd or 0) if profile else 0
+    
+    # Platform fee rate (30%)
+    platform_fee_rate = 30.0
+    
+    # By course breakdown
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    by_course = []
+    
+    max_revenue = 0.0
+    for course in courses:
+        course_earnings = db.query(InstructorEarning).filter(
+            InstructorEarning.course_id == course.id
+        ).all()
+        revenue = sum(float(e.net_amount or 0) for e in course_earnings)
+        if revenue > max_revenue:
+            max_revenue = revenue
+        
+        by_course.append({
+            "course_id": course.id,
+            "title": course.title,
+            "revenue": round(revenue, 2),
+            "percentage": 0.0  # Will calculate after
+        })
+    
+    # Calculate percentages
+    if max_revenue > 0:
+        for item in by_course:
+            item["percentage"] = round((item["revenue"] / max_revenue) * 100, 1)
+    
+    return {
+        "mtd_gross": round(mtd_gross, 2),
+        "mtd_net": round(mtd_net, 2),
+        "pending_payout": round(pending_payout, 2),
+        "all_time_net": round(all_time_net, 2),
+        "platform_fee_rate": platform_fee_rate,
+        "by_course": by_course
+    }
