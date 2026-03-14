@@ -304,17 +304,28 @@ export default function Component23InstructorDashboard() {
 
       {/* Row 2: Revenue Chart + Live Sessions + Activity Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-[14px] mb-8">
-        {/* Revenue Chart */}
-        <div className="lg:col-span-2 card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="h3 text-white">Revenue Overview</h3>
-            <button 
-              className="btn-ghost text-[12px]"
-              onClick={() => setSelectedYear(y => y === new Date().getFullYear() ? y - 1 : y + 1)}
-            >
-              {selectedYear} ▾
-            </button>
-          </div>
+           {/* Revenue Chart */}
+           <div className="lg:col-span-2 card p-6">
+             <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center gap-3">
+                 <h3 className="h3 text-white">Revenue Overview</h3>
+                 <div className="flex gap-2">
+                   <button 
+                     onClick={() => setSelectedYear(y => y - 1)}
+                     className="btn-ghost text-[12px] hover:text-[var(--neon)]"
+                   >
+                     ‹
+                   </button>
+                   <button 
+                     onClick={() => setSelectedYear(y => y + 1)}
+                     className="btn-ghost text-[12px] hover:text-[var(--neon)]"
+                   >
+                     ›
+                   </button>
+                 </div>
+               </div>
+               <button className="btn-ghost text-[11px]">Export CSV</button>
+             </div>
           <div className="flex items-center gap-4 mb-4 text-[11px]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[var(--neon)]"></div>

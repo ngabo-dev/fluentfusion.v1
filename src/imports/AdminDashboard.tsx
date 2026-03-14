@@ -169,6 +169,13 @@ export default function AdminDashboard() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
+  // Month selector handler
+  const handleMonthChange = (offset: number) => {
+    const date = new Date(selectedMonth);
+    date.setMonth(date.getMonth() + offset);
+    setSelectedMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+  };
+
   const logIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -206,19 +213,19 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const results = await Promise.allSettled([
-        adminApi.getKpis(),
-        adminApi.getActiveAlerts(),
-        adminApi.getSystemHealth(),
-        adminApi.getSystemLogs(10),
-        adminApi.getRevenueDaily(selectedMonth),
-        adminApi.getPulseDistribution(),
-        adminApi.getTopLanguages({ limit: 6 }),
-        adminApi.getGeography({ limit: 8 }),
-        adminApi.getHealthMetrics(),
-        adminApi.getModerationQueue({ limit: 5 }),
-        adminApi.getUsers({ limit: 10, page: 1 }),
-      ]);
+       const results = await Promise.allSettled([
+         adminApi.getKpis(),
+         adminApi.getActiveAlerts(),
+         adminApi.getSystemHealth(),
+         adminApi.getSystemLogs({ limit: 10 }),
+         adminApi.getRevenueDaily(selectedMonth),
+         adminApi.getPulseDistribution(),
+         adminApi.getTopLanguages({ limit: 6 }),
+         adminApi.getGeography({ limit: 8 }),
+         adminApi.getHealthMetrics(),
+         adminApi.getModerationQueue({ limit: 5 }),
+         adminApi.getUsers({ limit: 10, page: 1 }),
+       ]);
 
       if (results[0].status === 'fulfilled') setKpis(results[0].value);
       if (results[1].status === 'fulfilled') setAlerts(results[1].value.alerts || []);
@@ -240,14 +247,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchSystemLogs = async () => {
-    try {
-      const result = await adminApi.getSystemLogs(10);
-      setSystemLogs(result.logs || []);
-    } catch (err) {
-      console.error('Failed to fetch logs:', err);
-    }
-  };
+   const fetchSystemLogs = async () => {
+     try {
+       const result = await adminApi.getSystemLogs({ limit: 10 });
+       setSystemLogs(result.logs || []);
+     } catch (err) {
+       console.error('Failed to fetch logs:', err);
+     }
+   };
 
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -585,12 +592,28 @@ export default function AdminDashboard() {
 
           {/* Row 2: Revenue + PULSE + Languages */}
           <div className="grid grid-cols-3 gap-[14px] mb-6">
-            {/* Platform Revenue Sparkline */}
-            <div className="card p-5 col-span-2">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="h3 text-white">Platform Revenue — {selectedMonth}</h3>
-                <button className="btn-ghost text-[11px]">Export CSV</button>
-              </div>
+           {/* Platform Revenue Sparkline */}
+             <div className="card p-5 col-span-2">
+               <div className="flex items-center justify-between mb-4">
+                 <div className="flex items-center gap-3">
+                   <h3 className="h3 text-white">Platform Revenue — {selectedMonth}</h3>
+                   <div className="flex gap-2">
+                     <button 
+                       onClick={() => handleMonthChange(-1)}
+                       className="btn-ghost text-[11px] hover:text-[var(--neon)]"
+                     >
+                       ‹
+                     </button>
+                     <button 
+                       onClick={() => handleMonthChange(1)}
+                       className="btn-ghost text-[11px] hover:text-[var(--neon)]"
+                     >
+                       ›
+                     </button>
+                   </div>
+                 </div>
+                 <button className="btn-ghost text-[11px]">Export CSV</button>
+               </div>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
                   <div className="label text-[9px]">MTD GROSS</div>
