@@ -1,0 +1,19 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/routers/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Environment files
+backend/.env
+
+# Node
+frontend/app/node_modules/
+frontend/app/dist/
+
+# Misc
+.DS_Store
+*.log
