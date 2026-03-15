@@ -11,6 +11,16 @@
 
 ---
 
+## 📺 Demo Video
+
+▶️ [Watch the Demo Video](#) <!-- TODO: Replace # with your demo video URL -->
+
+## 🌐 Live App
+
+🚀 [Open the Live App](#) <!-- TODO: Replace # with your deployed app URL -->
+
+---
+
 ## 📋 Table of Contents
 
 - [About the Project](#-about-the-project)
