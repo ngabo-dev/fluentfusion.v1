@@ -9,6 +9,7 @@ backend/app/routers/__pycache__/
 
 # Environment files
 backend/.env
+frontend/app/.env
 
 # Node
 frontend/app/node_modules/
