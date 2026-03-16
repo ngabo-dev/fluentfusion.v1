@@ -318,16 +318,26 @@ def delete_admin(user_id: int, db: Session = Depends(get_db), current_user: User
 
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    from fastapi import HTTPException
+    from app.models import Payment, Payout, Enrollment, AuditLog, Report, Message, Review, MonthlyRevenue
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="User not found")
     if user.role == RoleEnum.super_admin:
-        from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Cannot delete super admin")
     email = user.email
+    # Delete related records to avoid FK violations
+    db.query(Enrollment).filter(Enrollment.student_id == user_id).delete()
+    db.query(Payment).filter(Payment.user_id == user_id).delete()
+    db.query(Payout).filter(Payout.instructor_id == user_id).delete()
+    db.query(Report).filter(Report.reporter_id == user_id).delete()
+    db.query(Message).filter((Message.sender_id == user_id) | (Message.receiver_id == user_id)).delete(synchronize_session=False)
+    db.query(Review).filter(Review.student_id == user_id).delete()
+    db.query(MonthlyRevenue).filter(MonthlyRevenue.instructor_id == user_id).delete()
+    db.query(AuditLog).filter(AuditLog.admin_id == user_id).delete()
+    # Nullify instructor_id on courses rather than deleting them
+    db.query(Course).filter(Course.instructor_id == user_id).update({"instructor_id": None})
     db.delete(user); db.commit()
-    from app.models import AuditLog
     db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Admin deleted user: {email}"))
     db.commit()
     return {"ok": True}
