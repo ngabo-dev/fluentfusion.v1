@@ -15,6 +15,8 @@ _origins = [
     "http://localhost:5174",
     "http://localhost:5175",
     "http://localhost:3000",
+    "https://fluentfusionv1.vercel.app",
+    "https://fluentfusion-v1.vercel.app",
 ]
 if _frontend not in _origins:
     _origins.append(_frontend)
