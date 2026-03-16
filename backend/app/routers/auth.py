@@ -49,7 +49,8 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    send_otp_email(user.email, user.name, otp)
+    import threading
+    threading.Thread(target=send_otp_email, args=(user.email, user.name, otp), daemon=True).start()
     token = create_access_token({"sub": str(user.id), "role": user.role})
     return {"access_token": token, "token_type": "bearer", "role": user.role, "name": user.name, "id": user.id}
 
@@ -104,7 +105,8 @@ def resend_verification(body: ResendRequest, db: Session = Depends(get_db)):
     user.otp_code = otp
     user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
     db.commit()
-    send_otp_email(user.email, user.name, otp)
+    import threading
+    threading.Thread(target=send_otp_email, args=(user.email, user.name, otp), daemon=True).start()
     return {"message": "Verification code resent"}
 
 
@@ -121,14 +123,14 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 @router.post("/forgot-password")
 def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email.lower().strip()).first()
-    # Always return 200 to avoid email enumeration
     if user:
         token = secrets.token_urlsafe(32)
         user.reset_token = token
         user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
         db.commit()
         reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-        send_reset_email(user.email, user.name, reset_link)
+        import threading
+        threading.Thread(target=send_reset_email, args=(user.email, user.name, reset_link), daemon=True).start()
     return {"message": "If this email exists, a reset link has been sent."}
 
 @router.post("/reset-password")
