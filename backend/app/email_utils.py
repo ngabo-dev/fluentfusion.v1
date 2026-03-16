@@ -1,17 +1,14 @@
-import smtplib, os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import os, resend
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT     = int(os.getenv("SMTP_PORT", 587))
-SMTP_USER     = os.getenv("SMTP_USER", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-FROM_EMAIL    = os.getenv("FROM_EMAIL", SMTP_USER)
-FROM_NAME     = os.getenv("FROM_NAME", "FluentFusion")
-EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+FROM_EMAIL     = os.getenv("FROM_EMAIL", "onboarding@resend.dev")
+FROM_NAME      = os.getenv("FROM_NAME", "FluentFusion AI")
+EMAIL_ENABLED  = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
+
+resend.api_key = RESEND_API_KEY
 
 
 def send_email(to: str, subject: str, html: str) -> bool:
@@ -19,23 +16,12 @@ def send_email(to: str, subject: str, html: str) -> bool:
         print(f"[EMAIL DISABLED] To: {to} | Subject: {subject}")
         return True
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"]    = f"{FROM_NAME} <{FROM_EMAIL}>"
-        msg["To"]      = to
-        msg.attach(MIMEText(html, "html"))
-        password = SMTP_PASSWORD.strip()
-        try:
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
-                s.ehlo()
-                s.starttls()
-                s.ehlo()
-                s.login(SMTP_USER, password)
-                s.sendmail(FROM_EMAIL, to, msg.as_string())
-        except Exception:
-            with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=15) as s:
-                s.login(SMTP_USER, password)
-                s.sendmail(FROM_EMAIL, to, msg.as_string())
+        resend.Emails.send({
+            "from": f"{FROM_NAME} <{FROM_EMAIL}>",
+            "to": [to],
+            "subject": subject,
+            "html": html,
+        })
         print(f"[EMAIL SENT] To: {to} | Subject: {subject}")
         return True
     except Exception as e:
