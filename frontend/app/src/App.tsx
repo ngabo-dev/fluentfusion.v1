@@ -72,6 +72,16 @@ const Loading = () => (
   </div>
 )
 
+function OnboardGuard({ children }: { children: React.ReactNode }) {
+  const { token, user, ready } = useAuth()
+  if (!ready) return <Loading />
+  if (!token) return <Navigate to="/login" replace />
+  const role = user?.role
+  if (role === 'admin' || role === 'super_admin') return <Navigate to="/admin" replace />
+  if (role === 'instructor') return <Navigate to="/instructor" replace />
+  return <>{children}</>
+}
+
 function StudentLayout() {
   const { token, ready } = useAuth()
   if (!ready) return <Loading />
@@ -190,11 +200,11 @@ export default function App() {
           <Route path="/features" element={<Features />} />
           <Route path="/community" element={<Community />} />
 
-          {/* Onboarding */}
-          <Route path="/onboard/native-language" element={<OnboardNativeLang />} />
-          <Route path="/onboard/learn-language" element={<OnboardLearnLang />} />
-          <Route path="/onboard/goal" element={<OnboardGoal />} />
-          <Route path="/onboard/level" element={<OnboardLevel />} />
+          {/* Onboarding — students only */}
+          <Route path="/onboard/native-language" element={<OnboardGuard><OnboardNativeLang /></OnboardGuard>} />
+          <Route path="/onboard/learn-language" element={<OnboardGuard><OnboardLearnLang /></OnboardGuard>} />
+          <Route path="/onboard/goal" element={<OnboardGuard><OnboardGoal /></OnboardGuard>} />
+          <Route path="/onboard/level" element={<OnboardGuard><OnboardLevel /></OnboardGuard>} />
 
           {/* Student dashboard */}
           <Route path="/dashboard/*" element={<StudentLayout />} />

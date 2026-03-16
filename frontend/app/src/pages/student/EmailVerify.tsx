@@ -36,7 +36,13 @@ export default function EmailVerify() {
       await authApi.verifyEmail({ email, code: verifyCode })
       setSuccess('Email verified! Setting up your profile...')
       localStorage.removeItem('verification_email')
-      setTimeout(() => nav('/onboard/native-language'), 1500)
+      const stored = localStorage.getItem('ff_user') || sessionStorage.getItem('ff_user')
+      const role = stored ? JSON.parse(stored).role : 'student'
+      setTimeout(() => {
+        if (role === 'instructor') nav('/instructor')
+        else if (role === 'admin' || role === 'super_admin') nav('/admin')
+        else nav('/onboard/native-language')
+      }, 1500)
     } catch (ex: any) {
       setErr(ex.message || 'Invalid code. Please try again.')
       setOtp(['', '', '', '', '', ''])
