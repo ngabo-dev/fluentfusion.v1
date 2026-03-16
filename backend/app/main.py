@@ -45,17 +45,26 @@ def health():
 
 @app.get("/test-email")
 def test_email():
-    import os
-    from app.email_utils import send_email, EMAIL_ENABLED, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL
-    result = send_email(SMTP_USER, "FluentFusion Test", "<p>Test email from Render</p>")
+    import os, smtplib
+    from app.email_utils import EMAIL_ENABLED, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL
+    error = None
+    sent = False
+    try:
+        password = SMTP_PASSWORD.strip()
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+            s.ehlo()
+            s.starttls()
+            s.ehlo()
+            s.login(SMTP_USER, password)
+            sent = True
+    except Exception as e:
+        error = str(e)
     return {
         "EMAIL_ENABLED": EMAIL_ENABLED,
-        "SMTP_HOST": SMTP_HOST,
-        "SMTP_PORT": SMTP_PORT,
         "SMTP_USER": SMTP_USER,
         "SMTP_PASSWORD_LEN": len(SMTP_PASSWORD),
-        "FROM_EMAIL": FROM_EMAIL,
-        "sent": result
+        "sent": sent,
+        "error": error
     }
 
 @app.get("/api/stats")
