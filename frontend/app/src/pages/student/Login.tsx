@@ -18,28 +18,47 @@ export default function Login() {
     setErr(''); setLoading(true)
     try {
       const res = await login(email, pw, remember)
-      setSuccess('Welcome back! Redirecting...')
       const role = res?.user?.role
+      const isFirst = res?.is_first_login
+      setSuccess('Welcome! Redirecting...')
       setTimeout(() => {
         if (role === 'admin' || role === 'super_admin') nav('/admin')
         else if (role === 'instructor') nav('/instructor')
         else {
-          const steps = [
-            { key: 'onboarding_native_lang', path: '/onboard/native-language' },
-            { key: 'onboarding_learn_lang',  path: '/onboard/learn-language' },
-            { key: 'onboarding_goal',        path: '/onboard/goal' },
-            { key: 'onboarding_level',       path: '/onboard/level' },
-          ]
-          const next = steps.find(s => !localStorage.getItem(s.key))
-          nav(next ? next.path : '/dashboard')
+          // Students always go through onboarding on first login
+          if (isFirst) {
+            localStorage.removeItem('onboarding_native_lang')
+            localStorage.removeItem('onboarding_learn_lang')
+            localStorage.removeItem('onboarding_goal')
+            localStorage.removeItem('onboarding_level')
+            nav('/onboard/native-language')
+          } else {
+            const steps = [
+              { key: 'onboarding_native_lang', path: '/onboard/native-language' },
+              { key: 'onboarding_learn_lang',  path: '/onboard/learn-language' },
+              { key: 'onboarding_goal',        path: '/onboard/goal' },
+              { key: 'onboarding_level',       path: '/onboard/level' },
+            ]
+            const next = steps.find(s => !localStorage.getItem(s.key))
+            nav(next ? next.path : '/dashboard')
+          }
         }
       }, 800)
     } catch (ex: any) {
       const msg = ex?.message || 'Invalid credentials'
-      if (msg.includes('401') || msg.toLowerCase().includes('invalid')) setErr('Incorrect email or password. Please try again.')
-      else if (msg.includes('suspended') || msg.includes('banned')) setErr('Your account has been suspended. Contact support.')
-      else if (msg.includes('network') || msg.includes('fetch')) setErr('Cannot connect to server. Make sure the backend is running.')
-      else setErr(msg)
+      if (msg.includes('EMAIL_NOT_VERIFIED')) {
+        localStorage.setItem('verification_email', email)
+        setErr('Please verify your email first. Redirecting to verification...')
+        setTimeout(() => nav(`/verify-email?email=${encodeURIComponent(email)}`), 1800)
+      } else if (msg.includes('401') || msg.toLowerCase().includes('invalid')) {
+        setErr('Incorrect email or password. Please try again.')
+      } else if (msg.includes('suspended') || msg.includes('banned')) {
+        setErr('Your account has been suspended. Contact support.')
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setErr('Cannot connect to server. Make sure the backend is running.')
+      } else {
+        setErr(msg)
+      }
     } finally { setLoading(false) }
   }
 

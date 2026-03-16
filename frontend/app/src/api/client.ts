@@ -183,7 +183,7 @@ export const authApi = {
     }
     setTokenExpiry(ACCESS_TOKEN_EXPIRE_MINUTES * 60);
     setupInactivityListeners();
-    return { access_token: json.access_token, user };
+    return { access_token: json.access_token, user, is_first_login: !!json.is_first_login };
   },
 
   // Logout user

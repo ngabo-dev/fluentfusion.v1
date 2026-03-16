@@ -81,6 +81,7 @@ class User(Base):
     enrollments = relationship("Enrollment", back_populates="student")
     pulse_state = Column(Enum(PulseStateEnum), default=PulseStateEnum.coasting)
     xp = Column(Integer, default=0)
+    first_login = Column(Boolean, default=True)
 
 class Course(Base):
     __tablename__ = "courses"
