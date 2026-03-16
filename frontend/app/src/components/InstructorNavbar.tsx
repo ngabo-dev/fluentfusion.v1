@@ -6,7 +6,7 @@ export default function Navbar() {
   const { user, logout } = useAuth()
   return (
     <nav className="nav">
-      <Link to="/" className="logo">
+      <Link to="/instructor" className="logo">
         <div className="logo-mark">FF</div>
         <div className="logo-name">Fluent<span>Fusion</span></div>
       </Link>

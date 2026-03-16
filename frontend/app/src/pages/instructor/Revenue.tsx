@@ -44,7 +44,7 @@ export default function Revenue() {
               <div style={{ fontFamily: 'Syne', fontSize: 19, fontWeight: 800, color: 'var(--er)' }}>−30%</div>
             </div>
           </div>
-          <button className="btn bp" style={{ width: '100%' }} onClick={() => window.location.href = '/payouts'}>Request Payout →</button>
+          <button className="btn bp" style={{ width: '100%' }} onClick={() => window.location.href = '/instructor/payouts'}>Request Payout →</button>
         </div>
       </div>
       <div className="card">
