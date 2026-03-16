@@ -2,5 +2,5 @@ import React from 'react'
 import MessagesPage from '../../components/MessagesPage'
 
 export default function Messages() {
-  return <MessagesPage role="instructor" />
+  return <MessagesPage role="admin" />
 }

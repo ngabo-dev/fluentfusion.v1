@@ -1,29 +1,41 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.models import Base, engine
-from app.routers import auth, admin, instructor, student
+from app.routers import auth, admin, instructor, student, messages
+import os
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="FluentFusion API")
 
+_frontend = os.getenv("FRONTEND_URL", "http://localhost:5173")
+_origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:3000",
+]
+if _frontend not in _origins:
+    _origins.append(_frontend)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:3000",
-    ],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(instructor.router)
 app.include_router(student.router)
+app.include_router(messages.router)
 
 @app.get("/health")
 def health():

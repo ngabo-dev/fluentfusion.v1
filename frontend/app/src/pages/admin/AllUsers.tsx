@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
 import Badge from '../../components/Badge'
+import { useAuth } from '../../components/AuthContext'
 
 export default function AllUsers() {
+  const { user: me } = useAuth()
   const [users, setUsers] = useState<any[]>([])
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
@@ -14,7 +16,11 @@ export default function AllUsers() {
     if (role) params.role = role
     if (status) params.status = status
     if (search) params.search = search
-    api.get('/api/admin/users', { params }).then(r => setUsers(r.data))
+    api.get('/api/admin/users', { params }).then(r => {
+      const data: any[] = r.data
+      data.sort((a, b) => (b.id === me?.id ? 1 : 0) - (a.id === me?.id ? 1 : 0))
+      setUsers(data)
+    })
   }
 
   useEffect(() => { load() }, [role, status, search])
@@ -46,7 +52,7 @@ export default function AllUsers() {
         <table className="tbl"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Last Active</th><th></th></tr></thead>
         <tbody>{users.map(u => (
           <tr key={u.id}>
-            <td><div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Avatar initials={u.avatar_initials || u.name.slice(0,2).toUpperCase()} /><div><div style={{ fontSize: 12, fontWeight: 500 }}>{u.name}</div><div style={{ fontSize: 9, color: 'var(--mu)' }}>{u.email}</div></div></div></td>
+            <td><div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><Avatar initials={u.avatar_initials || u.name.slice(0,2).toUpperCase()} /><div><div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 500 }}>{u.name}{u.id === me?.id && <span style={{ fontSize: 9, background: 'var(--neon)', color: '#000', borderRadius: 4, padding: '1px 5px', fontWeight: 700 }}>YOU</span>}</div><div style={{ fontSize: 9, color: 'var(--mu)' }}>{u.email}</div></div></div></td>
             <td><Badge variant={roleBadge[u.role] || 'm'}>{u.role.toUpperCase()}</Badge></td>
             <td><span><span className={`sdot ${statusDot[u.status] || 'sd-p'}`} />{u.status === 'banned' ? <span style={{ color: 'var(--er)' }}>Banned</span> : u.status === 'pending' ? <span style={{ color: 'var(--wa)' }}>Pending</span> : 'Active'}</span></td>
             <td style={{ color: 'var(--mu)', fontFamily: 'JetBrains Mono', fontSize: 9 }}>{u.created_at?.slice(0,10)}</td>

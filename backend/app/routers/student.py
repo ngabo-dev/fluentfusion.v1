@@ -31,6 +31,33 @@ def dashboard(db: Session = Depends(get_db), current_user: User = Depends(guard)
         "upcoming_sessions": [{"id": s.id, "title": s.title, "scheduled_at": s.scheduled_at, "status": s.status, "attendees": s.attendees} for s in upcoming]
     }
 
+@router.get("/catalog")
+def course_catalog(search: str = "", language: str = "", level: str = "", db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    q = db.query(Course).filter(Course.status == "published")
+    if search: q = q.filter(Course.title.ilike(f"%{search}%"))
+    if language: q = q.filter(Course.language.ilike(f"%{language}%"))
+    if level: q = q.filter(Course.level == level)
+    courses = q.order_by(Course.created_at.desc()).all()
+    enrolled_ids = {e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()}
+    result = []
+    for c in courses:
+        instructor = db.query(User).filter(User.id == c.instructor_id).first()
+        lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
+        student_count = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
+        avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
+        result.append({"id": c.id, "title": c.title, "description": c.description, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "thumbnail_url": c.thumbnail_url, "price": c.price, "instructor": instructor.name if instructor else "", "instructor_initials": instructor.avatar_initials if instructor else "", "lesson_count": lesson_count, "student_count": student_count, "rating": round(avg_rat, 1), "enrolled": c.id in enrolled_ids})
+    return result
+
+@router.post("/courses/{course_id}/enroll")
+def enroll(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    existing = db.query(Enrollment).filter(Enrollment.student_id == current_user.id, Enrollment.course_id == course_id).first()
+    if existing: return {"ok": True, "already_enrolled": True}
+    course = db.query(Course).filter(Course.id == course_id, Course.status == "published").first()
+    if not course: return {"error": "Course not found"}
+    db.add(Enrollment(student_id=current_user.id, course_id=course_id))
+    db.commit()
+    return {"ok": True, "enrolled": True}
+
 @router.get("/courses")
 def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     enrollments = db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()

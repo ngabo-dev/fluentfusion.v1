@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
@@ -8,6 +9,7 @@ import Progress from '../../components/Progress'
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [data, setData] = useState<any>(null)
   useEffect(() => { api.get('/api/instructor/dashboard').then(r => setData(r.data)) }, [])
   if (!data) return <div className="loading" />
@@ -20,7 +22,7 @@ export default function Dashboard() {
     <div className="pg">
       <div className="ph">
         <div><h1>Dashboard</h1><p>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
-        <div className="pa"><button className="btn bp">＋ New Course</button><button className="btn bo sm">🎙️</button></div>
+        <div className="pa"><button className="btn bp" onClick={() => navigate('/instructor/courses/new')}>＋ New Course</button><button className="btn bo sm">🎙️</button></div>
       </div>
       <div className="sr">
         <StatCard label="Total Students" value={data.total_students?.toLocaleString()} sub="↑ 12% this month" />

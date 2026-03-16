@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum
-from app.auth import require_role
+from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz
+from app.auth import require_role, hash_password
 from typing import Optional
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
-guard = require_role(RoleEnum.admin)
+guard = require_role(RoleEnum.admin, RoleEnum.super_admin)
+super_guard = require_role(RoleEnum.super_admin)
 
 @router.get("/dashboard")
 def dashboard(db: Session = Depends(get_db), _=Depends(guard)):
@@ -71,8 +72,43 @@ def list_courses(status: Optional[str] = None, db: Session = Depends(get_db), _=
         students = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
         revenue = db.query(func.sum(Payment.amount)).filter(Payment.course_id == c.id, Payment.status == "completed").scalar() or 0
         ins = db.query(User).filter(User.id == c.instructor_id).first()
-        result.append({"id": c.id, "title": c.title, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "status": c.status, "instructor": ins.name if ins else "", "students": students, "revenue": round(revenue, 2), "created_at": c.created_at})
+        result.append({"id": c.id, "title": c.title, "description": c.description, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "thumbnail_url": c.thumbnail_url, "status": c.status, "price": c.price, "instructor": ins.name if ins else "", "instructor_id": c.instructor_id, "students": students, "revenue": round(revenue, 2), "created_at": c.created_at})
     return result
+
+@router.get("/courses/{course_id}")
+def get_course(course_id: int, db: Session = Depends(get_db), _=Depends(guard)):
+    c = db.query(Course).filter(Course.id == course_id).first()
+    if not c: return {"error": "not found"}
+    ins = db.query(User).filter(User.id == c.instructor_id).first()
+    lessons = db.query(Lesson).filter(Lesson.course_id == c.id).order_by(Lesson.order).all()
+    quizzes = db.query(Quiz).filter(Quiz.course_id == c.id).all()
+    students = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
+    return {
+        "id": c.id, "title": c.title, "description": c.description,
+        "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
+        "thumbnail_url": c.thumbnail_url, "status": c.status, "price": c.price,
+        "instructor": ins.name if ins else "", "instructor_email": ins.email if ins else "",
+        "created_at": c.created_at, "students": students,
+        "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "description": l.description, "order": l.order} for l in lessons],
+        "quizzes": [{"id": q.id, "title": q.title, "question_count": q.question_count, "avg_score": q.avg_score} for q in quizzes],
+    }
+
+@router.post("/courses")
+def create_course(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    """Admin creates a course — auto-published, assigned to a chosen instructor or self."""
+    course = Course(
+        title=body["title"],
+        description=body.get("description", ""),
+        language=body.get("language", ""),
+        level=body.get("level", ""),
+        flag_emoji=body.get("flag_emoji", ""),
+        thumbnail_url=body.get("thumbnail_url", ""),
+        instructor_id=body.get("instructor_id") or current_user.id,
+        price=body.get("price", 49.99),
+        status="published",
+    )
+    db.add(course); db.commit(); db.refresh(course)
+    return {"id": course.id, "title": course.title}
 
 @router.patch("/courses/{course_id}/status")
 def update_course_status(course_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
@@ -230,8 +266,59 @@ def list_payments(status: Optional[str] = None, search: Optional[str] = None, db
 
 @router.get("/admins")
 def list_admins(db: Session = Depends(get_db), _=Depends(guard)):
-    admins = db.query(User).filter(User.role == RoleEnum.admin).all()
-    return [{"id": u.id, "name": u.name, "email": u.email, "avatar_initials": u.avatar_initials, "last_active": u.last_active} for u in admins]
+    admins = db.query(User).filter(User.role.in_([RoleEnum.admin, RoleEnum.super_admin])).all()
+    return [{"id": u.id, "name": u.name, "email": u.email, "role": u.role, "avatar_initials": u.avatar_initials, "last_active": u.last_active, "is_verified": u.is_verified, "status": u.status} for u in admins]
+
+# ── Super Admin only endpoints ────────────────────────────────────────────
+
+@router.post("/admins")
+def create_admin(body: dict, db: Session = Depends(get_db), current_user: User = Depends(super_guard)):
+    """Super admin creates a new admin account."""
+    if db.query(User).filter(User.email == body["email"]).first():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Email already registered")
+    initials = "".join(w[0].upper() for w in body["name"].split()[:2])
+    user = User(
+        name=body["name"],
+        email=body["email"],
+        hashed_password=hash_password(body["password"]),
+        role=RoleEnum.admin,
+        status=StatusEnum.active,
+        avatar_initials=initials,
+        is_verified=True,
+    )
+    db.add(user); db.commit(); db.refresh(user)
+    from app.models import AuditLog
+    db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Super admin created new admin account: {user.email}"))
+    db.commit()
+    return {"id": user.id, "name": user.name, "email": user.email, "role": user.role}
+
+@router.delete("/admins/{user_id}")
+def delete_admin(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(super_guard)):
+    """Super admin removes an admin account."""
+    user = db.query(User).filter(User.id == user_id, User.role == RoleEnum.admin).first()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Admin not found")
+    db.delete(user); db.commit()
+    from app.models import AuditLog
+    db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Super admin removed admin account: {user.email}"))
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(super_guard)):
+    """Super admin permanently deletes any user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+    email = user.email
+    db.delete(user); db.commit()
+    from app.models import AuditLog
+    db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Super admin permanently deleted user: {email}"))
+    db.commit()
+    return {"ok": True}
 
 @router.get("/settings")
 def get_settings(_=Depends(guard)):

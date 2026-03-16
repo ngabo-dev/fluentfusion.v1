@@ -18,3 +18,9 @@ frontend/app/dist/
 # Misc
 .DS_Store
 *.log
+
+# Uploads (user files)
+backend/uploads/
+
+# SSL cert (set as env var or Render secret file)
+backend/ca.pem

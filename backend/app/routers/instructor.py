@@ -46,7 +46,7 @@ def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard
         avg_comp = db.query(func.avg(Enrollment.completion_pct)).filter(Enrollment.course_id == c.id).scalar() or 0
         avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
         lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
-        result.append({"id": c.id, "title": c.title, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "status": c.status, "students": students, "revenue": round(rev * 0.7, 2), "completion": round(avg_comp, 1), "rating": round(avg_rat, 1), "lesson_count": lesson_count})
+        result.append({"id": c.id, "title": c.title, "description": c.description, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "thumbnail_url": c.thumbnail_url, "status": c.status, "price": c.price, "students": students, "revenue": round(rev * 0.7, 2), "completion": round(avg_comp, 1), "rating": round(avg_rat, 1), "lesson_count": lesson_count})
     return result
 
 @router.get("/courses/{course_id}/lessons")
@@ -70,16 +70,38 @@ def update_lesson(course_id: int, lesson_id: int, body: dict, db: Session = Depe
 
 @router.post("/courses")
 def create_course(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    course = Course(title=body["title"], language=body.get("language",""), level=body.get("level",""), flag_emoji=body.get("flag_emoji",""), instructor_id=current_user.id, price=body.get("price",49.99))
+    course = Course(
+        title=body["title"],
+        description=body.get("description", ""),
+        language=body.get("language", ""),
+        level=body.get("level", ""),
+        flag_emoji=body.get("flag_emoji", ""),
+        thumbnail_url=body.get("thumbnail_url", ""),
+        instructor_id=current_user.id,
+        price=body.get("price", 49.99)
+    )
     db.add(course); db.commit(); db.refresh(course)
-    return {"id": course.id}
+    return {"id": course.id, "title": course.title, "status": course.status}
 
 @router.patch("/courses/{course_id}")
 def update_course(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
-    if course:
-        for k, v in body.items(): setattr(course, k, v)
-        db.commit()
+    if not course: return {"error": "not found"}
+    for k, v in body.items():
+        if hasattr(course, k): setattr(course, k, v)
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/courses/{course_id}")
+def delete_course(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if course: db.delete(course); db.commit()
+    return {"ok": True}
+
+@router.post("/courses/{course_id}/submit")
+def submit_for_review(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if course: course.status = "pending"; db.commit()
     return {"ok": True}
 
 @router.get("/live-sessions")

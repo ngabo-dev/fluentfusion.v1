@@ -2208,6 +2208,39 @@ export const studentApi = {
   },
 };
 
+// Messages API (unified — all roles)
+export const messagesApi = {
+  getThreads: () => apiCall<any[]>('/messages/threads'),
+  getThread: (peerId: number) => apiCall<any[]>(`/messages/thread/${peerId}`),
+  getContacts: (params?: { search?: string; role?: string; course_id?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.search) q.set('search', params.search)
+    if (params?.role) q.set('role', params.role)
+    if (params?.course_id) q.set('course_id', String(params.course_id))
+    const qs = q.toString()
+    return apiCall<any[]>(`/messages/contacts${qs ? `?${qs}` : ''}`)
+  },
+  getCoursesList: () => apiCall<any[]>('/messages/courses-list'),
+  send: (content: string, recipient_ids: number[], attachment?: { url: string; type: string; name: string }) =>
+    apiCall<{ ok: boolean; sent_to: number }>('/messages/send', {
+      method: 'POST',
+      body: JSON.stringify({ content, recipient_ids, attachment_url: attachment?.url, attachment_type: attachment?.type, attachment_name: attachment?.name }),
+    }),
+  upload: async (file: File) => {
+    const token = localStorage.getItem('ff_access_token')
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch(`${API_BASE_URL}/messages/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+    const data = await res.json().catch(() => ({ ok: false }))
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Upload failed')
+    return data as { ok: boolean; url: string; attachment_type: string; attachment_name: string }
+  },
+}
+
 // ── Axios-compatible shim for legacy pages ──────────────────────────────────
 const _legacyBase = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api', '')

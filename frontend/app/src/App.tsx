@@ -19,13 +19,23 @@ import StudentNavbar from './components/StudentNavbar'
 import StudentSidebar from './components/StudentSidebar'
 import StudentDashboard from './pages/student/Dashboard'
 import MyCourses from './pages/student/MyCourses'
+import CourseCatalog from './pages/student/CourseCatalog'
+import CourseDetails from './pages/student/CourseDetails'
 import StudentLessons from './pages/student/Lessons'
+import LessonView from './pages/student/LessonView'
 import StudentLiveSessions from './pages/student/LiveSessions'
 import StudentQuizzes from './pages/student/Quizzes'
+import QuizPage from './pages/student/QuizPage'
 import StudentMessages from './pages/student/Messages'
 import Leaderboard from './pages/student/Leaderboard'
 import StudentNotifications from './pages/student/Notifications'
 import StudentSettings from './pages/student/Settings'
+import Progress from './pages/student/Progress'
+import Achievements from './pages/student/Achievements'
+import StreakTracker from './pages/student/StreakTracker'
+import DailyChallenge from './pages/student/DailyChallenge'
+import Flashcards from './pages/student/Flashcards'
+import SpeakingPractice from './pages/student/SpeakingPractice'
 
 // Admin pages
 import AdminNavbar from './components/AdminNavbar'
@@ -44,6 +54,7 @@ import Payments from './pages/admin/Payments'
 import Payouts from './pages/admin/Payouts'
 import Revenue from './pages/admin/Revenue'
 import PulseEngine from './pages/admin/PulseEngine'
+import AdminMessages from './pages/admin/Messages'
 import AdminNotifications from './pages/admin/Notifications'
 import AuditLog from './pages/admin/AuditLog'
 import PlatformSettings from './pages/admin/PlatformSettings'
@@ -65,6 +76,7 @@ import InstructorRevenue from './pages/instructor/Revenue'
 import InstructorPayouts from './pages/instructor/Payouts'
 import InstructorNotifications from './pages/instructor/Notifications'
 import InstructorSettings from './pages/instructor/Settings'
+import CreateCourse from './pages/instructor/CreateCourse'
 
 const Loading = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)', color: 'var(--neon)', fontFamily: 'JetBrains Mono', fontSize: 13 }}>
@@ -94,13 +106,23 @@ function StudentLayout() {
         <Routes>
           <Route path="/" element={<StudentDashboard />} />
           <Route path="/courses" element={<MyCourses />} />
+          <Route path="/catalog" element={<CourseCatalog />} />
+          <Route path="/catalog/:id" element={<CourseDetails />} />
           <Route path="/lessons" element={<StudentLessons />} />
+          <Route path="/lesson" element={<LessonView />} />
           <Route path="/live-sessions" element={<StudentLiveSessions />} />
           <Route path="/quizzes" element={<StudentQuizzes />} />
+          <Route path="/quiz" element={<QuizPage />} />
           <Route path="/messages" element={<StudentMessages />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/notifications" element={<StudentNotifications />} />
           <Route path="/settings" element={<StudentSettings />} />
+          <Route path="/progress" element={<Progress />} />
+          <Route path="/achievements" element={<Achievements />} />
+          <Route path="/streak" element={<StreakTracker />} />
+          <Route path="/daily-challenge" element={<DailyChallenge />} />
+          <Route path="/flashcards" element={<Flashcards />} />
+          <Route path="/speaking" element={<SpeakingPractice />} />
         </Routes>
       </main>
     </div>
@@ -119,23 +141,24 @@ function AdminLayout() {
       <AdminSidebar />
       <main className="main">
         <Routes>
-          <Route path="/" element={<AdminDashboard />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/geo" element={<GeoData />} />
-          <Route path="/users" element={<AllUsers />} />
-          <Route path="/students" element={<Students />} />
-          <Route path="/instructors" element={<Instructors />} />
-          <Route path="/admins" element={<Admins />} />
-          <Route path="/approvals" element={<CourseApprovals />} />
-          <Route path="/live-sessions" element={<AdminLiveSessions />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/payouts" element={<Payouts />} />
-          <Route path="/revenue" element={<Revenue />} />
-          <Route path="/pulse" element={<PulseEngine />} />
-          <Route path="/notifications" element={<AdminNotifications />} />
-          <Route path="/audit-log" element={<AuditLog />} />
-          <Route path="/settings" element={<PlatformSettings />} />
+          <Route index element={<AdminDashboard />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="geo" element={<GeoData />} />
+          <Route path="users" element={<AllUsers />} />
+          <Route path="students" element={<Students />} />
+          <Route path="instructors" element={<Instructors />} />
+          <Route path="admins" element={<Admins />} />
+          <Route path="approvals" element={<CourseApprovals />} />
+          <Route path="live-sessions" element={<AdminLiveSessions />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="payouts" element={<Payouts />} />
+          <Route path="revenue" element={<Revenue />} />
+          <Route path="pulse" element={<PulseEngine />} />
+          <Route path="messages" element={<AdminMessages />} />
+          <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="audit-log" element={<AuditLog />} />
+          <Route path="settings" element={<PlatformSettings />} />
         </Routes>
       </main>
     </div>
@@ -156,6 +179,7 @@ function InstructorLayout() {
           <Route path="/" element={<InstructorDashboard />} />
           <Route path="/analytics" element={<InstructorAnalytics />} />
           <Route path="/courses" element={<InstructorCourses />} />
+          <Route path="/courses/new" element={<CreateCourse />} />
           <Route path="/lessons" element={<InstructorLessons />} />
           <Route path="/live-sessions" element={<InstructorLiveSessions />} />
           <Route path="/quizzes" element={<InstructorQuizzes />} />

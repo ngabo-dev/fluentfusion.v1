@@ -29,6 +29,7 @@ class RoleEnum(str, enum.Enum):
     student = "student"
     instructor = "instructor"
     admin = "admin"
+    super_admin = "super_admin"
 
 class StatusEnum(str, enum.Enum):
     active = "active"
@@ -85,9 +86,11 @@ class Course(Base):
     __tablename__ = "courses"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
     language = Column(String)
     level = Column(String)
     flag_emoji = Column(String(4))
+    thumbnail_url = Column(String, nullable=True)
     status = Column(Enum(CourseStatusEnum), default=CourseStatusEnum.draft)
     instructor_id = Column(Integer, ForeignKey("users.id"))
     price = Column(Float, default=49.99)
@@ -195,6 +198,9 @@ class Message(Base):
     sender_id = Column(Integer, ForeignKey("users.id"))
     receiver_id = Column(Integer, ForeignKey("users.id"))
     content = Column(Text)
+    attachment_url = Column(String, nullable=True)
+    attachment_type = Column(String, nullable=True)  # image | audio | document
+    attachment_name = Column(String, nullable=True)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

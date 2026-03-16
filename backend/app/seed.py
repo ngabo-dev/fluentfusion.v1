@@ -19,6 +19,19 @@ def clear():
 def seed():
     clear()
 
+    # Super Admin (Jean Pierre — ngabo470@gmail.com)
+    super_admin = User(
+        name="Jean Pierre Niyongabo",
+        email="ngabo470@gmail.com",
+        hashed_password=hash_password("superadmin123"),
+        role=RoleEnum.super_admin,
+        status=StatusEnum.active,
+        avatar_initials="JP",
+        is_verified=True,
+        last_active=datetime.utcnow(),
+    )
+    db.add(super_admin)
+
     # Admins
     admins = [
         User(name="Chidi Okafor", email="c.okafor@fluentfusion.com", hashed_password=hash_password("admin123"), role=RoleEnum.admin, status=StatusEnum.active, avatar_initials="CO", is_verified=True, last_active=datetime.utcnow()),
@@ -273,6 +286,7 @@ def seed():
     db.commit()
 
     print("✅ Seed complete!")
+    print(f"  Super Admin: 1")
     print(f"  Admins: {db.query(User).filter(User.role==RoleEnum.admin).count()}")
     print(f"  Instructors: {db.query(User).filter(User.role==RoleEnum.instructor).count()}")
     print(f"  Students: {db.query(User).filter(User.role==RoleEnum.student).count()}")
@@ -281,9 +295,10 @@ def seed():
     print(f"  Payments: {db.query(Payment).count()}")
     print()
     print("Login credentials:")
-    print("  Admin:      c.okafor@fluentfusion.com / admin123")
-    print("  Instructor: a.ndiaye@ff.com / instructor123")
-    print("  Student:    k.larbi@gmail.com / student123")
+    print("  Super Admin: ngabo470@gmail.com / superadmin123")
+    print("  Admin:       c.okafor@fluentfusion.com / admin123")
+    print("  Instructor:  a.ndiaye@ff.com / instructor123")
+    print("  Student:     k.larbi@gmail.com / student123")
 
 if __name__ == "__main__":
     seed()
