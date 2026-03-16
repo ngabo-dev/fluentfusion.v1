@@ -45,6 +45,16 @@ def update_user_status(user_id: int, body: dict, db: Session = Depends(get_db), 
     db.commit()
     return {"ok": True}
 
+@router.patch("/users/{user_id}")
+def update_user(user_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user: return {"error": "not found"}
+    if "name" in body: user.name = body["name"]
+    if "email" in body: user.email = body["email"]
+    if "role" in body and body["role"] in ("student", "instructor", "admin"): user.role = body["role"]
+    db.commit()
+    return {"ok": True}
+
 @router.get("/instructors")
 def list_instructors(db: Session = Depends(get_db), _=Depends(guard)):
     instructors = db.query(User).filter(User.role == RoleEnum.instructor).all()
@@ -307,16 +317,18 @@ def delete_admin(user_id: int, db: Session = Depends(get_db), current_user: User
     return {"ok": True}
 
 @router.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(super_guard)):
-    """Super admin permanently deletes any user."""
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="User not found")
+    if user.role == RoleEnum.super_admin:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Cannot delete super admin")
     email = user.email
     db.delete(user); db.commit()
     from app.models import AuditLog
-    db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Super admin permanently deleted user: {email}"))
+    db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Admin deleted user: {email}"))
     db.commit()
     return {"ok": True}
 
