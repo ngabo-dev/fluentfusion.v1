@@ -24,11 +24,19 @@ def send_email(to: str, subject: str, html: str) -> bool:
         msg["From"]    = f"{FROM_NAME} <{FROM_EMAIL}>"
         msg["To"]      = to
         msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
-            s.ehlo()
-            s.starttls()
-            s.login(SMTP_USER, SMTP_PASSWORD)
-            s.sendmail(FROM_EMAIL, to, msg.as_string())
+        password = SMTP_PASSWORD.strip()
+        try:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+                s.ehlo()
+                s.starttls()
+                s.ehlo()
+                s.login(SMTP_USER, password)
+                s.sendmail(FROM_EMAIL, to, msg.as_string())
+        except Exception:
+            with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=15) as s:
+                s.login(SMTP_USER, password)
+                s.sendmail(FROM_EMAIL, to, msg.as_string())
+        print(f"[EMAIL SENT] To: {to} | Subject: {subject}")
         return True
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")
