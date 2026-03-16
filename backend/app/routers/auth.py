@@ -6,7 +6,7 @@ from app.auth import verify_password, hash_password, create_access_token, get_cu
 from app.email_utils import send_otp_email, send_reset_email, send_welcome_email
 from pydantic import BaseModel
 from datetime import datetime, timedelta
-import random, secrets, os, threading
+import random, secrets, os
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -51,7 +51,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    threading.Thread(target=send_otp_email, args=(user.email, user.name, otp), daemon=True).start()
+    send_otp_email(user.email, user.name, otp)
     token = create_access_token({"sub": str(user.id), "role": user.role})
     return {"access_token": token, "token_type": "bearer", "role": user.role, "name": user.name, "id": user.id, "is_first_login": True}
 
@@ -68,7 +68,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     if is_first:
         user.first_login = False
         db.commit()
-        threading.Thread(target=send_welcome_email, args=(user.email, user.name, str(user.role)), daemon=True).start()
+        send_welcome_email(user.email, user.name, str(user.role))
     user.last_active = datetime.utcnow()
     db.commit()
     token = create_access_token({"sub": str(user.id), "role": user.role})
@@ -102,8 +102,7 @@ def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)):
     user.otp_code = None
     user.otp_expiry = None
     db.commit()
-    # Welcome email is sent after verification — first_login stays True until first actual login
-    threading.Thread(target=send_welcome_email, args=(user.email, user.name, str(user.role)), daemon=True).start()
+    send_welcome_email(user.email, user.name, str(user.role))
     return {"message": "Email verified successfully", "role": str(user.role)}
 
 @router.post("/resend-verification")
@@ -117,7 +116,7 @@ def resend_verification(body: ResendRequest, db: Session = Depends(get_db)):
     user.otp_code = otp
     user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
     db.commit()
-    threading.Thread(target=send_otp_email, args=(user.email, user.name, otp), daemon=True).start()
+    send_otp_email(user.email, user.name, otp)
     return {"message": "Verification code resent"}
 
 
@@ -140,7 +139,7 @@ def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
         user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
         db.commit()
         reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-        threading.Thread(target=send_reset_email, args=(user.email, user.name, reset_link), daemon=True).start()
+        send_reset_email(user.email, user.name, reset_link)
     return {"message": "If this email exists, a reset link has been sent."}
 
 @router.post("/reset-password")
