@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "re_UBSgYEG4_Pe8b8s9LwXrBuT9WVghyL7ox")
 FROM_EMAIL     = os.getenv("FROM_EMAIL", "onboarding@resend.dev")
 FROM_NAME      = os.getenv("FROM_NAME", "FluentFusion AI")
 EMAIL_ENABLED  = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
