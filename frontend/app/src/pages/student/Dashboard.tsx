@@ -20,8 +20,8 @@ export default function Dashboard() {
           <p>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="pa">
-          <button className="btn bp" onClick={() => nav('/courses')}>📚 My Courses</button>
-          <button className="btn bo sm" onClick={() => nav('/live-sessions')}>🎙️ Live</button>
+          <button className="btn bp" onClick={() => nav('/dashboard/courses')}>📚 My Courses</button>
+          <button className="btn bo sm" onClick={() => nav('/dashboard/live-sessions')}>🎙️ Live</button>
         </div>
       </div>
 
@@ -56,11 +56,11 @@ export default function Dashboard() {
         <div className="card">
           <div className="ch">
             <span className="ch-t">My Courses</span>
-            <span className="ch-a" onClick={() => nav('/courses')}>View All →</span>
+            <span className="ch-a" onClick={() => nav('/dashboard/courses')}>View All →</span>
           </div>
           {data.enrolled_courses?.length === 0 && <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0', textAlign: 'center' }}>No courses enrolled yet</div>}
           {data.enrolled_courses?.slice(0, 4).map((c: any) => (
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,.04)', cursor: 'pointer' }} onClick={() => nav('/courses')}>
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,.04)', cursor: 'pointer' }} onClick={() => nav('/dashboard/courses')}>
               <div style={{ width: 36, height: 36, background: 'rgba(191,255,0,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{c.flag_emoji}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.title}</div>
@@ -79,7 +79,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="ch">
             <span className="ch-t">Upcoming Sessions</span>
-            <span className="ch-a" onClick={() => nav('/live-sessions')}>All →</span>
+            <span className="ch-a" onClick={() => nav('/dashboard/live-sessions')}>All →</span>
           </div>
           {data.upcoming_sessions?.length === 0 && <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0', textAlign: 'center' }}>No upcoming sessions</div>}
           {data.upcoming_sessions?.map((s: any) => {

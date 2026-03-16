@@ -24,7 +24,7 @@ export default function MyCourses() {
       {filtered.length === 0 && <div style={{ color: 'var(--mu)', textAlign: 'center', padding: 40, fontFamily: 'JetBrains Mono', fontSize: 11 }}>No courses found</div>}
       <div className="g3">
         {filtered.map(c => (
-          <div key={c.id} className="card" style={{ padding: 0, cursor: 'pointer' }} onClick={() => nav('/lessons', { state: { courseId: c.id, courseTitle: c.title } })}>
+          <div key={c.id} className="card" style={{ padding: 0, cursor: 'pointer' }} onClick={() => nav('/dashboard/lessons', { state: { courseId: c.id, courseTitle: c.title } })}>
             <div style={{ height: 110, background: 'linear-gradient(135deg,#1a2a0a,#0f1f05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44, position: 'relative', borderRadius: '14px 14px 0 0' }}>
               {c.flag_emoji}
               <div style={{ position: 'absolute', top: 8, right: 8 }}>
@@ -46,10 +46,10 @@ export default function MyCourses() {
               </div>
               <div className="pt" style={{ marginBottom: 12 }}><div className="pf" style={{ width: `${c.completion}%` }} /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <button className="btn bp sm" onClick={e => { e.stopPropagation(); nav('/lessons', { state: { courseId: c.id, courseTitle: c.title } }) }}>
+                <button className="btn bp sm" onClick={e => { e.stopPropagation(); nav('/dashboard/lessons', { state: { courseId: c.id, courseTitle: c.title } }) }}>
                   ▶ Continue
                 </button>
-                <button className="btn bo sm" onClick={e => { e.stopPropagation(); nav('/quizzes') }}>
+                <button className="btn bo sm" onClick={e => { e.stopPropagation(); nav('/dashboard/quizzes') }}>
                   📝 Quiz
                 </button>
               </div>
