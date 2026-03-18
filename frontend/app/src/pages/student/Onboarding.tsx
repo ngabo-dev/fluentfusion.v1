@@ -190,6 +190,19 @@ export function OnboardLevel() {
   function finish() {
     if (!selected) return
     localStorage.setItem('onboarding_level', selected)
+    // Persist all onboarding data to DB
+    const token = localStorage.getItem('ff_access_token')
+    const payload = {
+      native_lang: localStorage.getItem('onboarding_native_lang'),
+      learn_lang: localStorage.getItem('onboarding_learn_lang'),
+      goal: localStorage.getItem('onboarding_goal'),
+      level: selected,
+    }
+    fetch(`${API_BASE_URL}/student/onboarding`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(payload),
+    }).catch(() => {}) // fire-and-forget — localStorage is the fallback
     nav('/dashboard')
   }
 

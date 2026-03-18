@@ -3,15 +3,26 @@ import api from '../../api/client'
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState<any[]>([])
+  const [stats, setStats] = useState({ all: 0, students: 0, instructors: 0 })
   const [form, setForm] = useState({ title: '', message: '', target: 'all' })
   const [emailToggle, setEmailToggle] = useState(true)
   const [pushToggle, setPushToggle] = useState(false)
 
-  useEffect(() => { api.get('/api/admin/notifications').then(r => setNotifs(r.data)) }, [])
+  useEffect(() => {
+    api.get('/api/admin/notifications').then(r => setNotifs(r.data))
+    api.get('/api/admin/users', { params: { role: 'student' } }).then(r => {
+      const students = Array.isArray(r.data) ? r.data.length : 0
+      api.get('/api/admin/users', { params: { role: 'instructor' } }).then(r2 => {
+        const instructors = Array.isArray(r2.data) ? r2.data.length : 0
+        setStats({ students, instructors, all: students + instructors })
+      })
+    })
+  }, [])
 
   async function send() {
     if (!form.title || !form.message) return
-    await api.post('/api/admin/notifications', { ...form, recipients: form.target === 'all' ? 28441 : form.target === 'instructors' ? 312 : 24820 })
+    const recipients = form.target === 'all' ? stats.all : form.target === 'instructors' ? stats.instructors : stats.students
+    await api.post('/api/admin/notifications', { ...form, recipients })
     setForm({ title: '', message: '', target: 'all' })
     api.get('/api/admin/notifications').then(r => setNotifs(r.data))
   }

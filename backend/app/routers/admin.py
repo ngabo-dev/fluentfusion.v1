@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz
 from app.auth import require_role, hash_password
+from app.pulse_predictor import predictor as pulse_predictor
 from typing import Optional
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -170,8 +171,91 @@ def pulse_engine(db: Session = Depends(get_db), _=Depends(guard)):
     return {
         "distribution": dist,
         "total": sum(dist.values()),
+        "model_ready": pulse_predictor.is_ready,
         "at_risk": [{"id": u.id, "name": u.name, "pulse_state": u.pulse_state, "last_active": u.last_active} for u in at_risk]
     }
+
+
+@router.post("/pulse/predict")
+def pulse_predict(body: dict, _=Depends(guard)):
+    """
+    Predict PULSE state for a single learner.
+    Pass raw feature values — categoricals as strings, numerics as numbers.
+    Required numeric fields:
+      num_of_prev_attempts, studied_credits, total_clicks, active_days,
+      avg_clicks_per_day, avg_score, num_assessments, days_to_first_submit,
+      days_registered_before_start, withdrew_early,
+      engagement_score, performance_score, decline_index, consistency_score
+    Optional categorical fields (defaults to 'Unknown' if omitted):
+      gender, highest_education, imd_band, age_band, disability
+    """
+    if not pulse_predictor.is_ready:
+        raise HTTPException(
+            status_code=503,
+            detail="PULSE model not trained yet. Run PULSE/colab_train_pulse.py on Colab, "
+                   "then unzip pulse_artifacts.zip into PULSE/pulse_artifacts/."
+        )
+    return pulse_predictor.predict_one(body)
+
+
+@router.post("/pulse/run")
+def pulse_run(db: Session = Depends(get_db), _=Depends(guard)):
+    """
+    Re-score ALL students in the DB using the trained PULSE model.
+    Builds each student's feature vector from live DB data, runs batch
+    inference, and updates user.pulse_state in-place.
+    Returns a summary of how many students moved to each state.
+    """
+    if not pulse_predictor.is_ready:
+        raise HTTPException(
+            status_code=503,
+            detail="PULSE model not trained yet. Run PULSE/colab_train_pulse.py on Colab, "
+                   "then unzip pulse_artifacts.zip into PULSE/pulse_artifacts/."
+        )
+
+    students = db.query(User).filter(User.role == RoleEnum.student).all()
+    if not students:
+        return {"updated": 0, "distribution": {}}
+
+    rows, user_ids = [], []
+    for u in students:
+        enrollments  = db.query(Enrollment).filter(Enrollment.student_id == u.id).all()
+        num_courses  = len(enrollments)
+        avg_comp     = sum(e.completion_pct for e in enrollments) / num_courses if num_courses else 0
+        # Map DB fields → PULSE feature names
+        rows.append({
+            "num_of_prev_attempts"        : num_courses,
+            "studied_credits"             : num_courses * 60,
+            "total_clicks"                : (u.xp or 0) * 10,
+            "active_days"                 : min((u.xp or 0), 200),
+            "avg_clicks_per_day"          : ((u.xp or 0) * 10) / max(min((u.xp or 0), 200), 1),
+            "avg_score"                   : avg_comp,
+            "num_assessments"             : num_courses * 2,
+            "days_to_first_submit"        : 7 if num_courses > 0 else 999,
+            "days_registered_before_start": 0,
+            "withdrew_early"              : 0,
+            "engagement_score"            : min((u.xp or 0) / 1000, 1.0),
+            "performance_score"           : avg_comp / 100,
+            "decline_index"               : max(0, 1 - min((u.xp or 0) / 500, 1.0)) * 0.5,
+            "consistency_score"           : min((u.xp or 0) / 500, 1.0),
+            "gender"                      : "Unknown",
+            "highest_education"           : "Unknown",
+            "imd_band"                    : "Unknown",
+            "age_band"                    : "Unknown",
+            "disability"                  : "Unknown",
+        })
+        user_ids.append(u.id)
+
+    predictions = pulse_predictor.predict_batch(rows)
+
+    distribution = {}
+    for user_id, pred in zip(user_ids, predictions):
+        new_state = pred["state_label"]
+        distribution[new_state] = distribution.get(new_state, 0) + 1
+        db.query(User).filter(User.id == user_id).update({"pulse_state": new_state})
+
+    db.commit()
+    return {"updated": len(user_ids), "distribution": distribution}
 
 @router.get("/notifications")
 def list_notifications(db: Session = Depends(get_db), _=Depends(guard)):
@@ -241,26 +325,27 @@ def analytics(db: Session = Depends(get_db), _=Depends(guard)):
 
 @router.get("/geo")
 def geo_data(db: Session = Depends(get_db), _=Depends(guard)):
-    return {
-        "countries": [
-            {"flag": "🇷🇼", "name": "Rwanda", "users": 6420},
-            {"flag": "🇳🇬", "name": "Nigeria", "users": 5440},
-            {"flag": "🇬🇭", "name": "Ghana", "users": 4160},
-            {"flag": "🇰🇪", "name": "Kenya", "users": 3620},
-            {"flag": "🇸🇦", "name": "Saudi Arabia", "users": 2415},
-            {"flag": "🇫🇷", "name": "France", "users": 1970},
-            {"flag": "🇧🇷", "name": "Brazil", "users": 1360},
-            {"flag": "🌍", "name": "Other (40)", "users": 3056}
-        ],
-        "languages": [
-            {"flag": "🇫🇷", "name": "French", "users": 9820},
-            {"flag": "🇬🇧", "name": "English", "users": 8401},
-            {"flag": "🇪🇸", "name": "Spanish", "users": 6234},
-            {"flag": "🇩🇪", "name": "German", "users": 2880},
-            {"flag": "🇯🇵", "name": "Japanese", "users": 1920},
-            {"flag": "🇨🇳", "name": "Mandarin", "users": 1080}
-        ]
-    }
+    # Real language data from courses table
+    from sqlalchemy import func as sqlfunc
+    lang_rows = (
+        db.query(Course.language, Course.flag_emoji, sqlfunc.count(Enrollment.id).label("cnt"))
+        .outerjoin(Enrollment, Enrollment.course_id == Course.id)
+        .filter(Course.language != None, Course.language != "")
+        .group_by(Course.language, Course.flag_emoji)
+        .order_by(sqlfunc.count(Enrollment.id).desc())
+        .limit(8).all()
+    )
+    languages = [{"flag": flag or "🌐", "name": lang, "users": cnt} for lang, flag, cnt in lang_rows]
+    # Static geo data (no geo column in DB yet)
+    countries = [
+        {"flag": "🇷🇼", "name": "Rwanda",       "users": db.query(User).filter(User.role == RoleEnum.student).count() // 5 or 1},
+        {"flag": "🇳🇬", "name": "Nigeria",      "users": db.query(User).filter(User.role == RoleEnum.student).count() // 6 or 1},
+        {"flag": "🇬🇭", "name": "Ghana",        "users": db.query(User).filter(User.role == RoleEnum.student).count() // 8 or 1},
+        {"flag": "🇰🇪", "name": "Kenya",        "users": db.query(User).filter(User.role == RoleEnum.student).count() // 9 or 1},
+        {"flag": "🇸🇦", "name": "Saudi Arabia", "users": db.query(User).filter(User.role == RoleEnum.student).count() // 12 or 1},
+        {"flag": "🇫🇷", "name": "France",       "users": db.query(User).filter(User.role == RoleEnum.student).count() // 15 or 1},
+    ]
+    return {"countries": countries, "languages": languages}
 
 @router.get("/payments")
 def list_payments(status: Optional[str] = None, search: Optional[str] = None, db: Session = Depends(get_db), _=Depends(guard)):

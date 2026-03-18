@@ -9,26 +9,10 @@ export default function Leaderboard() {
   const { user } = useAuth()
   const [students, setStudents] = useState<any[]>([])
   useEffect(() => {
-    // Use instructor student roster as leaderboard data source
-    api.get('/api/student/courses').then(async r => {
-      // Build a mock leaderboard from enrolled course data
-      const mockBoard = [
-        { id: 1, name: 'Kofi Larbi', avatar_initials: 'KL', xp: 2840, pulse_state: 'thriving', courses: 3 },
-        { id: 2, name: 'Amara Diallo', avatar_initials: 'AD', xp: 2610, pulse_state: 'thriving', courses: 4 },
-        { id: 3, name: 'Yuki Tanaka', avatar_initials: 'YT', xp: 2390, pulse_state: 'coasting', courses: 2 },
-        { id: 4, name: 'Sofia Reyes', avatar_initials: 'SR', xp: 2150, pulse_state: 'coasting', courses: 3 },
-        { id: 5, name: 'Lena Müller', avatar_initials: 'LM', xp: 1980, pulse_state: 'coasting', courses: 2 },
-        { id: 6, name: 'Tariq Hassan', avatar_initials: 'TH', xp: 1740, pulse_state: 'struggling', courses: 2 },
-        { id: 7, name: 'Priya Nair', avatar_initials: 'PN', xp: 1520, pulse_state: 'coasting', courses: 1 },
-        { id: 8, name: 'Marco Rossi', avatar_initials: 'MR', xp: 1310, pulse_state: 'struggling', courses: 1 },
-        { id: 9, name: 'Aiko Sato', avatar_initials: 'AS', xp: 1100, pulse_state: 'disengaged', courses: 1 },
-        { id: 10, name: 'Chidi Obi', avatar_initials: 'CO', xp: 890, pulse_state: 'disengaged', courses: 1 },
-      ]
-      setStudents(mockBoard)
-    })
+    api.get('/api/student/leaderboard').then(r => setStudents(Array.isArray(r.data) ? r.data : []))
   }, [])
 
-  const myRank = students.findIndex(s => s.name === user?.name) + 1
+  const myRank = students.find(s => s.is_me)?.rank ?? 0
 
   return (
     <div className="pg">

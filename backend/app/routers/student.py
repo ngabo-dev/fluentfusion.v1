@@ -144,3 +144,35 @@ def update_profile(body: dict, db: Session = Depends(get_db), current_user: User
         if hasattr(current_user, k): setattr(current_user, k, v)
     db.commit()
     return {"ok": True}
+
+@router.get("/leaderboard")
+def leaderboard(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    students = db.query(User).filter(User.role == RoleEnum.student).order_by(User.xp.desc()).limit(50).all()
+    result = []
+    for i, s in enumerate(students):
+        course_count = db.query(Enrollment).filter(Enrollment.student_id == s.id).count()
+        result.append({
+            "rank": i + 1,
+            "id": s.id,
+            "name": s.name,
+            "avatar_initials": s.avatar_initials,
+            "xp": s.xp or 0,
+            "pulse_state": s.pulse_state,
+            "courses": course_count,
+            "is_me": s.id == current_user.id,
+        })
+    return result
+
+@router.post("/onboarding")
+def save_onboarding(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    """Persist onboarding selections to user profile bio field as JSON."""
+    import json
+    data = {
+        "native_lang": body.get("native_lang"),
+        "learn_lang": body.get("learn_lang"),
+        "goal": body.get("goal"),
+        "level": body.get("level"),
+    }
+    current_user.bio = json.dumps(data)
+    db.commit()
+    return {"ok": True}
