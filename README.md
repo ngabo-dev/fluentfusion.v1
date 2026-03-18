@@ -12,46 +12,28 @@
 ---
 
 ## 📺 Demo Video
-
-▶️ [Watch the Demo Video](#) <!-- TODO: Replace # with your demo video URL -->
+▶️ [Watch the Demo Video](#)
 
 ## 🌐 Live App
-
-🚀 [Open the Live App](#) <!-- TODO: Replace # with your deployed app URL -->
-
----
-
-## 📋 Table of Contents
-
-- [About the Project](#-about-the-project)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Prerequisites](#-prerequisites)
-- [Installation & Setup](#-installation--setup)
-- [Environment Variables](#-environment-variables)
-- [Running the Application](#-running-the-application)
-- [API Overview](#-api-overview)
-- [Design System](#-design-system)
-- [User Roles & Flow](#-user-roles--flow)
-- [Roadmap](#-roadmap)
-- [Author](#-author)
-- [License](#-license)
+🚀 [Open the Live App](https://fluentfusionv1.vercel.app/)
+🔧 [Backend API](https://fluentfusion-v1.onrender.com)
+📖 [Swagger Docs](https://fluentfusion-v1.onrender.com/docs)
 
 ---
 
 ## 🎯 About the Project
 
-FluentFusion is a full-stack language learning platform built for the ALU Capstone Project. It combines a modern React frontend with a FastAPI backend connected to a cloud-hosted PostgreSQL database (Aiven).
+FluentFusion is a full-stack language learning platform built for the ALU Capstone Project. It combines a React + TypeScript frontend with a FastAPI backend connected to a cloud-hosted PostgreSQL database (Aiven).
 
-The platform supports **three roles** — Students, Instructors, and Admins — each with a fully dedicated dashboard, sidebar navigation, and feature set.
+Three roles — **Students, Instructors, Admins** — each with a fully dedicated dashboard, sidebar navigation, and feature set.
 
 Key highlights:
-- 🔐 **JWT Authentication** — Register, login, OTP email verification, and password reset via SMTP
-- 🎓 **4-Step Onboarding** — Native language → target language → learning goal → proficiency level
-- 📊 **Role-Based Dashboards** — Separate layouts and routes for students, instructors, and admins
-- 📧 **Real Email Delivery** — OTP codes and password reset links sent via Gmail SMTP
-- 🌍 **Public Pages** — Welcome, Features, Pricing, and Community pages with live platform stats
+- 🔐 **JWT Authentication** — Register, login, OTP email verification, password reset
+- 🎓 **4-Step Onboarding** — Native language → target language → goal → level (persisted to DB)
+- 📊 **Role-Based Dashboards** — Separate layouts and routes for all three roles
+- 📧 **Dual Email Provider** — Resend API (production) with SMTP fallback (local dev)
+- 🧠 **PULSE ML Engine** — Classifies learners into 5 behavioural states using OULAD dataset
+- 🌍 **Public Pages** — Welcome, Features, Pricing, Community with live platform stats
 
 ---
 
@@ -61,23 +43,19 @@ Key highlights:
 
 | Feature | Details |
 |---|---|
-| Authentication | Email/password signup & login, JWT tokens, OTP email verification, password reset via email link |
-| Onboarding | 4-step progressive setup: native language → target language → goal → proficiency level. Resumes from last completed step |
-| Student Dashboard | XP tracking, streak, course progress, live session reminders, leaderboard, quizzes, messages |
-| Instructor Dashboard | Course management, student roster, live sessions, quizzes, revenue, payouts, analytics, pulse insights |
-| Admin Dashboard | User management, course approvals, analytics, geo data, payments, revenue, audit log, platform settings, pulse engine |
-| Email System | OTP verification codes + password reset links via Gmail SMTP (branded HTML emails) |
-| Remember Me | Checked → persists in `localStorage`; unchecked → session-only via `sessionStorage` |
-| Public Pages | Welcome (with live stats), Features, Pricing (monthly/annual toggle), Community |
-| Role Routing | After login: admin → `/admin`, instructor → `/instructor`, student → onboarding or `/dashboard` |
-| Platform Stats | Live learner count, instructor count, course count fetched from `/api/stats` |
+| Authentication | Email/password signup & login, JWT, OTP verification, password reset |
+| Onboarding | 4-step setup persisted to DB: native lang → learn lang → goal → level |
+| Student Dashboard | XP, pulse state, enrolled courses, live sessions, leaderboard (real DB data) |
+| Instructor Dashboard | Courses, students, sessions, quizzes, revenue, payouts, analytics, pulse insights |
+| Admin Dashboard | User management, course approvals, analytics, geo data, payments, revenue, audit log, pulse engine, settings |
+| Leaderboard | Real XP rankings from DB — top 50 students ordered by XP |
+| Messaging | Unified messages system for all roles with file/image/audio attachments |
+| Email System | OTP + welcome emails per role + password reset via Resend API / SMTP fallback |
+| PULSE ML | 5-state learner classifier trained on OULAD dataset (32k real students) |
+| Public Pages | Welcome (live stats), Features, Pricing (monthly/annual), Community |
 
 ### 🔜 Coming Soon
-
-- Course catalog & lesson player
-- Practice exercises (vocabulary, grammar, speaking, listening)
-- Live session booking & video interface
-- Community forums UI
+- Live session video interface
 - Certificate generation
 - Mobile app (React Native)
 
@@ -86,29 +64,29 @@ Key highlights:
 ## 🛠️ Tech Stack
 
 ### Frontend
-
 | Technology | Version | Purpose |
 |---|---|---|
 | React | 18.3.1 | UI framework |
 | TypeScript | 5.4.5 | Type safety |
-| Vite | 5.3.1 | Build tool & dev server |
+| Vite | 5.3.1 | Build tool |
 | React Router DOM | 6.23.1 | Client-side routing |
-| Axios | 1.7.2 | HTTP client (legacy shim) |
 
 ### Backend
-
 | Technology | Version | Purpose |
 |---|---|---|
-| FastAPI | 0.111.0 | REST API framework |
-| Uvicorn | 0.29.0 | ASGI server |
+| FastAPI | 0.111.0 | REST API |
 | PostgreSQL | 15 (Aiven cloud) | Primary database |
 | SQLAlchemy | 2.0.30 | ORM |
-| Psycopg2 | 2.9.9 | PostgreSQL driver |
-| Python-Jose | 3.3.0 | JWT token signing |
-| Passlib + bcrypt | 1.7.4 / 4.0.1 | Password hashing |
-| Python-dotenv | 1.0.1 | Environment config |
-| Faker | 24.11.0 | Database seeding |
-| smtplib (stdlib) | — | SMTP email delivery |
+| Python-Jose | 3.3.0 | JWT |
+| Resend | 2.24.0 | Email delivery (production) |
+| smtplib | stdlib | Email fallback (local dev) |
+
+### ML (PULSE)
+| Technology | Purpose |
+|---|---|
+| scikit-learn | Model training (GradientBoostingClassifier) |
+| pandas / numpy | Feature engineering from OULAD dataset |
+| OULAD Dataset | 32k real Open University students — ground truth labels |
 
 ---
 
@@ -116,184 +94,106 @@ Key highlights:
 
 ```
 Instructo&admin/
-├── backend/                        # Python FastAPI backend
+├── backend/
 │   ├── app/
-│   │   ├── routers/                # API route handlers
-│   │   │   ├── auth.py             # Register, login, verify-email, forgot/reset-password
-│   │   │   ├── admin.py            # Admin-only endpoints
-│   │   │   ├── instructor.py       # Instructor endpoints
-│   │   │   └── student.py          # Student endpoints
-│   │   ├── auth.py                 # JWT helpers, password hashing, get_current_user
-│   │   ├── email_utils.py          # SMTP email sender, OTP & reset email templates
-│   │   ├── models.py               # SQLAlchemy models (User, Course, Enrollment, etc.)
-│   │   ├── main.py                 # FastAPI app entry point, CORS, /api/stats
-│   │   └── seed.py                 # Database seeding script
-│   ├── .env                        # Backend environment variables
-│   ├── ca.pem                      # Aiven SSL certificate
-│   └── requirements.txt            # Python dependencies
+│   │   ├── routers/
+│   │   │   ├── auth.py          # register, login, verify-email, forgot/reset-password
+│   │   │   ├── admin.py         # all /api/admin/* endpoints
+│   │   │   ├── instructor.py    # all /api/instructor/* endpoints
+│   │   │   ├── student.py       # all /api/student/* endpoints + leaderboard + onboarding
+│   │   │   └── messages.py      # unified messaging for all roles
+│   │   ├── auth.py              # JWT helpers, password hashing
+│   │   ├── email_utils.py       # Resend → SMTP fallback, role-specific welcome emails
+│   │   ├── models.py            # SQLAlchemy models
+│   │   ├── main.py              # FastAPI app, CORS, /api/stats
+│   │   └── seed.py              # DB seeding script
+│   ├── .env
+│   ├── ca.pem                   # Aiven SSL certificate
+│   └── requirements.txt
 │
-├── frontend/
-│   └── app/                        # Single unified Vite app (port 5173)
-│       ├── public/
-│       │   └── favicon.svg
-│       ├── src/
-│       │   ├── api/
-│       │   │   └── client.ts       # Full API client (authApi, adminApi, instructorApi, etc.)
-│       │   ├── components/
-│       │   │   ├── AuthContext.tsx  # Global auth state (token, user, login, register, logout)
-│       │   │   ├── AdminNavbar.tsx / AdminSidebar.tsx
-│       │   │   ├── InstructorNavbar.tsx / InstructorSidebar.tsx
-│       │   │   ├── StudentNavbar.tsx / StudentSidebar.tsx
-│       │   │   ├── Avatar.tsx
-│       │   │   ├── Badge.tsx
-│       │   │   ├── BarChart.tsx
-│       │   │   ├── Progress.tsx
-│       │   │   └── StatCard.tsx
-│       │   ├── pages/
-│       │   │   ├── student/
-│       │   │   │   ├── Welcome.tsx         # Landing page with live stats
-│       │   │   │   ├── Signup.tsx          # Registration → email verify
-│       │   │   │   ├── Login.tsx           # Login with remember me
-│       │   │   │   ├── ForgotPassword.tsx  # Request reset email
-│       │   │   │   ├── ResetPassword.tsx   # Set new password via token
-│       │   │   │   ├── EmailVerify.tsx     # 6-digit OTP verification
-│       │   │   │   ├── Onboarding.tsx      # 4 steps: native lang, learn lang, goal, level
-│       │   │   │   ├── Dashboard.tsx
-│       │   │   │   ├── MyCourses.tsx
-│       │   │   │   ├── Lessons.tsx
-│       │   │   │   ├── LiveSessions.tsx
-│       │   │   │   ├── Quizzes.tsx
-│       │   │   │   ├── Messages.tsx
-│       │   │   │   ├── Leaderboard.tsx
-│       │   │   │   ├── Notifications.tsx
-│       │   │   │   ├── Settings.tsx
-│       │   │   │   ├── Pricing.tsx         # Monthly/annual toggle
-│       │   │   │   ├── Features.tsx
-│       │   │   │   └── Community.tsx
-│       │   │   ├── instructor/             # 15 instructor pages
-│       │   │   │   ├── Dashboard.tsx
-│       │   │   │   ├── MyCourses.tsx
-│       │   │   │   ├── Lessons.tsx
-│       │   │   │   ├── LiveSessions.tsx
-│       │   │   │   ├── Quizzes.tsx
-│       │   │   │   ├── StudentRoster.tsx
-│       │   │   │   ├── PulseInsights.tsx
-│       │   │   │   ├── Messages.tsx
-│       │   │   │   ├── Reviews.tsx
-│       │   │   │   ├── Revenue.tsx
-│       │   │   │   ├── Payouts.tsx
-│       │   │   │   ├── Analytics.tsx
-│       │   │   │   ├── Notifications.tsx
-│       │   │   │   └── Settings.tsx
-│       │   │   └── admin/                  # 18 admin pages
-│       │   │       ├── Dashboard.tsx
-│       │   │       ├── Analytics.tsx
-│       │   │       ├── GeoData.tsx
-│       │   │       ├── AllUsers.tsx
-│       │   │       ├── Students.tsx
-│       │   │       ├── Instructors.tsx
-│       │   │       ├── Admins.tsx
-│       │   │       ├── CourseApprovals.tsx
-│       │   │       ├── LiveSessions.tsx
-│       │   │       ├── Reports.tsx
-│       │   │       ├── Payments.tsx
-│       │   │       ├── Payouts.tsx
-│       │   │       ├── Revenue.tsx
-│       │   │       ├── PulseEngine.tsx
-│       │   │       ├── Notifications.tsx
-│       │   │       ├── AuditLog.tsx
-│       │   │       └── PlatformSettings.tsx
-│       │   ├── App.tsx                     # Role-based routing
-│       │   ├── index.css                   # Global styles & CSS variables
-│       │   └── main.tsx                    # React entry point
-│       ├── .env                            # Frontend environment variables
-│       ├── package.json
-│       ├── tsconfig.json
-│       └── vite.config.ts
+├── frontend/app/
+│   ├── src/
+│   │   ├── api/client.ts        # All API calls (legacy shim + typed APIs)
+│   │   ├── components/          # Shared UI components + AuthContext
+│   │   ├── pages/
+│   │   │   ├── admin/           # 18 admin pages
+│   │   │   ├── instructor/      # 15 instructor pages
+│   │   │   └── student/         # 28 student pages
+│   │   └── App.tsx              # Role-based routing
+│   ├── .env
+│   └── vite.config.ts
 │
-├── start.sh                        # One-command startup script
-└── README.md                       # This file
+├── PULSE/
+│   └── PULSE_ML_Notebook.ipynb  # Full ML pipeline — OULAD data → trained model
+│
+├── archive/                     # OULAD dataset files
+│   ├── studentInfo.csv
+│   ├── studentAssessment.csv
+│   ├── studentRegistration.csv
+│   ├── studentVle_0-7.csv
+│   ├── assessments.csv
+│   ├── vle.csv
+│   └── courses.csv
+│
+├── start.sh
+├── render.yaml
+└── README.md
 ```
 
 ---
 
 ## 🔧 Prerequisites
 
-| Requirement | Minimum Version | Notes |
-|---|---|---|
-| Node.js | 18+ | [Download](https://nodejs.org) |
-| npm | Latest | Comes with Node.js |
-| Python | 3.12+ | [Download](https://python.org) |
-| Git | Latest | [Download](https://git-scm.com) |
+| Requirement | Version |
+|---|---|
+| Node.js | 18+ |
+| Python | 3.12+ |
+| Git | Latest |
 
-> **No local PostgreSQL or Redis needed** — the database is hosted on Aiven cloud and configured in `backend/.env`.
+> No local PostgreSQL needed — database is hosted on Aiven cloud.
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### Step 1 — Clone the repository
-
 ```bash
+# 1. Clone
 git clone https://github.com/ngabo-dev/fluentfusion.git
 cd fluentfusion
-```
 
-### Step 2 — Backend setup
-
-```bash
+# 2. Backend
 cd backend
-
-# Create and activate virtual environment
 python3 -m venv venv
-source venv/bin/activate          # macOS/Linux
-# venv\Scripts\activate           # Windows
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### Step 3 — Frontend setup
-
-```bash
-cd frontend/app
+# 3. Frontend
+cd ../frontend/app
 npm install
 ```
-
-That's it — the database is already hosted on Aiven cloud. No local DB setup needed.
 
 ---
 
 ## 🔐 Environment Variables
 
-### Backend — `backend/.env`
-
+### `backend/.env`
 ```env
-# Database (Aiven PostgreSQL — already configured)
 DATABASE_URL=postgresql://user:password@host:port/defaultdb?sslmode=require
-
-# JWT
 SECRET_KEY=your-secret-key-min-32-chars
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
-
-# Frontend URL (for password reset links in emails)
 FRONTEND_URL=http://localhost:5173
-
-# Email (Gmail SMTP)
+RESEND_API_KEY=your-resend-api-key
 EMAIL_ENABLED=True
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-gmail@gmail.com
-SMTP_PASSWORD=your-app-password        # Gmail App Password (not your login password)
+SMTP_PASSWORD=your-app-password
 FROM_EMAIL=your-gmail@gmail.com
 FROM_NAME=FluentFusion AI
 ```
 
-> **Gmail App Password**: Go to Google Account → Security → 2-Step Verification → App Passwords → generate one for "Mail".
-
-### Frontend — `frontend/app/.env`
-
+### `frontend/app/.env`
 ```env
 VITE_API_URL=http://localhost:8000/api
 VITE_FRONTEND_URL=http://localhost:5173
@@ -303,37 +203,27 @@ VITE_FRONTEND_URL=http://localhost:5173
 
 ## ▶️ Running the Application
 
-### Option A — One command (recommended)
-
 ```bash
-# From the project root
+# One command (recommended)
 bash start.sh
-```
 
-This starts both backend and frontend together. Press `Ctrl+C` to stop everything.
-
-### Option B — Two separate terminals
-
-**Terminal 1 — Backend:**
-```bash
-cd backend
-source venv/bin/activate
+# Or two terminals:
+# Terminal 1 — Backend
+cd backend && source venv/bin/activate
 uvicorn app.main:app --reload --port 8000
-```
 
-**Terminal 2 — Frontend:**
-```bash
-cd frontend/app
-npm run dev
+# Terminal 2 — Frontend
+cd frontend/app && npm run dev
 ```
-
-### URLs
 
 | Service | URL |
 |---|---|
-| App | http://localhost:5173 |
-| API | http://localhost:8000 |
-| API Docs (Swagger) | http://localhost:8000/docs |
+| App (local) | http://localhost:5173 |
+| API (local) | http://localhost:8000 |
+| Swagger Docs (local) | http://localhost:8000/docs |
+| App (production) | https://fluentfusionv1.vercel.app/ |
+| API (production) | https://fluentfusion-v1.onrender.com |
+| Swagger Docs (production) | https://fluentfusion-v1.onrender.com/docs |
 
 ### Demo Credentials
 
@@ -347,157 +237,165 @@ npm run dev
 
 ## 🌐 API Overview
 
-All API endpoints live under `/api/`. Interactive Swagger docs at `http://localhost:8000/docs`.
-
-### Authentication — `/api/auth/`
-
-```
-POST /api/auth/register           → Register new user (sends OTP email)
-POST /api/auth/login              → Login (OAuth2 form, returns JWT)
-POST /api/auth/verify-email       → Verify email with 6-digit OTP
-POST /api/auth/resend-verification → Resend OTP code
-POST /api/auth/forgot-password    → Send password reset email
-POST /api/auth/reset-password     → Set new password via reset token
-GET  /api/auth/me                 → Get current user profile
-```
-
-### Other Endpoints
-
-| Prefix | Purpose |
-|---|---|
-| `/api/admin/` | User management, analytics, course approvals, audit log |
-| `/api/instructor/` | Course creation, student roster, earnings, sessions |
-| `/api/student/` | Assignments, messages, meetings, announcements |
-| `/api/stats` | Public platform stats (learners, instructors, courses) |
-| `/health` | API health check |
-
-### Authentication Flow
-
+### Auth — `/api/auth/`
 ```
 POST /api/auth/register
-  → 201: { access_token, token_type, role, name, id }
-  → OTP sent to email
-
-POST /api/auth/login  (form-encoded: username, password)
-  → 200: { access_token, token_type, role, name, id }
-  → 401: Invalid credentials
-
-POST /api/auth/verify-email  { email, code }
-  → 200: { message: "Email verified successfully" }
-  → 400: Invalid or expired code
-
-POST /api/auth/forgot-password  { email }
-  → 200: { message: "If this email exists, a reset link has been sent." }
-
-POST /api/auth/reset-password  { token, new_password }
-  → 200: { message: "Password reset successfully" }
-  → 400: Invalid or expired token
+POST /api/auth/login
+POST /api/auth/verify-email
+POST /api/auth/resend-verification
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+GET  /api/auth/me
 ```
 
-> **Note:** Login uses OAuth2 form encoding (`application/x-www-form-urlencoded`) with fields `username` and `password`. Register uses JSON with fields `name`, `email`, `password`, `role`.
+### Student — `/api/student/`
+```
+GET  /api/student/dashboard
+GET  /api/student/catalog
+GET  /api/student/courses
+POST /api/student/courses/{id}/enroll
+GET  /api/student/courses/{id}/lessons
+GET  /api/student/live-sessions
+GET  /api/student/quizzes
+GET  /api/student/messages
+GET  /api/student/messages/{peer_id}
+POST /api/student/messages/{peer_id}
+GET  /api/student/notifications
+GET  /api/student/leaderboard        ← real XP rankings from DB
+POST /api/student/onboarding         ← persists 4-step onboarding to DB
+GET  /api/student/profile
+PATCH /api/student/profile
+```
+
+### Instructor — `/api/instructor/`
+```
+GET  /api/instructor/dashboard
+GET/POST /api/instructor/courses
+PATCH/DELETE /api/instructor/courses/{id}
+GET  /api/instructor/courses/{id}/lessons
+POST /api/instructor/courses/{id}/lessons
+GET  /api/instructor/live-sessions
+POST /api/instructor/live-sessions
+GET  /api/instructor/quizzes
+GET  /api/instructor/students
+GET  /api/instructor/pulse
+GET  /api/instructor/reviews
+PATCH /api/instructor/reviews/{id}/reply
+GET  /api/instructor/revenue
+GET/POST /api/instructor/payouts
+GET  /api/instructor/analytics
+GET  /api/instructor/notifications
+GET/PATCH /api/instructor/profile
+```
+
+### Admin — `/api/admin/`
+```
+GET  /api/admin/dashboard
+GET  /api/admin/users
+PATCH /api/admin/users/{id}
+PATCH /api/admin/users/{id}/status
+DELETE /api/admin/users/{id}
+GET  /api/admin/instructors
+PATCH /api/admin/instructors/{id}/verify
+GET/POST /api/admin/courses
+PATCH /api/admin/courses/{id}/status
+GET  /api/admin/revenue
+GET/PATCH /api/admin/payouts/{id}/status
+GET  /api/admin/pulse
+GET  /api/admin/notifications
+POST /api/admin/notifications
+GET  /api/admin/audit-log
+GET/PATCH /api/admin/reports/{id}
+GET  /api/admin/live-sessions
+GET  /api/admin/analytics
+GET  /api/admin/geo              ← real language data from DB
+GET  /api/admin/payments
+GET  /api/admin/admins
+POST /api/admin/admins           ← super_admin only
+DELETE /api/admin/admins/{id}    ← super_admin only
+GET/PATCH /api/admin/settings
+```
+
+### Messages — `/api/messages/`
+```
+GET  /api/messages/threads
+GET  /api/messages/thread/{peer_id}
+GET  /api/messages/contacts
+GET  /api/messages/courses-list
+POST /api/messages/send
+POST /api/messages/upload
+```
+
+---
+
+## 🧠 PULSE ML Engine
+
+PULSE classifies each learner into one of 5 behavioural states:
+
+| State | Meaning |
+|---|---|
+| 🚀 Thriving | High engagement, high performance |
+| 😐 Coasting | Moderate engagement, not challenged |
+| 😓 Struggling | Low performance, needs scaffolding |
+| 🔥 Burning Out | Declining metrics, at-risk of churn |
+| 💤 Disengaged | Very low activity, near dropout |
+
+### Training Data — OULAD Dataset
+Real data from 32,000 Open University students (`/archive/`):
+
+| OULAD Result | PULSE State |
+|---|---|
+| Distinction | Thriving (0) |
+| Pass | Coasting (1) |
+| Fail | Struggling (2) |
+| Withdrawn (late) | Burning Out (3) |
+| Withdrawn (early) | Disengaged (4) |
+
+### Engineered Features
+`total_clicks`, `active_days`, `avg_clicks_per_day`, `avg_score`, `num_assessments`, `days_to_first_submit`, `num_of_prev_attempts`, `studied_credits`, `days_registered_before_start`, `withdrew_early`, plus 4 composite scores.
+
+### Running the Notebook
+```bash
+cd PULSE
+jupyter notebook PULSE_ML_Notebook.ipynb
+# Run all cells — outputs pulse_artifacts/ with model, scaler, encoders, metadata
+```
 
 ---
 
 ## 🎨 Design System
 
-All pages use a consistent dark design system with inline styles.
-
-### Color Palette
-
 | Token | Hex | Usage |
 |---|---|---|
 | Background | `#0a0a0a` | App background |
 | Card | `#151515` | Card surfaces |
-| Card 2 | `#1f1f1f` | Input backgrounds |
-| Border | `#2a2a2a` | Borders & dividers |
-| Neon | `#BFFF00` | Primary accent, CTAs, highlights |
-| Muted | `#888888` | Secondary text |
-| Success | `#00FF7F` | Success banners |
+| Neon | `#BFFF00` | Primary accent, CTAs |
+| Success | `#00FF7F` | Success states |
 | Error | `#FF4444` | Error messages |
-| Foreground | `#ffffff` | Primary text |
 
-### Typography
-
-| Role | Font | Weight | Size |
-|---|---|---|---|
-| Headings | Syne | 800 ExtraBold | 24–52px |
-| Body | DM Sans | 400 Regular | 14–16px |
-| Labels / Code | JetBrains Mono | 500 Medium | 10–13px |
-
-### CSS Variables (defined in `index.css`)
-
-```css
---bg:    #0a0a0a
---card:  #151515
---card2: #1f1f1f
---bdr:   #2a2a2a
---neon:  #BFFF00
---mu:    #888888
---fg:    #ffffff
-```
+Fonts: **Syne** (headings) · **DM Sans** (body) · **JetBrains Mono** (labels/code)
 
 ---
 
-## 👥 User Roles & Flow
+## 👥 User Flows
 
-### Student Flow
+### Student
 ```
 /signup → /verify-email (OTP) → /onboard/native-language
        → /onboard/learn-language → /onboard/goal
        → /onboard/level → /dashboard
 ```
+Onboarding data saved to DB on final step. Subsequent logins go directly to `/dashboard`.
 
-On subsequent logins, onboarding resumes from the last incomplete step. Once all 4 steps are done, login goes directly to `/dashboard`.
-
-### Instructor Flow
+### Instructor
 ```
 /signup (role: instructor) → /verify-email → /instructor
 ```
 
-### Admin Flow
+### Admin
 ```
-/login → /admin  (pre-seeded admin accounts only)
+/login → /admin  (pre-seeded accounts only)
 ```
-
-### Route Guards
-- `/dashboard/*` — requires valid JWT token, student role
-- `/instructor/*` — requires valid JWT token, instructor role
-- `/admin/*` — requires valid JWT token, admin or super_admin role
-- `/onboard/*` — public (no auth required)
-
----
-
-## 🗺️ Roadmap
-
-### Phase 1 — Foundation ✅
-- [x] Authentication (register, login, JWT, OTP verify, password reset)
-- [x] 4-step onboarding with smart resume
-- [x] Student, Instructor, Admin dashboards
-- [x] Role-based routing & layout guards
-- [x] Email delivery via Gmail SMTP
-- [x] Remember Me (localStorage vs sessionStorage)
-- [x] Public pages (Welcome, Features, Pricing, Community)
-- [x] Live platform stats from database
-
-### Phase 2 — Learning Core 🔄
-- [ ] Course catalog & detail pages
-- [ ] Lesson player with progress tracking
-- [ ] Practice exercises (vocabulary, grammar, quizzes)
-- [ ] Flashcard system
-
-### Phase 3 — Social & Live 📋
-- [ ] Live session booking & video interface
-- [ ] Community forums & discussion threads
-- [ ] Language exchange matching
-- [ ] Study group creation
-
-### Phase 4 — Advanced 📋
-- [ ] Progress analytics & charts
-- [ ] Achievement gallery & badge showcase
-- [ ] Certificate generation & download
-- [ ] Mobile app (React Native)
-- [ ] Offline mode & PWA support
-- [ ] Voice recognition for speaking practice
 
 ---
 
@@ -512,7 +410,3 @@ On subsequent logins, onboarding resumes from the last incomplete step. Once all
 ## 📄 License
 
 Proprietary — All rights reserved © 2026 FluentFusion AI
-
----
-
-*Built with ❤️ for language learners worldwide.*
