@@ -1,0 +1,56 @@
+{
+  "model_info": {
+    "algorithm": "GradientBoostingClassifier",
+    "version": "1.0.0",
+    "n_estimators": 300,
+    "learning_rate": 0.08,
+    "max_depth": 5,
+    "n_features": 19,
+    "n_classes": 5,
+    "test_accuracy": 0.6883,
+    "test_f1": 0.6756,
+    "cv_mean_f1": 0.6876,
+    "cv_std_f1": 0.0034
+  },
+  "training_info": {
+    "n_samples": 28785,
+    "train_samples": 20149,
+    "test_samples": 4318,
+    "random_state": 42
+  },
+  "features": [
+    "num_of_prev_attempts",
+    "studied_credits",
+    "gender",
+    "highest_education",
+    "imd_band",
+    "age_band",
+    "disability",
+    "total_clicks",
+    "active_days",
+    "avg_clicks_per_day",
+    "avg_score",
+    "num_assessments",
+    "days_to_first_submit",
+    "days_registered_before_start",
+    "withdrew_early",
+    "engagement_score",
+    "performance_score",
+    "decline_index",
+    "consistency_score"
+  ],
+  "categorical_features": [
+    "gender",
+    "highest_education",
+    "imd_band",
+    "age_band",
+    "disability"
+  ],
+  "state_labels": {
+    "0": "thriving",
+    "1": "coasting",
+    "2": "struggling",
+    "3": "burning_out",
+    "4": "disengaged"
+  }
+}
