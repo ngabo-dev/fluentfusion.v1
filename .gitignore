@@ -24,3 +24,7 @@ backend/uploads/
 
 # SSL cert (set as env var or Render secret file)
 backend/ca.pem
+
+# OULAD dataset (large files)
+archive/
+archive.zip
