@@ -7,14 +7,15 @@
     "max_depth": 5,
     "n_features": 19,
     "n_classes": 5,
-    "test_accuracy": 0.6883,
-    "test_f1": 0.6756,
-    "cv_mean_f1": 0.6876,
-    "cv_std_f1": 0.0034
+    "test_accuracy": 0.6959,
+    "test_f1": 0.6855,
+    "cv_mean_f1": 0.6925,
+    "cv_std_f1": 0.0038
   },
   "training_info": {
     "n_samples": 28785,
     "train_samples": 20149,
+    "val_samples": 4318,
     "test_samples": 4318,
     "random_state": 42
   },
@@ -47,10 +48,84 @@
     "disability"
   ],
   "state_labels": {
-    "0": "thriving",
-    "1": "coasting",
-    "2": "struggling",
-    "3": "burning_out",
-    "4": "disengaged"
+    "0": "Thriving",
+    "1": "Coasting",
+    "2": "Struggling",
+    "3": "Burning Out",
+    "4": "Disengaged"
+  },
+  "intervention_map": {
+    "0": {
+      "curriculum_action": "accelerate",
+      "session_target_min": 35,
+      "difficulty_adjustment": 1,
+      "flashcards_per_day": 30,
+      "lesson_type_weights": {
+        "grammar": 0.2,
+        "speaking": 0.4,
+        "writing": 0.2,
+        "culture": 0.2
+      },
+      "streak_protection": true,
+      "notification_message": "You're on fire! Let's push further. \ud83d\ude80",
+      "notification_type": "challenge"
+    },
+    "1": {
+      "curriculum_action": "challenge",
+      "session_target_min": 25,
+      "difficulty_adjustment": 1,
+      "flashcards_per_day": 25,
+      "lesson_type_weights": {
+        "grammar": 0.3,
+        "speaking": 0.3,
+        "writing": 0.2,
+        "listening": 0.2
+      },
+      "streak_protection": false,
+      "notification_message": "You're doing great \u2014 ready for a challenge? \ud83d\udcaa",
+      "notification_type": "motivate"
+    },
+    "2": {
+      "curriculum_action": "scaffold",
+      "session_target_min": 20,
+      "difficulty_adjustment": -1,
+      "flashcards_per_day": 40,
+      "lesson_type_weights": {
+        "review": 0.4,
+        "grammar": 0.3,
+        "listening": 0.2,
+        "speaking": 0.1
+      },
+      "streak_protection": true,
+      "notification_message": "Let's revisit some fundamentals \u2014 you've got this! \ud83d\udcda",
+      "notification_type": "support"
+    },
+    "3": {
+      "curriculum_action": "recovery",
+      "session_target_min": 10,
+      "difficulty_adjustment": -2,
+      "flashcards_per_day": 10,
+      "lesson_type_weights": {
+        "culture": 0.5,
+        "listening": 0.3,
+        "review": 0.2
+      },
+      "streak_protection": true,
+      "notification_message": "Short and sweet today \u2014 rest is part of learning. \ud83c\udf3f",
+      "notification_type": "rest"
+    },
+    "4": {
+      "curriculum_action": "reactivate",
+      "session_target_min": 5,
+      "difficulty_adjustment": -2,
+      "flashcards_per_day": 5,
+      "lesson_type_weights": {
+        "micro": 0.6,
+        "culture": 0.4
+      },
+      "streak_protection": true,
+      "notification_message": "Welcome back! Even 5 minutes counts. \u2728",
+      "notification_type": "reengagement"
+    }
   }
 }
