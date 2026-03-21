@@ -51,7 +51,13 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    send_otp_email(user.email, user.name, otp)
+    email_sent = send_otp_email(user.email, user.name, otp)
+    # If email delivery failed, auto-verify so the user is never locked out
+    if not email_sent:
+        user.is_verified = True
+        user.otp_code = None
+        user.otp_expiry = None
+        db.commit()
     token = create_access_token({"sub": str(user.id), "role": user.role})
     return {"access_token": token, "token_type": "bearer", "role": user.role, "name": user.name, "id": user.id, "is_first_login": True}
 
@@ -116,7 +122,14 @@ def resend_verification(body: ResendRequest, db: Session = Depends(get_db)):
     user.otp_code = otp
     user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
     db.commit()
-    send_otp_email(user.email, user.name, otp)
+    email_sent = send_otp_email(user.email, user.name, otp)
+    # If email delivery failed, auto-verify so the user is never locked out
+    if not email_sent:
+        user.is_verified = True
+        user.otp_code = None
+        user.otp_expiry = None
+        db.commit()
+        return {"message": "Email verified automatically"}
     return {"message": "Verification code resent"}
 
 

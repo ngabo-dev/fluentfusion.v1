@@ -19,17 +19,19 @@ services:
       - key: EMAIL_ENABLED
         value: "True"
       - key: RESEND_API_KEY
-        value: re_UBSgYEG4_Pe8b8s9LwXrBuT9WVghyL7ox
+        value: ""
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: a5a28e001@smtp-brevo.com
+      - key: SMTP_PASSWORD
+        sync: false
       - key: FROM_EMAIL
-        value: onboarding@resend.dev
+        value: a5a28e001@smtp-brevo.com
       - key: FROM_NAME
         value: FluentFusion AI
-      - key: SMTP_HOST
-        value: ""
-      - key: SMTP_USER
-        value: ""
-      - key: SMTP_PASSWORD
-        value: ""
 
 staticSites:
   - name: fluentfusion-frontend

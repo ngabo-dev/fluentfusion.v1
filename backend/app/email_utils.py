@@ -16,7 +16,7 @@ SMTP_PASSWORD  = os.getenv("SMTP_PASSWORD", "")
 def send_email(to: str, subject: str, html: str) -> bool:
     if not EMAIL_ENABLED:
         print(f"[EMAIL DISABLED] To: {to} | Subject: {subject}")
-        return True
+        return False
     # Try Resend first (production), fall back to SMTP (local dev)
     if RESEND_API_KEY:
         try:
@@ -49,7 +49,7 @@ def send_email(to: str, subject: str, html: str) -> bool:
             return True
         except Exception as e:
             print(f"[SMTP ERROR] {e}")
-    print(f"[EMAIL FAILED] No working provider configured. To: {to}")
+    print(f"[EMAIL FAILED] No working provider. To: {to}")
     return False
 
 
