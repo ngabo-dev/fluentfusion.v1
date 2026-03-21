@@ -4,18 +4,26 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:80
 export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 
 // Token & Session Configuration (matching backend)
-const ACCESS_TOKEN_EXPIRE_MINUTES = 480;  // 8 hours
 const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;  // 1 hour of inactivity
 
 // Session Management Functions
 function getTokenExpiry(): number | null {
-  const expiry = localStorage.getItem('ff_token_expiry');
+  const expiry = localStorage.getItem('ff_token_expiry') || sessionStorage.getItem('ff_token_expiry');
   return expiry ? parseInt(expiry, 10) : null;
 }
 
-function setTokenExpiry(expiresInSeconds: number): void {
-  const expiryTime = Date.now() + (expiresInSeconds * 1000);
-  localStorage.setItem('ff_token_expiry', expiryTime.toString());
+function setTokenExpiry(token: string): void {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp) {
+      const expiryMs = payload.exp * 1000;
+      // Store in whichever storage has the token
+      const storage = sessionStorage.getItem('ff_access_token') ? sessionStorage : localStorage;
+      storage.setItem('ff_token_expiry', expiryMs.toString());
+    }
+  } catch {
+    localStorage.setItem('ff_token_expiry', (Date.now() + 8 * 60 * 60 * 1000).toString());
+  }
 }
 
 function isTokenExpired(): boolean {
@@ -152,7 +160,7 @@ export const authApi = {
     const user = { id: response.id, name: response.name, email: data.email, role: response.role };
     localStorage.setItem('ff_access_token', response.access_token);
     localStorage.setItem('ff_user', JSON.stringify(user));
-    setTokenExpiry(ACCESS_TOKEN_EXPIRE_MINUTES * 60);
+    setTokenExpiry(response.access_token);
     setupInactivityListeners();
     return { access_token: response.access_token, user };
   },
@@ -181,7 +189,7 @@ export const authApi = {
       localStorage.setItem('ff_access_token', json.access_token);
       localStorage.setItem('ff_user', JSON.stringify(user));
     }
-    setTokenExpiry(ACCESS_TOKEN_EXPIRE_MINUTES * 60);
+    setTokenExpiry(json.access_token);
     setupInactivityListeners();
     return { access_token: json.access_token, user, is_first_login: !!json.is_first_login };
   },

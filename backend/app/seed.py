@@ -153,7 +153,7 @@ def seed():
     students = []
     for name, email, initials, pulse, xp in students_data:
         last_active = datetime.utcnow() - timedelta(days=random.randint(0,10))
-        u = User(name=name, email=email, hashed_password=hash_password("student123"), role=RoleEnum.student, status=StatusEnum.active, avatar_initials=initials, pulse_state=pulse, xp=xp, last_active=last_active, created_at=datetime.utcnow() - timedelta(days=random.randint(60,400)))
+        u = User(name=name, email=email, hashed_password=hash_password("student123"), role=RoleEnum.student, status=StatusEnum.active, avatar_initials=initials, pulse_state=pulse, xp=xp, is_verified=True, last_active=last_active, created_at=datetime.utcnow() - timedelta(days=random.randint(60,400)))
         db.add(u)
         students.append(u)
 

@@ -13,17 +13,23 @@ services:
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: 1440
+        value: "1440"
       - key: FRONTEND_URL
-        sync: false
+        value: https://fluentfusionv1.vercel.app
       - key: EMAIL_ENABLED
         value: "True"
       - key: RESEND_API_KEY
-        sync: false
+        value: re_UBSgYEG4_Pe8b8s9LwXrBuT9WVghyL7ox
       - key: FROM_EMAIL
         value: onboarding@resend.dev
       - key: FROM_NAME
         value: FluentFusion AI
+      - key: SMTP_HOST
+        value: ""
+      - key: SMTP_USER
+        value: ""
+      - key: SMTP_PASSWORD
+        value: ""
 
 staticSites:
   - name: fluentfusion-frontend
