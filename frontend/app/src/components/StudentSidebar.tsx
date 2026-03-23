@@ -39,7 +39,7 @@ const links: NavGroup[] = [
 export default function Sidebar() {
   const { collapsed } = useSidebar()
   return (
-    <aside className="sb" style={{ width: collapsed ? 0 : 'var(--sw)', overflow: collapsed ? 'hidden' : 'auto', transition: 'width .25s ease', flexShrink: 0 }}>
+    <aside className="sb" data-collapsed={collapsed ? 'true' : 'false'} style={{ overflow: collapsed ? 'hidden' : undefined }}>
       {!collapsed && <>
         {links.map(group => (
           <React.Fragment key={group.section}>

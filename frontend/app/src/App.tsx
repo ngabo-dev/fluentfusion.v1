@@ -116,7 +116,7 @@ function StudentLayoutInner() {
     <div className="app-shell">
       <StudentNavbar />
       <StudentSidebar />
-      <main className="main" style={{ marginLeft: collapsed ? 0 : 'var(--sw)', transition: 'margin-left .25s ease' }}>
+      <main className="main" data-collapsed={collapsed ? 'true' : 'false'}>
         <Routes>
           <Route path="/" element={<StudentDashboard />} />
           <Route path="/courses" element={<MyCourses />} />
@@ -162,7 +162,7 @@ function AdminLayoutInner() {
     <div className="app-shell">
       <AdminNavbar />
       <AdminSidebar />
-      <main className="main" style={{ marginLeft: collapsed ? 0 : 'var(--sw)', transition: 'margin-left .25s ease' }}>
+      <main className="main" data-collapsed={collapsed ? 'true' : 'false'}>
         <Routes>
           <Route index element={<AdminDashboard />} />
           <Route path="analytics" element={<Analytics />} />
@@ -207,7 +207,7 @@ function InstructorLayoutInner() {
     <div className="app-shell">
       <InstructorNavbar />
       <InstructorSidebar />
-      <main className="main" style={{ marginLeft: collapsed ? 0 : 'var(--sw)', transition: 'margin-left .25s ease' }}>
+      <main className="main" data-collapsed={collapsed ? 'true' : 'false'}>
         <Routes>
           <Route path="/" element={<InstructorDashboard />} />
           <Route path="/analytics" element={<InstructorAnalytics />} />
