@@ -32,10 +32,7 @@ export default function AdminDashboard() {
   const pd = dash.pulse_distribution ?? {}
   const pulseTotal = Object.values(pd).reduce((a: any, b: any) => a + b, 0) as number
   const atRisk = (pd.burning_out ?? 0) + (pd.disengaged ?? 0)
-
-  const openReports  = reports.filter((r: any) => r.status === 'open').length
-  const pendingItems = (dash.pending_payouts ?? 0) + openReports
-
+  const openReports = dash.open_reports ?? 0
   const languages = geo?.languages ?? []
   const maxLang   = languages[0]?.users ?? 1
 
@@ -50,11 +47,11 @@ export default function AdminDashboard() {
 
       {/* KPI row */}
       <div className="sr sr5" style={{ marginBottom: 16 }}>
-        <StatCard label="Total Users"     value={dash.total_users?.toLocaleString()}                       deltaUp />
-        <StatCard label="Platform Revenue" value={`$${(dash.total_revenue / 1000).toFixed(1)}k`}           deltaUp variant="ok" />
-        <StatCard label="Active Courses"  value={dash.active_courses}                                      deltaUp variant="in" />
-        <StatCard label="Pending Payouts" value={dash.pending_payouts}                                     variant="wa" />
-        <StatCard label="Open Reports"    value={openReports}  sub={openReports > 0 ? '⚠ needs review' : '✓ all clear'} variant={openReports > 0 ? 'er' : undefined} />
+        <StatCard label="Total Users"      value={dash.total_users?.toLocaleString()}                        deltaUp />
+        <StatCard label="Students"         value={dash.total_students?.toLocaleString()}                    deltaUp variant="in" />
+        <StatCard label="Platform Revenue" value={`$${(dash.total_revenue / 1000).toFixed(1)}k`}            deltaUp variant="ok" />
+        <StatCard label="Active Courses"   value={dash.active_courses}                                      deltaUp variant="in" />
+        <StatCard label="Pending Actions"  value={(dash.pending_payouts ?? 0) + (dash.open_reports ?? 0) + (dash.pending_courses ?? 0)} sub={`${dash.pending_courses ?? 0} courses · ${dash.pending_payouts ?? 0} payouts · ${dash.open_reports ?? 0} reports`} variant={(dash.pending_payouts ?? 0) + (dash.open_reports ?? 0) + (dash.pending_courses ?? 0) > 0 ? 'wa' : undefined} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr', gap: 12, marginBottom: 12 }}>

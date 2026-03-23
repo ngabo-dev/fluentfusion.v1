@@ -13,18 +13,29 @@ super_guard = require_role(RoleEnum.super_admin)
 @router.get("/dashboard")
 def dashboard(db: Session = Depends(get_db), _=Depends(guard)):
     total_users = db.query(User).count()
+    total_students = db.query(User).filter(User.role == RoleEnum.student).count()
+    total_instructors = db.query(User).filter(User.role == RoleEnum.instructor).count()
     total_revenue = db.query(func.sum(Payment.amount)).filter(Payment.status == "completed").scalar() or 0
     active_courses = db.query(Course).filter(Course.status == "published").count()
+    pending_courses = db.query(Course).filter(Course.status == "pending").count()
+    total_enrollments = db.query(Enrollment).count()
     pending_payouts = db.query(Payout).filter(Payout.status == "pending").count()
+    from app.models import Report
+    open_reports = db.query(Report).filter(Report.status == "open").count()
     pulse_dist = {}
     for state in ["thriving","coasting","struggling","burning_out","disengaged"]:
         pulse_dist[state] = db.query(User).filter(User.pulse_state == state).count()
     monthly = db.query(MonthlyRevenue).filter(MonthlyRevenue.instructor_id == None).order_by(MonthlyRevenue.year, MonthlyRevenue.month).all()
     return {
         "total_users": total_users,
+        "total_students": total_students,
+        "total_instructors": total_instructors,
         "total_revenue": round(total_revenue, 2),
         "active_courses": active_courses,
+        "pending_courses": pending_courses,
+        "total_enrollments": total_enrollments,
         "pending_payouts": pending_payouts,
+        "open_reports": open_reports,
         "pulse_distribution": pulse_dist,
         "monthly_revenue": [{"month": r.month, "year": r.year, "gross": r.gross, "net": r.net} for r in monthly]
     }
@@ -325,8 +336,8 @@ def analytics(db: Session = Depends(get_db), _=Depends(guard)):
 
 @router.get("/geo")
 def geo_data(db: Session = Depends(get_db), _=Depends(guard)):
-    # Real language data from courses table
     from sqlalchemy import func as sqlfunc
+    # Real language enrollment data from DB
     lang_rows = (
         db.query(Course.language, Course.flag_emoji, sqlfunc.count(Enrollment.id).label("cnt"))
         .outerjoin(Enrollment, Enrollment.course_id == Course.id)
@@ -336,15 +347,22 @@ def geo_data(db: Session = Depends(get_db), _=Depends(guard)):
         .limit(8).all()
     )
     languages = [{"flag": flag or "🌐", "name": lang, "users": cnt} for lang, flag, cnt in lang_rows]
-    # Static geo data (no geo column in DB yet)
-    countries = [
-        {"flag": "🇷🇼", "name": "Rwanda",       "users": db.query(User).filter(User.role == RoleEnum.student).count() // 5 or 1},
-        {"flag": "🇳🇬", "name": "Nigeria",      "users": db.query(User).filter(User.role == RoleEnum.student).count() // 6 or 1},
-        {"flag": "🇬🇭", "name": "Ghana",        "users": db.query(User).filter(User.role == RoleEnum.student).count() // 8 or 1},
-        {"flag": "🇰🇪", "name": "Kenya",        "users": db.query(User).filter(User.role == RoleEnum.student).count() // 9 or 1},
-        {"flag": "🇸🇦", "name": "Saudi Arabia", "users": db.query(User).filter(User.role == RoleEnum.student).count() // 12 or 1},
-        {"flag": "🇫🇷", "name": "France",       "users": db.query(User).filter(User.role == RoleEnum.student).count() // 15 or 1},
-    ]
+    # Country data derived from target language enrollments as a proxy
+    country_map = {
+        "French":     ("🇫🇷", "France / Francophone"),
+        "Spanish":    ("🇪🇸", "Spain / Latin America"),
+        "English":    ("🇬🇧", "UK / Global"),
+        "German":     ("🇩🇪", "Germany"),
+        "Mandarin":   ("🇨🇳", "China"),
+        "Japanese":   ("🇯🇵", "Japan"),
+        "Portuguese": ("🇧🇷", "Brazil"),
+        "Arabic":     ("🇸🇦", "Arab World"),
+    }
+    countries = []
+    for lang, flag, cnt in lang_rows:
+        mapped = country_map.get(lang)
+        if mapped:
+            countries.append({"flag": mapped[0], "name": mapped[1], "users": cnt})
     return {"countries": countries, "languages": languages}
 
 @router.get("/payments")
