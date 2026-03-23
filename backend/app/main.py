@@ -7,6 +7,22 @@ import os
 
 Base.metadata.create_all(bind=engine)
 
+# Safe column migrations — add new columns if they don't exist yet
+def _run_migrations():
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        for col, definition in [
+            ("notif_type", "VARCHAR DEFAULT 'announcement'"),
+            ("link",       "VARCHAR"),
+        ]:
+            try:
+                conn.execute(text(f"ALTER TABLE notifications ADD COLUMN {col} {definition}"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+_run_migrations()
+
 app = FastAPI(title="FluentFusion API")
 
 _frontend = os.getenv("FRONTEND_URL", "http://localhost:5173")
