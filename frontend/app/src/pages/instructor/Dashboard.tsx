@@ -5,6 +5,7 @@ import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
 import Badge from '../../components/Badge'
 import Progress from '../../components/Progress'
+import LiveSessionBanner from '../../components/LiveSessionBanner'
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
@@ -20,6 +21,7 @@ export default function Dashboard() {
 
   return (
     <div className="pg">
+      <LiveSessionBanner endpoint="/api/meetings" />
       <div className="ph">
         <div><h1>Dashboard</h1><p>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
         <div className="pa"><button className="btn bp" onClick={() => navigate('/instructor/courses/new')}>＋ New Course</button><button className="btn bo sm">🎙️</button></div>

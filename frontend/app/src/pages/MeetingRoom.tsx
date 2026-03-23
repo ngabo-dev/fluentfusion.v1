@@ -42,6 +42,7 @@ export default function MeetingRoom() {
   const [joined, setJoined] = useState(false)
   const [error, setError] = useState('')
   const [ending, setEnding] = useState(false)
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null)
 
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
@@ -92,9 +93,9 @@ export default function MeetingRoom() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       localStreamRef.current = stream
+      setLocalStream(stream)
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream
-        localVideoRef.current.muted = true
       }
 
       const wsUrl = `${WS_BASE}/api/meetings/ws/${roomId}/${user.id}`
@@ -338,6 +339,7 @@ export default function MeetingRoom() {
             audioOn={audioOn}
             videoOn={videoOn}
             isLocal
+            stream={localStream ?? undefined}
           />
           {/* Remote peers */}
           {peerList.map(peer => (
@@ -419,9 +421,15 @@ export default function MeetingRoom() {
 
 // ── Sub-components ────────────────────────────────────────────────────────
 
-function VideoTile({ label, initials, videoRef, audioOn, videoOn, isLocal }: {
-  label: string; initials: string; videoRef: React.RefObject<HTMLVideoElement>; audioOn: boolean; videoOn: boolean; isLocal?: boolean
+function VideoTile({ label, initials, videoRef, audioOn, videoOn, isLocal, stream }: {
+  label: string; initials: string; videoRef: React.RefObject<HTMLVideoElement>; audioOn: boolean; videoOn: boolean; isLocal?: boolean; stream?: MediaStream
 }) {
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream, videoRef])
+
   return (
     <div style={{ position: 'relative', background: '#151515', borderRadius: 12, overflow: 'hidden', border: '1px solid #2a2a2a' }}>
       <video ref={videoRef} autoPlay playsInline muted={!!isLocal}

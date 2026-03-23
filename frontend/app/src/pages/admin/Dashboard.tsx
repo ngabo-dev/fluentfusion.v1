@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
+import LiveSessionBanner from '../../components/LiveSessionBanner'
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="pg">
+      <LiveSessionBanner endpoint="/api/meetings" />
       <div className="ph">
         <div>
           <h1>Admin Overview</h1>

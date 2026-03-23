@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import { useAuth } from '../../components/AuthContext'
+import LiveSessionBanner from '../../components/LiveSessionBanner'
 
 const PULSE_LABELS: Record<string, string> = { thriving: '🔥 Thriving', coasting: '⚡ Coasting', struggling: '⚠️ Struggling', burning_out: '😮‍💨 Burning Out', disengaged: '💤 Disengaged' }
 
@@ -14,6 +15,7 @@ export default function Dashboard() {
 
   return (
     <div className="pg">
+      <LiveSessionBanner endpoint="/api/meetings" />
       <div className="ph">
         <div>
           <h1>Welcome back, {user?.name?.split(' ')[0] ?? 'Student'} 👋</h1>
