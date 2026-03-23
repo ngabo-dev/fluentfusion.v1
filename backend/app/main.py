@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.models import Base, engine
-from app.routers import auth, admin, instructor, student, messages, meetings
+from app.routers import auth, admin, instructor, student, messages, meetings, notifications
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -39,6 +39,7 @@ app.include_router(instructor.router)
 app.include_router(student.router)
 app.include_router(messages.router)
 app.include_router(meetings.router)
+app.include_router(notifications.router)
 
 @app.get("/health")
 def health():

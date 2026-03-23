@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, Quiz, Lesson, Message, Review, MonthlyRevenue, RoleEnum
+from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, Quiz, Lesson, Message, Review, MonthlyRevenue, Notification, NotificationRead, RoleEnum
 from app.auth import require_role, get_current_user
 from typing import Optional
 
@@ -238,25 +238,37 @@ def request_payout(body: dict, db: Session = Depends(get_db), current_user: User
 
 @router.get("/notifications")
 def notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from app.models import Notification
     notifs = db.query(Notification).filter(
         Notification.target.in_(["all", "instructors", str(current_user.id)])
     ).order_by(Notification.sent_at.desc()).limit(50).all()
-    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "target": n.target} for n in notifs]
+    read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "target": n.target or "", "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from app.models import Notification
-    # Count notifications sent after the user's last_active (proxy for unread)
-    count = db.query(Notification).filter(
-        Notification.target.in_(["all", "instructors", str(current_user.id)]),
-        Notification.sent_at > (current_user.last_active or current_user.created_at)
+    targets = ["all", "instructors", str(current_user.id)]
+    total = db.query(Notification).filter(Notification.target.in_(targets)).count()
+    read = db.query(NotificationRead).filter(
+        NotificationRead.user_id == current_user.id,
+        NotificationRead.notification_id.in_(
+            db.query(Notification.id).filter(Notification.target.in_(targets))
+        )
     ).count()
-    return {"count": count}
+    return {"count": max(0, total - read)}
+
+@router.post("/notifications/mark-read")
+def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    targets = ["all", "instructors", str(current_user.id)]
+    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets)).all()]
+    existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    for nid in notif_ids:
+        if nid not in existing:
+            db.add(NotificationRead(user_id=current_user.id, notification_id=nid))
+    db.commit()
+    return {"ok": True}
 
 @router.post("/notifications")
 def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from app.models import Notification
     target = body.get("target", "all_students")
     course_id = body.get("course_id")
     recipients = 0
@@ -268,7 +280,7 @@ def send_notification(body: dict, db: Session = Depends(get_db), current_user: U
     n = Notification(
         title=body["title"], message=body["message"],
         target=target, recipients=recipients, sender_id=current_user.id,
-        course_id=course_id
+        course_id=course_id, allow_replies=body.get("allow_replies", False)
     )
     db.add(n); db.commit()
     return {"ok": True}

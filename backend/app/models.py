@@ -82,6 +82,7 @@ class User(Base):
     pulse_state = Column(Enum(PulseStateEnum), default=PulseStateEnum.coasting)
     xp = Column(Integer, default=0)
     first_login = Column(Boolean, default=True)
+    avatar_url = Column(String, nullable=True)
 
 class Course(Base):
     __tablename__ = "courses"
@@ -177,6 +178,7 @@ class Notification(Base):
     read_rate = Column(Float, default=0.0)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
+    allow_replies = Column(Boolean, default=False)
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -225,6 +227,29 @@ class MonthlyRevenue(Base):
     gross = Column(Float, default=0)
     net = Column(Float, default=0)
     instructor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+class NotificationRead(Base):
+    __tablename__ = "notification_reads"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    notification_id = Column(Integer, ForeignKey("notifications.id"), nullable=False)
+    read_at = Column(DateTime, default=datetime.utcnow)
+
+class NotificationReaction(Base):
+    __tablename__ = "notification_reactions"
+    id = Column(Integer, primary_key=True, index=True)
+    notification_id = Column(Integer, ForeignKey("notifications.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    emoji = Column(String(8), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class NotificationReply(Base):
+    __tablename__ = "notification_replies"
+    id = Column(Integer, primary_key=True, index=True)
+    notification_id = Column(Integer, ForeignKey("notifications.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class MeetingStatusEnum(str, enum.Enum):
     scheduled = "scheduled"

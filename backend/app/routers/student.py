@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, LiveSession, Quiz, Lesson, Message, Review, Notification, RoleEnum
+from app.models import get_db, User, Course, Enrollment, Payment, LiveSession, Quiz, Lesson, Message, Review, Notification, NotificationRead, RoleEnum
 from app.auth import require_role
 
 router = APIRouter(prefix="/api/student", tags=["student"])
@@ -137,18 +137,35 @@ def notifications(db: Session = Depends(get_db), current_user: User = Depends(gu
     notifs = db.query(Notification).filter(
         Notification.target.in_(targets)
     ).order_by(Notification.sent_at.desc()).limit(50).all()
-    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at} for n in notifs]
+    read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
     targets = ["all", "students", str(current_user.id)] + course_targets
-    count = db.query(Notification).filter(
-        Notification.target.in_(targets),
-        Notification.sent_at > (current_user.last_active or current_user.created_at)
+    total = db.query(Notification).filter(Notification.target.in_(targets)).count()
+    read = db.query(NotificationRead).filter(
+        NotificationRead.user_id == current_user.id,
+        NotificationRead.notification_id.in_(
+            db.query(Notification.id).filter(Notification.target.in_(targets))
+        )
     ).count()
-    return {"count": count}
+    return {"count": max(0, total - read)}
+
+@router.post("/notifications/mark-read")
+def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
+    course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
+    targets = ["all", "students", str(current_user.id)] + course_targets
+    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets)).all()]
+    existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    for nid in notif_ids:
+        if nid not in existing:
+            db.add(NotificationRead(user_id=current_user.id, notification_id=nid))
+    db.commit()
+    return {"ok": True}
 
 @router.get("/profile")
 def get_profile(db: Session = Depends(get_db), current_user: User = Depends(guard)):

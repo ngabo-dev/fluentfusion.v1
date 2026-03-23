@@ -1,38 +1,46 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import NotificationDetailModal from '../../components/NotificationDetailModal'
+
+function targetLabel(t: string | null | undefined, courses: any[]): string {
+  if (!t) return 'Platform'
+  if (t === 'all_students' || t === 'all') return 'All Students'
+  if (t === 'instructors') return 'Instructors'
+  if (t === 'students') return 'All Students'
+  if (t.startsWith('course_')) {
+    const cid = Number(t.replace('course_', ''))
+    const c = courses.find(x => x.id === cid)
+    return c ? `📚 ${c.title}` : 'Course'
+  }
+  return t
+}
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState<any[]>([])
   const [courses, setCourses] = useState<any[]>([])
-  const [form, setForm] = useState({ title: '', message: '', target: 'all_students', course_id: '' })
+  const [form, setForm] = useState({ title: '', message: '', target: 'all_students', course_id: '', allow_replies: false })
   const [sending, setSending] = useState(false)
+  const [openId, setOpenId] = useState<number | null>(null)
 
-  const load = () => api.get('/api/instructor/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
+  const load = () =>
+    api.get('/api/instructor/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
 
   useEffect(() => {
     load()
     api.get('/api/instructor/courses').then(r => setCourses(Array.isArray(r.data) ? r.data : []))
+    // Mark all as read when page opens
+    api.post('/api/instructor/notifications/mark-read').catch(() => {})
   }, [])
 
   async function send() {
     if (!form.title.trim() || !form.message.trim()) return
     setSending(true)
-    const payload: any = { title: form.title, message: form.message, target: form.target }
+    const payload: any = { title: form.title, message: form.message, target: form.target, allow_replies: form.allow_replies }
     if (form.target === 'course' && form.course_id) payload.course_id = Number(form.course_id)
     await api.post('/api/instructor/notifications', payload)
-    setForm({ title: '', message: '', target: 'all_students', course_id: '' })
+    setForm({ title: '', message: '', target: 'all_students', course_id: '', allow_replies: false })
     await load()
     setSending(false)
-  }
-
-  const targetLabel = (t: string) => {
-    if (t === 'all_students') return 'All Students'
-    if (t.startsWith('course_')) {
-      const cid = Number(t.replace('course_', ''))
-      const c = courses.find(x => x.id === cid)
-      return c ? `Course: ${c.title}` : t
-    }
-    return t
   }
 
   return (
@@ -68,29 +76,41 @@ export default function Notifications() {
           <label className="lbl">Message</label>
           <textarea className="inp" rows={3} placeholder="Write your message..." value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
         </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer', marginBottom: 12 }}>
+          <div className={`tgl${form.allow_replies ? ' on' : ''}`} onClick={() => setForm(f => ({ ...f, allow_replies: !f.allow_replies }))} />
+          Allow recipients to reply
+        </label>
         <button className="btn bp" onClick={send} disabled={sending || (form.target === 'course' && !form.course_id)}>
           {sending ? 'Sending...' : 'Send Now'}
         </button>
       </div>
 
-      {/* Received + sent history */}
+      {/* Notification list */}
       <div className="card">
-        <div className="ch"><span className="ch-t">Notifications</span></div>
+        <div className="ch"><span className="ch-t">All Notifications</span><span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--mu)' }}>{notifs.length}</span></div>
         {notifs.length === 0 && <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0', textAlign: 'center' }}>No notifications</div>}
         {notifs.map(n => (
-          <div key={n.id} className="ni">
-            <div className="nc" style={{ background: 'rgba(0,255,127,.1)' }}>🔔</div>
+          <div key={n.id} className={`ni${n.is_read === false ? ' unr' : ''}`}
+            onClick={() => setOpenId(n.id)}
+            style={{ cursor: 'pointer' }}>
+            <div className="nc" style={{ background: n.is_read === false ? 'rgba(191,255,0,.12)' : 'rgba(0,255,127,.08)' }}>🔔</div>
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>{n.title}</span>
-                <span className="bdg bm" style={{ fontSize: 9 }}>{targetLabel(n.target)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, fontWeight: n.is_read === false ? 700 : 500 }}>{n.title}</span>
+                <span className="bdg bm" style={{ fontSize: 9 }}>{targetLabel(n.target, courses)}</span>
+                {n.is_read === false && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#BFFF00', display: 'inline-block' }} />}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 3 }}>{n.message}</div>
+              <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>{n.message}</div>
               <div style={{ fontSize: 10, color: 'var(--mu)', fontFamily: 'JetBrains Mono', marginTop: 2 }}>{n.sent_at?.slice(0, 16).replace('T', ' ')}</div>
             </div>
+            <div style={{ fontSize: 11, color: '#444' }}>→</div>
           </div>
         ))}
       </div>
+
+      {openId !== null && (
+        <NotificationDetailModal notifId={openId} onClose={() => setOpenId(null)} />
+      )}
     </div>
   )
 }

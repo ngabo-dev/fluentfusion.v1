@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz
+from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz, Notification, NotificationRead
 from app.auth import require_role, hash_password
 from app.pulse_predictor import predictor as pulse_predictor
 from typing import Optional
@@ -270,17 +270,25 @@ def pulse_run(db: Session = Depends(get_db), _=Depends(guard)):
 
 @router.get("/notifications")
 def list_notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from app.models import Notification
     notifs = db.query(Notification).order_by(Notification.sent_at.desc()).limit(100).all()
-    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target, "sent_at": n.sent_at, "recipients": n.recipients, "read_rate": n.read_rate, "sender_id": n.sender_id, "course_id": n.course_id} for n in notifs]
+    read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target or "", "sent_at": n.sent_at, "recipients": n.recipients, "read_rate": n.read_rate, "sender_id": n.sender_id, "course_id": n.course_id, "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from app.models import Notification
-    count = db.query(Notification).filter(
-        Notification.sent_at > (current_user.last_active or current_user.created_at)
-    ).count()
-    return {"count": count}
+    total = db.query(Notification).count()
+    read = db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).count()
+    return {"count": max(0, total - read)}
+
+@router.post("/notifications/mark-read")
+def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    notif_ids = [n.id for n in db.query(Notification.id).all()]
+    existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    for nid in notif_ids:
+        if nid not in existing:
+            db.add(NotificationRead(user_id=current_user.id, notification_id=nid))
+    db.commit()
+    return {"ok": True}
 
 @router.post("/notifications")
 def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
@@ -291,7 +299,7 @@ def send_notification(body: dict, db: Session = Depends(get_db), current_user: U
         if target == "all": recipients = db.query(User).filter(User.role.in_([RoleEnum.student, RoleEnum.instructor])).count()
         elif target == "students": recipients = db.query(User).filter(User.role == RoleEnum.student).count()
         elif target == "instructors": recipients = db.query(User).filter(User.role == RoleEnum.instructor).count()
-    n = Notification(title=body["title"], message=body["message"], target=body.get("target", "all"), recipients=recipients, sender_id=current_user.id)
+    n = Notification(title=body["title"], message=body["message"], target=body.get("target", "all"), recipients=recipients, sender_id=current_user.id, allow_replies=body.get("allow_replies", False))
     db.add(n); db.commit(); db.refresh(n)
     return {"ok": True, "id": n.id}
 
@@ -313,7 +321,54 @@ def delete_notification(notif_id: int, db: Session = Depends(get_db), _=Depends(
     if n: db.delete(n); db.commit()
     return {"ok": True}
 
-@router.get("/audit-log")
+@router.get("/activity")
+def platform_activity(limit: int = 50, db: Session = Depends(get_db), _=Depends(guard)):
+    """Aggregated real-time platform activity feed for admins."""
+    from datetime import datetime
+    events = []
+
+    # New user registrations
+    for u in db.query(User).order_by(User.created_at.desc()).limit(30).all():
+        events.append({"type": "USER_REGISTERED", "icon": "👤", "color": "var(--in)",
+            "text": f"{u.name} registered as {u.role}",
+            "detail": u.email, "ts": u.created_at})
+
+    # Enrollments
+    for e in db.query(Enrollment).order_by(Enrollment.enrolled_at.desc()).limit(20).all():
+        student = db.query(User).filter(User.id == e.student_id).first()
+        course = db.query(Course).filter(Course.id == e.course_id).first()
+        if student and course:
+            events.append({"type": "ENROLLMENT", "icon": "🎓", "color": "var(--ok)",
+                "text": f"{student.name} enrolled in {course.title}",
+                "detail": f"{course.language} · {course.level}", "ts": e.enrolled_at})
+
+    # Payments
+    for p in db.query(Payment).order_by(Payment.created_at.desc()).limit(20).all():
+        user = db.query(User).filter(User.id == p.user_id).first()
+        course = db.query(Course).filter(Course.id == p.course_id).first()
+        if user and course:
+            events.append({"type": "PAYMENT", "icon": "💳", "color": "var(--wa)",
+                "text": f"{user.name} paid ${p.amount:.2f} for {course.title}",
+                "detail": f"via {p.method} · {p.status}", "ts": p.created_at})
+
+    # Payout requests
+    for p in db.query(Payout).order_by(Payout.requested_at.desc()).limit(10).all():
+        ins = db.query(User).filter(User.id == p.instructor_id).first()
+        if ins:
+            events.append({"type": "PAYOUT", "icon": "💰", "color": "#FF8C00",
+                "text": f"{ins.name} requested payout of ${p.amount:.2f}",
+                "detail": f"{p.reference} · {p.status}", "ts": p.requested_at})
+
+    # Course submissions
+    for c in db.query(Course).filter(Course.status == "pending").order_by(Course.created_at.desc()).limit(10).all():
+        ins = db.query(User).filter(User.id == c.instructor_id).first()
+        events.append({"type": "COURSE_SUBMITTED", "icon": "📚", "color": "var(--neon)",
+            "text": f"{ins.name if ins else 'Unknown'} submitted course for review: {c.title}",
+            "detail": f"{c.language} · {c.level}", "ts": c.created_at})
+
+    # Sort all events by timestamp descending
+    events.sort(key=lambda x: x["ts"] or datetime.min, reverse=True)
+    return events[:limit]
 def audit_log(db: Session = Depends(get_db), _=Depends(guard)):
     from app.models import AuditLog
     logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()

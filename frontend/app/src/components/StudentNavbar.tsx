@@ -25,6 +25,12 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  function goNotifications() {
+    api.post('/api/student/notifications/mark-read').catch(() => {})
+    setUnread(0)
+    nav('/dashboard/notifications')
+  }
+
   return (
     <nav className="nav">
       <Link to="/dashboard" className="logo">
@@ -38,7 +44,7 @@ export default function Navbar() {
         </div>
 
         {/* Bell */}
-        <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => nav('/dashboard/notifications')}>
+        <div style={{ position: 'relative', cursor: 'pointer' }} onClick={goNotifications}>
           <span style={{ fontSize: 18 }}>🔔</span>
           {unread > 0 && (
             <span style={{ position: 'absolute', top: -4, right: -4, background: '#FF4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
@@ -47,20 +53,26 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Profile dropdown */}
+        {/* Avatar only — no name */}
         <div ref={dropRef} style={{ position: 'relative' }}>
-          <div onClick={() => setDropOpen(o => !o)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '4px 8px', borderRadius: 8, background: dropOpen ? 'rgba(255,255,255,0.05)' : 'transparent', transition: 'background .15s' }}>
-            <div className="nav-ava" style={{ cursor: 'pointer', margin: 0 }}>{user?.avatar_initials || 'ST'}</div>
-            <span style={{ fontSize: 13, fontWeight: 500, color: '#ddd', whiteSpace: 'nowrap' }}>{user?.name}</span>
-            <span style={{ fontSize: 10, color: '#555' }}>{dropOpen ? '▲' : '▼'}</span>
+          <div onClick={() => setDropOpen(o => !o)} style={{ cursor: 'pointer' }}>
+            {user?.avatar_url
+              ? <img src={user.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(191,255,0,.3)' }} />
+              : <div className="nav-ava" style={{ cursor: 'pointer', margin: 0 }}>{user?.avatar_initials || 'ST'}</div>
+            }
           </div>
 
           {dropOpen && (
-            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, minWidth: 180, zIndex: 200, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-              <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a' }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{user?.name}</div>
-                <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>Student</div>
+            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, minWidth: 190, zIndex: 200, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: 10 }}>
+                {user?.avatar_url
+                  ? <img src={user.avatar_url} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                  : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(191,255,0,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--neon)' }}>{user?.avatar_initials || 'ST'}</div>
+                }
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{user?.name}</div>
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>Student</div>
+                </div>
               </div>
               {[
                 { label: '👤 Profile', path: '/dashboard/settings' },
@@ -68,7 +80,7 @@ export default function Navbar() {
                 { label: '⚙️ Settings', path: '/dashboard/settings' },
               ].map(item => (
                 <div key={item.label} onClick={() => { nav(item.path); setDropOpen(false) }}
-                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#ccc', transition: 'background .1s' }}
+                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#ccc' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#222')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   {item.label}
@@ -76,7 +88,7 @@ export default function Navbar() {
               ))}
               <div style={{ borderTop: '1px solid #2a2a2a' }}>
                 <div onClick={() => { logout(); setDropOpen(false) }}
-                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#FF4444', transition: 'background .1s' }}
+                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#FF4444' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,68,68,0.08)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   🚪 Logout
