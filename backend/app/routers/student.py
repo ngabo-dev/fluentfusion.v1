@@ -131,10 +131,24 @@ def send_message(peer_id: int, body: dict, db: Session = Depends(get_db), curren
 
 @router.get("/notifications")
 def notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
+    course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
+    targets = ["all", "students", str(current_user.id)] + course_targets
     notifs = db.query(Notification).filter(
-        Notification.target.in_(["all", "students", str(current_user.id)])
+        Notification.target.in_(targets)
     ).order_by(Notification.sent_at.desc()).limit(50).all()
     return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at} for n in notifs]
+
+@router.get("/notifications/unread-count")
+def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
+    course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
+    targets = ["all", "students", str(current_user.id)] + course_targets
+    count = db.query(Notification).filter(
+        Notification.target.in_(targets),
+        Notification.sent_at > (current_user.last_active or current_user.created_at)
+    ).count()
+    return {"count": count}
 
 @router.get("/profile")
 def get_profile(db: Session = Depends(get_db), current_user: User = Depends(guard)):

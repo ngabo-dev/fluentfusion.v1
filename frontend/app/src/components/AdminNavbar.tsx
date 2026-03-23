@@ -11,7 +11,10 @@ export default function Navbar() {
   const dropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    api.get('/api/admin/notifications').then(r => setUnread(r.data.length)).catch(() => {})
+    const fetch = () => api.get('/api/admin/notifications/unread-count').then(r => setUnread(r.data.count ?? 0)).catch(() => {})
+    fetch()
+    const t = setInterval(fetch, 30000)
+    return () => clearInterval(t)
   }, [])
 
   useEffect(() => {

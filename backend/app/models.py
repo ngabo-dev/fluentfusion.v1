@@ -175,6 +175,8 @@ class Notification(Base):
     sent_at = Column(DateTime, default=datetime.utcnow)
     recipients = Column(Integer, default=0)
     read_rate = Column(Float, default=0.0)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

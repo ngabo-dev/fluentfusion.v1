@@ -271,17 +271,46 @@ def pulse_run(db: Session = Depends(get_db), _=Depends(guard)):
 @router.get("/notifications")
 def list_notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     from app.models import Notification
-    notifs = db.query(Notification).filter(
-        Notification.target.in_(["all", "admins", str(current_user.id)]) |
-        Notification.target.notin_(["students", "instructors"])
-    ).order_by(Notification.sent_at.desc()).limit(50).all()
-    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target, "sent_at": n.sent_at, "recipients": n.recipients, "read_rate": n.read_rate} for n in notifs]
+    notifs = db.query(Notification).order_by(Notification.sent_at.desc()).limit(100).all()
+    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target, "sent_at": n.sent_at, "recipients": n.recipients, "read_rate": n.read_rate, "sender_id": n.sender_id, "course_id": n.course_id} for n in notifs]
+
+@router.get("/notifications/unread-count")
+def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    from app.models import Notification
+    count = db.query(Notification).filter(
+        Notification.sent_at > (current_user.last_active or current_user.created_at)
+    ).count()
+    return {"count": count}
 
 @router.post("/notifications")
-def send_notification(body: dict, db: Session = Depends(get_db), _=Depends(guard)):
+def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     from app.models import Notification
-    n = Notification(title=body["title"], message=body["message"], target=body.get("target","all"), recipients=body.get("recipients",0))
-    db.add(n); db.commit()
+    recipients = body.get("recipients", 0)
+    if not recipients:
+        target = body.get("target", "all")
+        if target == "all": recipients = db.query(User).filter(User.role.in_([RoleEnum.student, RoleEnum.instructor])).count()
+        elif target == "students": recipients = db.query(User).filter(User.role == RoleEnum.student).count()
+        elif target == "instructors": recipients = db.query(User).filter(User.role == RoleEnum.instructor).count()
+    n = Notification(title=body["title"], message=body["message"], target=body.get("target", "all"), recipients=recipients, sender_id=current_user.id)
+    db.add(n); db.commit(); db.refresh(n)
+    return {"ok": True, "id": n.id}
+
+@router.patch("/notifications/{notif_id}")
+def update_notification(notif_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
+    from app.models import Notification
+    n = db.query(Notification).filter(Notification.id == notif_id).first()
+    if not n: raise HTTPException(status_code=404, detail="Not found")
+    if "title" in body: n.title = body["title"]
+    if "message" in body: n.message = body["message"]
+    if "target" in body: n.target = body["target"]
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/notifications/{notif_id}")
+def delete_notification(notif_id: int, db: Session = Depends(get_db), _=Depends(guard)):
+    from app.models import Notification
+    n = db.query(Notification).filter(Notification.id == notif_id).first()
+    if n: db.delete(n); db.commit()
     return {"ok": True}
 
 @router.get("/audit-log")

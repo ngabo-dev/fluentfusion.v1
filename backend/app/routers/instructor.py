@@ -242,7 +242,36 @@ def notifications(db: Session = Depends(get_db), current_user: User = Depends(gu
     notifs = db.query(Notification).filter(
         Notification.target.in_(["all", "instructors", str(current_user.id)])
     ).order_by(Notification.sent_at.desc()).limit(50).all()
-    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at} for n in notifs]
+    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "target": n.target} for n in notifs]
+
+@router.get("/notifications/unread-count")
+def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    from app.models import Notification
+    # Count notifications sent after the user's last_active (proxy for unread)
+    count = db.query(Notification).filter(
+        Notification.target.in_(["all", "instructors", str(current_user.id)]),
+        Notification.sent_at > (current_user.last_active or current_user.created_at)
+    ).count()
+    return {"count": count}
+
+@router.post("/notifications")
+def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    from app.models import Notification
+    target = body.get("target", "all_students")
+    course_id = body.get("course_id")
+    recipients = 0
+    if target == "all_students":
+        recipients = db.query(User).filter(User.role == RoleEnum.student).count()
+    elif target == "course" and course_id:
+        recipients = db.query(Enrollment).filter(Enrollment.course_id == course_id).count()
+        target = f"course_{course_id}"
+    n = Notification(
+        title=body["title"], message=body["message"],
+        target=target, recipients=recipients, sender_id=current_user.id,
+        course_id=course_id
+    )
+    db.add(n); db.commit()
+    return {"ok": True}
 
 @router.get("/analytics")
 def analytics(db: Session = Depends(get_db), current_user: User = Depends(guard)):
