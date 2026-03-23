@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { useSidebar } from './SidebarContext'
 
 type NavItem = { to: string; label: string; icon: string; badge?: string }
 type NavGroup = { section: string; items: NavItem[] }
@@ -36,22 +37,25 @@ const links: NavGroup[] = [
 ]
 
 export default function Sidebar() {
+  const { collapsed } = useSidebar()
   return (
-    <aside className="sb">
-      {links.map(group => (
-        <React.Fragment key={group.section}>
-          <div className="ss">{group.section}</div>
-          {group.items.map(item => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}>
-              <span>{item.icon}</span> {item.label}
-              {item.badge && <span className="sbg">{item.badge}</span>}
-            </NavLink>
-          ))}
-        </React.Fragment>
-      ))}
-      <div className="sb-bot">
-        <div className="pl"><span className="pd" />PULSE Active · v2.0</div>
-      </div>
+    <aside className="sb" style={{ width: collapsed ? 0 : 'var(--sw)', overflow: collapsed ? 'hidden' : 'auto', transition: 'width .25s ease', flexShrink: 0 }}>
+      {!collapsed && <>
+        {links.map(group => (
+          <React.Fragment key={group.section}>
+            <div className="ss">{group.section}</div>
+            {group.items.map(item => (
+              <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}>
+                <span>{item.icon}</span> {item.label}
+                {item.badge && <span className="sbg">{item.badge}</span>}
+              </NavLink>
+            ))}
+          </React.Fragment>
+        ))}
+        <div className="sb-bot">
+          <div className="pl"><span className="pd" />PULSE Active · v2.0</div>
+        </div>
+      </>}
     </aside>
   )
 }

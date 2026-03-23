@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz, Notification, NotificationRead
+from app.models import get_db, User, Course, CourseSection, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz, Notification, NotificationRead
 from app.auth import require_role, hash_password
 from app.pulse_predictor import predictor as pulse_predictor
+from app.notify import notify
 from typing import Optional
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -53,7 +54,16 @@ def list_users(role: Optional[str] = None, status: Optional[str] = None, search:
 def update_user_status(user_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user: return {"error": "not found"}
-    user.status = body.get("status", user.status)
+    new_status = body.get("status", user.status)
+    user.status = new_status
+    if new_status == "banned":
+        notify(db, title="🚫 Account Suspended",
+               message="Your account has been suspended by an administrator. Contact support if you believe this is an error.",
+               target=str(user_id), link=None)
+    elif new_status == "active":
+        notify(db, title="✅ Account Reinstated",
+               message="Your account has been reinstated. You can now access the platform again.",
+               target=str(user_id), link="/dashboard")
     db.commit()
     return {"ok": True}
 
@@ -81,7 +91,13 @@ def list_instructors(db: Session = Depends(get_db), _=Depends(guard)):
 @router.patch("/instructors/{user_id}/verify")
 def verify_instructor(user_id: int, db: Session = Depends(get_db), _=Depends(guard)):
     user = db.query(User).filter(User.id == user_id).first()
-    if user: user.is_verified = True; user.status = StatusEnum.active; db.commit()
+    if user:
+        user.is_verified = True
+        user.status = StatusEnum.active
+        notify(db, title="✅ Account Verified",
+               message="Your instructor account has been verified. You can now create and publish courses.",
+               target=str(user_id), link="/instructor/courses")
+        db.commit()
     return {"ok": True}
 
 @router.get("/courses")
@@ -102,16 +118,31 @@ def get_course(course_id: int, db: Session = Depends(get_db), _=Depends(guard)):
     c = db.query(Course).filter(Course.id == course_id).first()
     if not c: return {"error": "not found"}
     ins = db.query(User).filter(User.id == c.instructor_id).first()
-    lessons = db.query(Lesson).filter(Lesson.course_id == c.id).order_by(Lesson.order).all()
+    sections = db.query(CourseSection).filter(CourseSection.course_id == c.id).order_by(CourseSection.order).all()
+    section_data = []
+    for s in sections:
+        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
+        section_data.append({"id": s.id, "title": s.title, "order": s.order,
+            "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type,
+                         "duration_min": l.duration_min, "description": l.description,
+                         "video_url": l.video_url, "is_preview": l.is_preview} for l in lessons]})
+    loose = db.query(Lesson).filter(Lesson.course_id == c.id, Lesson.section_id == None).order_by(Lesson.order).all()
     quizzes = db.query(Quiz).filter(Quiz.course_id == c.id).all()
     students = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
+    total_lessons = db.query(Lesson).filter(Lesson.course_id == c.id).count()
     return {
-        "id": c.id, "title": c.title, "description": c.description,
-        "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
-        "thumbnail_url": c.thumbnail_url, "status": c.status, "price": c.price,
+        "id": c.id, "title": c.title, "subtitle": c.subtitle, "description": c.description,
+        "category": c.category, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
+        "thumbnail_url": c.thumbnail_url, "intro_video_url": c.intro_video_url,
+        "status": c.status, "price": c.price, "is_free": c.is_free,
+        "what_you_learn": c.what_you_learn, "requirements": c.requirements, "target_audience": c.target_audience,
+        "rejection_feedback": c.rejection_feedback, "admin_notes": c.admin_notes,
         "instructor": ins.name if ins else "", "instructor_email": ins.email if ins else "",
-        "created_at": c.created_at, "students": students,
-        "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "description": l.description, "order": l.order} for l in lessons],
+        "created_at": c.created_at, "submitted_at": c.submitted_at, "approved_at": c.approved_at,
+        "students": students, "total_lessons": total_lessons,
+        "sections": section_data,
+        "loose_lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type,
+                           "duration_min": l.duration_min, "description": l.description} for l in loose],
         "quizzes": [{"id": q.id, "title": q.title, "question_count": q.question_count, "avg_score": q.avg_score} for q in quizzes],
     }
 
@@ -133,9 +164,39 @@ def create_course(body: dict, db: Session = Depends(get_db), current_user: User 
     return {"id": course.id, "title": course.title}
 
 @router.patch("/courses/{course_id}/status")
-def update_course_status(course_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
+def update_course_status(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    from datetime import datetime
     course = db.query(Course).filter(Course.id == course_id).first()
-    if course: course.status = body.get("status"); db.commit()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    new_status = body.get("status")
+    feedback = body.get("feedback", "").strip()
+    admin_notes = body.get("admin_notes", "").strip()
+
+    course.status = new_status
+    if admin_notes: course.admin_notes = admin_notes
+
+    instructor = db.query(User).filter(User.id == course.instructor_id).first()
+
+    if new_status == "approved":
+        course.approved_at = datetime.utcnow()
+        course.rejection_feedback = None
+        notify(db, title="✅ Course Approved!",
+               message=f"Your course '{course.title}' has been approved. You can now publish it to make it available to students.",
+               target=str(course.instructor_id), link="/instructor/courses", course_id=course.id)
+        from app.models import AuditLog
+        db.add(AuditLog(admin_id=current_user.id, action_type="COURSE", description=f"Approved course: {course.title}"))
+
+    elif new_status == "rejected":
+        if not feedback:
+            raise HTTPException(status_code=400, detail="Feedback is required when rejecting a course")
+        course.rejection_feedback = feedback
+        notify(db, title="❌ Course Rejected",
+               message=f"Your course '{course.title}' was rejected. Feedback: {feedback}",
+               target=str(course.instructor_id), link="/instructor/courses", course_id=course.id)
+        from app.models import AuditLog
+        db.add(AuditLog(admin_id=current_user.id, action_type="COURSE", description=f"Rejected course: {course.title}. Feedback: {feedback}"))
+
+    db.commit()
     return {"ok": True}
 
 @router.get("/revenue")
@@ -166,10 +227,18 @@ def list_payouts(status: Optional[str] = None, db: Session = Depends(get_db), _=
 def update_payout(payout_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
     payout = db.query(Payout).filter(Payout.id == payout_id).first()
     if payout:
-        payout.status = body.get("status")
-        if body.get("status") == "paid":
+        new_status = body.get("status")
+        payout.status = new_status
+        if new_status == "paid":
             from datetime import datetime
             payout.paid_at = datetime.utcnow()
+            notify(db, title="💰 Payout Processed",
+                   message=f"Your payout of ${payout.amount:.2f} ({payout.reference}) has been paid.",
+                   target=str(payout.instructor_id), link="/instructor/payouts")
+        elif new_status == "rejected":
+            notify(db, title="❌ Payout Rejected",
+                   message=f"Your payout request of ${payout.amount:.2f} ({payout.reference}) was rejected. Contact support for details.",
+                   target=str(payout.instructor_id), link="/instructor/payouts")
         db.commit()
     return {"ok": True}
 
@@ -268,21 +337,25 @@ def pulse_run(db: Session = Depends(get_db), _=Depends(guard)):
     db.commit()
     return {"updated": len(user_ids), "distribution": distribution}
 
+# Notifications = system-generated event alerts (notif_type='notification')
 @router.get("/notifications")
 def list_notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    notifs = db.query(Notification).order_by(Notification.sent_at.desc()).limit(100).all()
+    notifs = db.query(Notification).filter(Notification.notif_type == "notification").order_by(Notification.sent_at.desc()).limit(100).all()
     read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
-    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target or "", "sent_at": n.sent_at, "recipients": n.recipients, "read_rate": n.read_rate, "sender_id": n.sender_id, "course_id": n.course_id, "is_read": n.id in read_ids} for n in notifs]
+    return [{"id": n.id, "title": n.title, "message": n.message, "link": n.link, "sent_at": n.sent_at, "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    total = db.query(Notification).count()
-    read = db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).count()
+    total = db.query(Notification).filter(Notification.notif_type == "notification").count()
+    read = db.query(NotificationRead).filter(
+        NotificationRead.user_id == current_user.id,
+        NotificationRead.notification_id.in_(db.query(Notification.id).filter(Notification.notif_type == "notification"))
+    ).count()
     return {"count": max(0, total - read)}
 
 @router.post("/notifications/mark-read")
 def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    notif_ids = [n.id for n in db.query(Notification.id).all()]
+    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.notif_type == "notification").all()]
     existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
     for nid in notif_ids:
         if nid not in existing:
@@ -290,18 +363,29 @@ def mark_notifications_read(db: Session = Depends(get_db), current_user: User = 
     db.commit()
     return {"ok": True}
 
-@router.post("/notifications")
-def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from app.models import Notification
-    recipients = body.get("recipients", 0)
-    if not recipients:
-        target = body.get("target", "all")
-        if target == "all": recipients = db.query(User).filter(User.role.in_([RoleEnum.student, RoleEnum.instructor])).count()
-        elif target == "students": recipients = db.query(User).filter(User.role == RoleEnum.student).count()
-        elif target == "instructors": recipients = db.query(User).filter(User.role == RoleEnum.instructor).count()
-    n = Notification(title=body["title"], message=body["message"], target=body.get("target", "all"), recipients=recipients, sender_id=current_user.id, allow_replies=body.get("allow_replies", False))
+# Announcements = human-composed broadcasts (notif_type='announcement')
+@router.get("/announcements")
+def list_announcements(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    notifs = db.query(Notification).filter(Notification.notif_type == "announcement").order_by(Notification.sent_at.desc()).limit(100).all()
+    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target or "", "sent_at": n.sent_at, "recipients": n.recipients, "allow_replies": n.allow_replies} for n in notifs]
+
+@router.post("/announcements")
+def send_announcement(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    target = body.get("target", "all")
+    recipients = 0
+    if target == "all": recipients = db.query(User).filter(User.role.in_([RoleEnum.student, RoleEnum.instructor])).count()
+    elif target == "students": recipients = db.query(User).filter(User.role == RoleEnum.student).count()
+    elif target == "instructors": recipients = db.query(User).filter(User.role == RoleEnum.instructor).count()
+    n = Notification(title=body["title"], message=body["message"], target=target, recipients=recipients,
+                     sender_id=current_user.id, allow_replies=body.get("allow_replies", False),
+                     notif_type="announcement")
     db.add(n); db.commit(); db.refresh(n)
     return {"ok": True, "id": n.id}
+
+@router.post("/notifications")
+def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    """Legacy endpoint — kept for backward compat, creates announcement."""
+    return send_announcement(body, db, current_user)
 
 @router.patch("/notifications/{notif_id}")
 def update_notification(notif_id: int, body: dict, db: Session = Depends(get_db), _=Depends(guard)):
@@ -491,6 +575,9 @@ def create_admin(body: dict, db: Session = Depends(get_db), current_user: User =
     db.add(user); db.commit(); db.refresh(user)
     from app.models import AuditLog
     db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Super admin created new admin account: {user.email}"))
+    notify(db, title="🔑 Admin Account Created",
+           message=f"Welcome {user.name}! Your admin account has been created. You can now log in.",
+           target=str(user.id), link="/admin")
     db.commit()
     return {"id": user.id, "name": user.name, "email": user.email, "role": user.role}
 

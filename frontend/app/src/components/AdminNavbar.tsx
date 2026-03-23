@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import api from '../api/client'
+import { useSidebar } from './SidebarContext'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const { collapsed, toggle } = useSidebar()
   const nav = useNavigate()
   const [dropOpen, setDropOpen] = useState(false)
   const [unread, setUnread] = useState(0)
@@ -33,10 +35,16 @@ export default function Navbar() {
 
   return (
     <nav className="nav">
-      <Link to="/admin" className="logo">
-        <div className="logo-mark">FF</div>
-        <div className="logo-name">Fluent<span>Fusion</span></div>
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mu)', fontSize: 18, padding: '4px 6px', borderRadius: 6, lineHeight: 1, transition: 'color .15s' }}
+          title={collapsed ? 'Show sidebar' : 'Hide sidebar'}>
+          {collapsed ? '▶' : '◀'}
+        </button>
+        <Link to="/admin" className="logo">
+          <div className="logo-mark">FF</div>
+          <div className="logo-name">Fluent<span>Fusion</span></div>
+        </Link>
+      </div>
       <div className="nav-r">
         <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--er)', background: 'rgba(255,68,68,.1)', padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(255,68,68,.2)' }}>ADMIN PORTAL</span>
 
@@ -72,6 +80,7 @@ export default function Navbar() {
                 </div>
               </div>
               {[
+                { label: '📢 Announcements', path: '/admin/announcements' },
                 { label: '🔔 Notifications', path: '/admin/notifications' },
                 { label: '⚙️ Settings', path: '/admin/settings' },
               ].map(item => (

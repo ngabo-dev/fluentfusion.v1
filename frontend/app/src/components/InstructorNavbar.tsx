@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import api from '../api/client'
+import { useSidebar } from './SidebarContext'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
+  const { collapsed, toggle } = useSidebar()
   const nav = useNavigate()
   const [dropOpen, setDropOpen] = useState(false)
   const [unread, setUnread] = useState(0)
@@ -33,10 +35,16 @@ export default function Navbar() {
 
   return (
     <nav className="nav">
-      <Link to="/instructor" className="logo">
-        <div className="logo-mark">FF</div>
-        <div className="logo-name">Fluent<span>Fusion</span></div>
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mu)', fontSize: 18, padding: '4px 6px', borderRadius: 6, lineHeight: 1, transition: 'color .15s' }}
+          title={collapsed ? 'Show sidebar' : 'Hide sidebar'}>
+          {collapsed ? '▶' : '◀'}
+        </button>
+        <Link to="/instructor" className="logo">
+          <div className="logo-mark">FF</div>
+          <div className="logo-name">Fluent<span>Fusion</span></div>
+        </Link>
+      </div>
       <div className="nav-r">
         <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--in)', background: 'rgba(0,207,255,.1)', padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(0,207,255,.2)' }}>INSTRUCTOR PORTAL</span>
 
@@ -72,7 +80,7 @@ export default function Navbar() {
                 </div>
               </div>
               {[
-                { label: '👤 Profile', path: '/instructor/settings' },
+                { label: '📢 Announcements', path: '/instructor/announcements' },
                 { label: '🔔 Notifications', path: '/instructor/notifications' },
                 { label: '⚙️ Settings', path: '/instructor/settings' },
               ].map(item => (

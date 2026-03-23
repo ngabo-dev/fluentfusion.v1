@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './components/AuthContext'
+import { SidebarProvider, useSidebar } from './components/SidebarContext'
 
 // Shared auth pages
 import Login from './pages/student/Login'
@@ -57,6 +58,7 @@ import Revenue from './pages/admin/Revenue'
 import PulseEngine from './pages/admin/PulseEngine'
 import AdminMessages from './pages/admin/Messages'
 import AdminNotifications from './pages/admin/Notifications'
+import AdminAnnouncements from './pages/admin/Announcements'
 import AuditLog from './pages/admin/AuditLog'
 import PlatformSettings from './pages/admin/PlatformSettings'
 
@@ -76,8 +78,10 @@ import Reviews from './pages/instructor/Reviews'
 import InstructorRevenue from './pages/instructor/Revenue'
 import InstructorPayouts from './pages/instructor/Payouts'
 import InstructorNotifications from './pages/instructor/Notifications'
+import InstructorAnnouncements from './pages/instructor/Announcements'
 import InstructorSettings from './pages/instructor/Settings'
 import CreateCourse from './pages/instructor/CreateCourse'
+import CourseEditor from './pages/instructor/CourseEditor'
 
 const Loading = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)', color: 'var(--neon)', fontFamily: 'JetBrains Mono', fontSize: 13 }}>
@@ -100,10 +104,19 @@ function StudentLayout() {
   if (!ready) return <Loading />
   if (!token) return <Navigate to="/login" replace />
   return (
+    <SidebarProvider>
+      <StudentLayoutInner />
+    </SidebarProvider>
+  )
+}
+
+function StudentLayoutInner() {
+  const { collapsed } = useSidebar()
+  return (
     <div className="app-shell">
       <StudentNavbar />
       <StudentSidebar />
-      <main className="main">
+      <main className="main" style={{ marginLeft: collapsed ? 0 : 'var(--sw)', transition: 'margin-left .25s ease' }}>
         <Routes>
           <Route path="/" element={<StudentDashboard />} />
           <Route path="/courses" element={<MyCourses />} />
@@ -137,10 +150,19 @@ function AdminLayout() {
   const role = user?.role
   if (role !== 'admin' && role !== 'super_admin') return <Navigate to="/" replace />
   return (
+    <SidebarProvider>
+      <AdminLayoutInner />
+    </SidebarProvider>
+  )
+}
+
+function AdminLayoutInner() {
+  const { collapsed } = useSidebar()
+  return (
     <div className="app-shell">
       <AdminNavbar />
       <AdminSidebar />
-      <main className="main">
+      <main className="main" style={{ marginLeft: collapsed ? 0 : 'var(--sw)', transition: 'margin-left .25s ease' }}>
         <Routes>
           <Route index element={<AdminDashboard />} />
           <Route path="analytics" element={<Analytics />} />
@@ -158,6 +180,7 @@ function AdminLayout() {
           <Route path="pulse" element={<PulseEngine />} />
           <Route path="messages" element={<AdminMessages />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="settings" element={<PlatformSettings />} />
         </Routes>
@@ -172,15 +195,25 @@ function InstructorLayout() {
   if (!token) return <Navigate to="/login" replace />
   if (user?.role !== 'instructor') return <Navigate to="/" replace />
   return (
+    <SidebarProvider>
+      <InstructorLayoutInner />
+    </SidebarProvider>
+  )
+}
+
+function InstructorLayoutInner() {
+  const { collapsed } = useSidebar()
+  return (
     <div className="app-shell">
       <InstructorNavbar />
       <InstructorSidebar />
-      <main className="main">
+      <main className="main" style={{ marginLeft: collapsed ? 0 : 'var(--sw)', transition: 'margin-left .25s ease' }}>
         <Routes>
           <Route path="/" element={<InstructorDashboard />} />
           <Route path="/analytics" element={<InstructorAnalytics />} />
           <Route path="/courses" element={<InstructorCourses />} />
           <Route path="/courses/new" element={<CreateCourse />} />
+          <Route path="/courses/:id/edit" element={<CourseEditor />} />
           <Route path="/lessons" element={<InstructorLessons />} />
           <Route path="/live-sessions" element={<InstructorLiveSessions />} />
           <Route path="/quizzes" element={<InstructorQuizzes />} />
@@ -191,6 +224,7 @@ function InstructorLayout() {
           <Route path="/revenue" element={<InstructorRevenue />} />
           <Route path="/payouts" element={<InstructorPayouts />} />
           <Route path="/notifications" element={<InstructorNotifications />} />
+          <Route path="/announcements" element={<InstructorAnnouncements />} />
           <Route path="/settings" element={<InstructorSettings />} />
         </Routes>
       </main>

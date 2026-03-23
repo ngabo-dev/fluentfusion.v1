@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../api/client'
 
 const LANGUAGES = [
@@ -13,8 +13,8 @@ const LANGUAGES = [
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'All Levels']
 const CATEGORIES = ['Language Basics', 'Conversation', 'Grammar', 'Business', 'Travel', 'Exam Prep', 'Culture', 'Writing', 'Pronunciation']
 
-type LessonDraft = { title: string; lesson_type: 'video' | 'text' | 'audio'; duration_min: string; description: string; is_preview: boolean }
-type Section = { title: string; lessons: LessonDraft[] }
+type LessonDraft = { id?: number; title: string; lesson_type: 'video' | 'text' | 'audio'; duration_min: string; description: string; is_preview: boolean }
+type Section = { id?: number; title: string; lessons: LessonDraft[] }
 const emptyLesson = (): LessonDraft => ({ title: '', lesson_type: 'video', duration_min: '', description: '', is_preview: false })
 
 const NAV = [
@@ -24,11 +24,15 @@ const NAV = [
   { id: 'pricing', label: 'Pricing', icon: '💳' },
 ]
 
-export default function CreateCourse() {
+export default function CourseEditor() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [active, setActive] = useState('basics')
+  const [courseStatus, setCourseStatus] = useState('')
+  const [rejectionFeedback, setRejectionFeedback] = useState('')
 
   const [form, setForm] = useState({
     title: '', subtitle: '', description: '', category: '', language: '', flag_emoji: '',
@@ -42,13 +46,23 @@ export default function CreateCourse() {
 
   const refs = { basics: useRef<HTMLDivElement>(null), media: useRef<HTMLDivElement>(null), curriculum: useRef<HTMLDivElement>(null), pricing: useRef<HTMLDivElement>(null) }
 
+  useEffect(() => {
+    api.get(`/api/instructor/courses/${id}`).then(r => {
+      const c = r.data
+      setCourseStatus(c.status); setRejectionFeedback(c.rejection_feedback || '')
+      setForm({ title: c.title || '', subtitle: c.subtitle || '', description: c.description || '', category: c.category || '', language: c.language || '', flag_emoji: c.flag_emoji || '', level: c.level || '', thumbnail_url: c.thumbnail_url || '', intro_video_url: c.intro_video_url || '', what_you_learn: c.what_you_learn || '', requirements: c.requirements || '', target_audience: c.target_audience || '' })
+      setPricing({ price: c.price || 49.99, is_free: c.is_free || false })
+      if (c.sections?.length > 0) {
+        setSections(c.sections.map((s: any) => ({ id: s.id, title: s.title, lessons: (s.lessons || []).map((l: any) => ({ id: l.id, title: l.title, lesson_type: l.lesson_type || 'video', duration_min: l.duration_min?.toString() || '', description: l.description || '', is_preview: l.is_preview || false })) })))
+      } else if (c.loose_lessons?.length > 0) {
+        setSections([{ title: 'Section 1', lessons: c.loose_lessons.map((l: any) => ({ id: l.id, title: l.title, lesson_type: l.lesson_type || 'video', duration_min: l.duration_min?.toString() || '', description: l.description || '', is_preview: l.is_preview || false })) }])
+      }
+    }).catch(() => navigate('/instructor/courses')).finally(() => setLoading(false))
+  }, [id])
+
   const ff = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
   const setLang = (name: string) => { const l = LANGUAGES.find(x => x.name === name); setForm(p => ({ ...p, language: name, flag_emoji: l?.flag || '' })) }
-
-  function scrollTo(id: string) {
-    refs[id as keyof typeof refs]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    setActive(id)
-  }
+  function scrollTo(sid: string) { refs[sid as keyof typeof refs]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setActive(sid) }
 
   function addLesson() {
     if (!lessonDraft.title.trim()) return
@@ -60,12 +74,9 @@ export default function CreateCourse() {
     setSections(p => p.map((s, i) => i === si ? { ...s, lessons: s.lessons.filter((_, j) => j !== li) } : s))
   }
 
-  function addSection() {
-    setSections(p => [...p, { title: `Section ${p.length + 1}`, lessons: [] }])
-    setActiveSec(sections.length)
-  }
+  function addSection() { setSections(p => [...p, { title: `Section ${p.length + 1}`, lessons: [] }]); setActiveSec(sections.length) }
 
-  async function submit() {
+  async function save(andSubmit = false) {
     if (!form.title.trim() || !form.language || !form.level || !form.description.trim()) {
       setError('Title, description, language and level are required'); scrollTo('basics'); return
     }
@@ -73,16 +84,17 @@ export default function CreateCourse() {
     if (total === 0) { setError('Add at least 1 lesson'); scrollTo('curriculum'); return }
     setSaving(true); setError('')
     try {
-      const res = await api.post('/api/instructor/courses', { ...form, price: pricing.is_free ? 0 : pricing.price, is_free: pricing.is_free })
-      const cid = res.data.id
+      await api.patch(`/api/instructor/courses/${id}`, { ...form, price: pricing.is_free ? 0 : pricing.price, is_free: pricing.is_free })
+      const existing = await api.get(`/api/instructor/courses/${id}/sections`)
+      for (const s of existing.data) await api.delete(`/api/instructor/courses/${id}/sections/${s.id}`)
       for (let si = 0; si < sections.length; si++) {
-        const sr = await api.post(`/api/instructor/courses/${cid}/sections`, { title: sections[si].title, order: si })
+        const sr = await api.post(`/api/instructor/courses/${id}/sections`, { title: sections[si].title, order: si })
         for (let li = 0; li < sections[si].lessons.length; li++) {
           const l = sections[si].lessons[li]
-          await api.post(`/api/instructor/courses/${cid}/lessons`, { title: l.title, lesson_type: l.lesson_type, duration_min: parseInt(l.duration_min) || null, description: l.description, section_id: sr.data.id, order: li, is_preview: l.is_preview })
+          await api.post(`/api/instructor/courses/${id}/lessons`, { title: l.title, lesson_type: l.lesson_type, duration_min: parseInt(l.duration_min) || null, description: l.description, section_id: sr.data.id, order: li, is_preview: l.is_preview })
         }
       }
-      await api.post(`/api/instructor/courses/${cid}/submit`, {})
+      if (andSubmit) await api.post(`/api/instructor/courses/${id}/submit`, {})
       navigate('/instructor/courses')
     } catch (e: any) {
       setError(e.response?.data?.detail || 'Failed to save'); setSaving(false)
@@ -91,14 +103,20 @@ export default function CreateCourse() {
 
   const totalLessons = sections.reduce((n, s) => n + s.lessons.length, 0)
 
+  if (loading) return <div className="loading" />
+
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - var(--nh))', overflow: 'hidden' }}>
 
       {/* Left nav */}
       <div style={{ width: 200, background: 'var(--bg2)', borderRight: '1px solid var(--bdr)', display: 'flex', flexDirection: 'column', padding: '24px 0', flexShrink: 0 }}>
         <div style={{ padding: '0 18px 20px', borderBottom: '1px solid var(--bdr)', marginBottom: 12 }}>
-          <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '.04em' }}>New Course</div>
-          <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 3 }}>{totalLessons} lesson{totalLessons !== 1 ? 's' : ''} added</div>
+          <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '.04em' }}>Edit Course</div>
+          <div style={{ fontSize: 11, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 99, fontFamily: 'JetBrains Mono',
+            background: courseStatus === 'rejected' ? 'rgba(255,68,68,.1)' : 'rgba(255,255,255,.06)',
+            color: courseStatus === 'rejected' ? 'var(--er)' : 'var(--mu)' }}>
+            {courseStatus}
+          </div>
         </div>
         {NAV.map(n => (
           <div key={n.id} onClick={() => scrollTo(n.id)}
@@ -107,15 +125,21 @@ export default function CreateCourse() {
           </div>
         ))}
         <div style={{ marginTop: 'auto', padding: '16px 18px', borderTop: '1px solid var(--bdr)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <button className="btn bp" onClick={submit} disabled={saving} style={{ width: '100%', justifyContent: 'center' }}>
-            {saving ? '…' : '🚀 Submit'}
+          <button className="btn bp" onClick={() => save(true)} disabled={saving} style={{ width: '100%', justifyContent: 'center' }}>
+            {saving ? '…' : '🚀 Resubmit'}
           </button>
-          <button className="btn bo sm" onClick={() => navigate(-1)} style={{ width: '100%', justifyContent: 'center' }}>Cancel</button>
+          <button className="btn bo sm" onClick={() => save(false)} disabled={saving} style={{ width: '100%', justifyContent: 'center' }}>💾 Save Draft</button>
+          <button className="btn bg sm" onClick={() => navigate(-1)} style={{ width: '100%', justifyContent: 'center' }}>Cancel</button>
         </div>
       </div>
 
       {/* Right scrollable content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
+        {courseStatus === 'rejected' && rejectionFeedback && (
+          <div className="alr ac" style={{ marginBottom: 20 }}>
+            <b>Rejection feedback:</b> {rejectionFeedback}
+          </div>
+        )}
         {error && <div className="alr ac" style={{ marginBottom: 20 }}>{error}</div>}
 
         {/* Basic Info */}
@@ -123,36 +147,24 @@ export default function CreateCourse() {
           <SectionHeader icon="📋" title="Basic Info" sub="Core details about your course" />
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="fg" style={{ marginBottom: 0 }}>
-                <label className="lbl">Course Title *</label>
-                <input className="inp" placeholder="e.g. French for Beginners" value={form.title} onChange={e => ff('title', e.target.value)} />
-              </div>
-              <div className="fg" style={{ marginBottom: 0 }}>
-                <label className="lbl">Subtitle</label>
-                <input className="inp" placeholder="Short tagline" value={form.subtitle} onChange={e => ff('subtitle', e.target.value)} />
-              </div>
+              <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Course Title *</label><input className="inp" value={form.title} onChange={e => ff('title', e.target.value)} /></div>
+              <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Subtitle</label><input className="inp" value={form.subtitle} onChange={e => ff('subtitle', e.target.value)} /></div>
             </div>
-            <div className="fg" style={{ marginBottom: 0 }}>
-              <label className="lbl">Description *</label>
-              <textarea className="inp" rows={4} placeholder="What will students learn and achieve?" value={form.description} onChange={e => ff('description', e.target.value)} style={{ resize: 'vertical', minHeight: 90 }} />
-            </div>
+            <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Description *</label><textarea className="inp" rows={4} value={form.description} onChange={e => ff('description', e.target.value)} style={{ resize: 'vertical', minHeight: 90 }} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <div className="fg" style={{ marginBottom: 0 }}>
-                <label className="lbl">Language *</label>
+              <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Language *</label>
                 <select className="inp" value={form.language} onChange={e => setLang(e.target.value)}>
                   <option value="">Select</option>
                   {LANGUAGES.map(l => <option key={l.name} value={l.name}>{l.flag} {l.name}</option>)}
                 </select>
               </div>
-              <div className="fg" style={{ marginBottom: 0 }}>
-                <label className="lbl">Level *</label>
+              <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Level *</label>
                 <select className="inp" value={form.level} onChange={e => ff('level', e.target.value)}>
                   <option value="">Select</option>
                   {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
-              <div className="fg" style={{ marginBottom: 0 }}>
-                <label className="lbl">Category</label>
+              <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Category</label>
                 <select className="inp" value={form.category} onChange={e => ff('category', e.target.value)}>
                   <option value="">Select</option>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -160,19 +172,10 @@ export default function CreateCourse() {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="fg" style={{ marginBottom: 0 }}>
-                <label className="lbl">What Students Will Learn</label>
-                <textarea className="inp" rows={3} placeholder="Key outcomes, one per line" value={form.what_you_learn} onChange={e => ff('what_you_learn', e.target.value)} style={{ resize: 'vertical' }} />
-              </div>
+              <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">What Students Will Learn</label><textarea className="inp" rows={3} value={form.what_you_learn} onChange={e => ff('what_you_learn', e.target.value)} style={{ resize: 'vertical' }} /></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div className="fg" style={{ marginBottom: 0 }}>
-                  <label className="lbl">Requirements</label>
-                  <input className="inp" placeholder="e.g. No prior knowledge needed" value={form.requirements} onChange={e => ff('requirements', e.target.value)} />
-                </div>
-                <div className="fg" style={{ marginBottom: 0 }}>
-                  <label className="lbl">Target Audience</label>
-                  <input className="inp" placeholder="e.g. Beginners, travelers" value={form.target_audience} onChange={e => ff('target_audience', e.target.value)} />
-                </div>
+                <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Requirements</label><input className="inp" value={form.requirements} onChange={e => ff('requirements', e.target.value)} /></div>
+                <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Target Audience</label><input className="inp" value={form.target_audience} onChange={e => ff('target_audience', e.target.value)} /></div>
               </div>
             </div>
           </div>
@@ -185,20 +188,13 @@ export default function CreateCourse() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="fg" style={{ marginBottom: 0 }}>
                 <label className="lbl">Thumbnail URL</label>
-                <input className="inp" placeholder="https://..." value={form.thumbnail_url} onChange={e => ff('thumbnail_url', e.target.value)} />
-                {form.thumbnail_url && (
-                  <img src={form.thumbnail_url} alt="" onError={e => (e.currentTarget.style.display = 'none')}
-                    style={{ marginTop: 10, width: '100%', height: 140, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--bdr)' }} />
-                )}
+                <input className="inp" value={form.thumbnail_url} onChange={e => ff('thumbnail_url', e.target.value)} />
+                {form.thumbnail_url && <img src={form.thumbnail_url} alt="" onError={e => (e.currentTarget.style.display = 'none')} style={{ marginTop: 10, width: '100%', height: 140, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--bdr)' }} />}
               </div>
               <div className="fg" style={{ marginBottom: 0 }}>
                 <label className="lbl">Intro Video URL</label>
-                <input className="inp" placeholder="https://youtube.com/..." value={form.intro_video_url} onChange={e => ff('intro_video_url', e.target.value)} />
-                {!form.thumbnail_url && (
-                  <div style={{ marginTop: 10, height: 140, background: 'var(--card2)', borderRadius: 8, border: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
-                    {form.flag_emoji || '📚'}
-                  </div>
-                )}
+                <input className="inp" value={form.intro_video_url} onChange={e => ff('intro_video_url', e.target.value)} />
+                {!form.thumbnail_url && <div style={{ marginTop: 10, height: 140, background: 'var(--card2)', borderRadius: 8, border: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>{form.flag_emoji || '📚'}</div>}
               </div>
             </div>
           </div>
@@ -208,40 +204,28 @@ export default function CreateCourse() {
         <div ref={refs.curriculum} style={{ marginBottom: 40 }}>
           <SectionHeader icon="📚" title="Curriculum" sub="Organize your course into sections and lessons" />
           <div className="card">
-            {/* Section tabs */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
               {sections.map((s, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <div onClick={() => setActiveSec(i)} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .13s',
-                    background: activeSec === i ? 'var(--neon)' : 'var(--card2)', color: activeSec === i ? '#000' : 'var(--mu)', border: `1px solid ${activeSec === i ? 'var(--neon)' : 'var(--bdr)'}` }}>
+                  <div onClick={() => setActiveSec(i)} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .13s', background: activeSec === i ? 'var(--neon)' : 'var(--card2)', color: activeSec === i ? '#000' : 'var(--mu)', border: `1px solid ${activeSec === i ? 'var(--neon)' : 'var(--bdr)'}` }}>
                     {s.title} <span style={{ opacity: .7 }}>({s.lessons.length})</span>
                   </div>
-                  {sections.length > 1 && (
-                    <span onClick={() => { setSections(p => p.filter((_, j) => j !== i)); setActiveSec(Math.max(0, i - 1)) }}
-                      style={{ cursor: 'pointer', color: 'var(--mu)', fontSize: 11, padding: '0 2px' }}>✕</span>
-                  )}
+                  {sections.length > 1 && <span onClick={() => { setSections(p => p.filter((_, j) => j !== i)); setActiveSec(Math.max(0, i - 1)) }} style={{ cursor: 'pointer', color: 'var(--mu)', fontSize: 11, padding: '0 2px' }}>✕</span>}
                 </div>
               ))}
               <button className="btn bo sm" onClick={addSection}>+ Add Section</button>
             </div>
-
-            {/* Section title edit */}
             <div style={{ marginBottom: 16 }}>
               <label className="lbl">Section Title</label>
-              <input className="inp" value={sections[activeSec]?.title}
-                onChange={e => setSections(p => p.map((s, i) => i === activeSec ? { ...s, title: e.target.value } : s))} />
+              <input className="inp" value={sections[activeSec]?.title} onChange={e => setSections(p => p.map((s, i) => i === activeSec ? { ...s, title: e.target.value } : s))} />
             </div>
-
-            {/* Existing lessons */}
             {sections[activeSec]?.lessons.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 {sections[activeSec].lessons.map((l, li) => (
                   <div key={li} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--card2)', border: '1px solid var(--bdr)', borderRadius: 8, marginBottom: 6 }}>
                     <span style={{ fontSize: 16 }}>{l.lesson_type === 'video' ? '📹' : l.lesson_type === 'audio' ? '🎧' : '📝'}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{l.title}
-                        {l.is_preview && <span style={{ marginLeft: 8, fontSize: 9, color: 'var(--neon)', fontFamily: 'JetBrains Mono', background: 'rgba(191,255,0,.1)', padding: '2px 6px', borderRadius: 4 }}>FREE PREVIEW</span>}
-                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{l.title}{l.is_preview && <span style={{ marginLeft: 8, fontSize: 9, color: 'var(--neon)', fontFamily: 'JetBrains Mono', background: 'rgba(191,255,0,.1)', padding: '2px 6px', borderRadius: 4 }}>FREE PREVIEW</span>}</div>
                       {(l.duration_min || l.description) && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{l.duration_min ? `${l.duration_min} min` : ''}{l.duration_min && l.description ? ' · ' : ''}{l.description}</div>}
                     </div>
                     <button className="btn bd sm" onClick={() => removeLesson(activeSec, li)}>Remove</button>
@@ -249,13 +233,10 @@ export default function CreateCourse() {
                 ))}
               </div>
             )}
-
-            {/* Add lesson form */}
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12 }}>Add Lesson</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10, marginBottom: 10 }}>
-                <input className="inp" placeholder="Lesson title *" value={lessonDraft.title} onChange={e => setLessonDraft(d => ({ ...d, title: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && addLesson()} />
+                <input className="inp" placeholder="Lesson title *" value={lessonDraft.title} onChange={e => setLessonDraft(d => ({ ...d, title: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addLesson()} />
                 <select className="inp" value={lessonDraft.lesson_type} onChange={e => setLessonDraft(d => ({ ...d, lesson_type: e.target.value as any }))}>
                   <option value="video">📹 Video</option>
                   <option value="text">📝 Text</option>
@@ -274,7 +255,6 @@ export default function CreateCourse() {
                 <button className="btn bp sm" onClick={addLesson}>+ Add Lesson</button>
               </div>
             </div>
-
             <div style={{ marginTop: 14, fontSize: 11, color: 'var(--mu)', fontFamily: 'JetBrains Mono' }}>
               {totalLessons} lesson{totalLessons !== 1 ? 's' : ''} across {sections.length} section{sections.length !== 1 ? 's' : ''}
             </div>
@@ -297,10 +277,7 @@ export default function CreateCourse() {
             </div>
             {!pricing.is_free && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'end' }}>
-                <div className="fg" style={{ marginBottom: 0 }}>
-                  <label className="lbl">Price (USD)</label>
-                  <input className="inp" type="number" min={0} step={0.01} value={pricing.price} onChange={e => setPricing(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} />
-                </div>
+                <div className="fg" style={{ marginBottom: 0 }}><label className="lbl">Price (USD)</label><input className="inp" type="number" min={0} step={0.01} value={pricing.price} onChange={e => setPricing(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} /></div>
                 <div style={{ padding: '14px 18px', background: 'var(--card2)', borderRadius: 10, border: '1px solid var(--bdr)' }}>
                   <div style={{ fontSize: 11, color: 'var(--mu)', fontFamily: 'JetBrains Mono', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 4 }}>Your earnings / sale</div>
                   <div style={{ fontFamily: 'Syne', fontSize: 26, fontWeight: 800, color: 'var(--neon)' }}>${(pricing.price * 0.8).toFixed(2)}</div>
@@ -311,7 +288,6 @@ export default function CreateCourse() {
           </div>
         </div>
 
-        {/* Bottom submit bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 22px', background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, marginBottom: 32 }}>
           <div style={{ fontSize: 13, color: 'var(--mu)' }}>
             {form.title ? <><span style={{ color: 'var(--fg)', fontWeight: 600 }}>{form.title}</span> · </> : ''}
@@ -319,7 +295,8 @@ export default function CreateCourse() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn bo" onClick={() => navigate(-1)}>Cancel</button>
-            <button className="btn bp" onClick={submit} disabled={saving}>{saving ? 'Submitting…' : '🚀 Submit for Review'}</button>
+            <button className="btn bo" onClick={() => save(false)} disabled={saving}>💾 Save Draft</button>
+            <button className="btn bp" onClick={() => save(true)} disabled={saving}>{saving ? 'Saving…' : '🚀 Save & Resubmit'}</button>
           </div>
         </div>
       </div>

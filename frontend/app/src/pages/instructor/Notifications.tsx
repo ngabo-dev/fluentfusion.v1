@@ -1,116 +1,93 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../../api/client'
-import NotificationDetailModal from '../../components/NotificationDetailModal'
 
-function targetLabel(t: string | null | undefined, courses: any[]): string {
-  if (!t) return 'Platform'
-  if (t === 'all_students' || t === 'all') return 'All Students'
-  if (t === 'instructors') return 'Instructors'
-  if (t === 'students') return 'All Students'
-  if (t.startsWith('course_')) {
-    const cid = Number(t.replace('course_', ''))
-    const c = courses.find(x => x.id === cid)
-    return c ? `📚 ${c.title}` : 'Course'
-  }
-  return t
+function getIcon(title: string) {
+  const t = title?.toLowerCase() ?? ''
+  if (t.includes('course') || t.includes('approved') || t.includes('rejected')) return '📚'
+  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return '🎙️'
+  if (t.includes('quiz')) return '📝'
+  if (t.includes('payment') || t.includes('payout')) return '💰'
+  if (t.includes('message')) return '💬'
+  return '🔔'
+}
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
 }
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState<any[]>([])
-  const [courses, setCourses] = useState<any[]>([])
-  const [form, setForm] = useState({ title: '', message: '', target: 'all_students', course_id: '', allow_replies: false })
-  const [sending, setSending] = useState(false)
-  const [openId, setOpenId] = useState<number | null>(null)
-
-  const load = () =>
-    api.get('/api/instructor/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
 
   useEffect(() => {
-    load()
-    api.get('/api/instructor/courses').then(r => setCourses(Array.isArray(r.data) ? r.data : []))
-    // Mark all as read when page opens
+    api.get('/api/instructor/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
     api.post('/api/instructor/notifications/mark-read').catch(() => {})
   }, [])
 
-  async function send() {
-    if (!form.title.trim() || !form.message.trim()) return
-    setSending(true)
-    const payload: any = { title: form.title, message: form.message, target: form.target, allow_replies: form.allow_replies }
-    if (form.target === 'course' && form.course_id) payload.course_id = Number(form.course_id)
-    await api.post('/api/instructor/notifications', payload)
-    setForm({ title: '', message: '', target: 'all_students', course_id: '', allow_replies: false })
-    await load()
-    setSending(false)
-  }
+  const unread = notifs.filter(n => !n.is_read).length
 
   return (
     <div className="pg">
-      <div className="ph"><div><h1>Notifications</h1><p>Send announcements to your students</p></div></div>
-
-      {/* Send form */}
-      <div className="card" style={{ marginBottom: 16, borderColor: 'rgba(191,255,0,.2)' }}>
-        <div style={{ fontFamily: 'Syne', fontSize: 13, fontWeight: 800, textTransform: 'uppercase', marginBottom: 14 }}>Send Notification</div>
-        <div className="g2">
-          <div className="fg">
-            <label className="lbl">Title</label>
-            <input className="inp" placeholder="Notification title..." value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-          </div>
-          <div className="fg">
-            <label className="lbl">Target Audience</label>
-            <select className="sel" value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value, course_id: '' }))}>
-              <option value="all_students">All My Students</option>
-              <option value="course">Specific Course Students</option>
-            </select>
-          </div>
+      <div className="ph">
+        <div>
+          <h1>Notifications</h1>
+          <p>{unread > 0 ? `${unread} unread` : 'All caught up'}</p>
         </div>
-        {form.target === 'course' && (
-          <div className="fg" style={{ marginBottom: 12 }}>
-            <label className="lbl">Select Course</label>
-            <select className="sel" value={form.course_id} onChange={e => setForm(f => ({ ...f, course_id: e.target.value }))}>
-              <option value="">— Choose a course —</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.flag_emoji} {c.title}</option>)}
-            </select>
-          </div>
-        )}
-        <div className="fg">
-          <label className="lbl">Message</label>
-          <textarea className="inp" rows={3} placeholder="Write your message..." value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} />
-        </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer', marginBottom: 12 }}>
-          <div className={`tgl${form.allow_replies ? ' on' : ''}`} onClick={() => setForm(f => ({ ...f, allow_replies: !f.allow_replies }))} />
-          Allow recipients to reply
-        </label>
-        <button className="btn bp" onClick={send} disabled={sending || (form.target === 'course' && !form.course_id)}>
-          {sending ? 'Sending...' : 'Send Now'}
-        </button>
       </div>
 
-      {/* Notification list */}
-      <div className="card">
-        <div className="ch"><span className="ch-t">All Notifications</span><span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--mu)' }}>{notifs.length}</span></div>
-        {notifs.length === 0 && <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0', textAlign: 'center' }}>No notifications</div>}
-        {notifs.map(n => (
-          <div key={n.id} className={`ni${n.is_read === false ? ' unr' : ''}`}
-            onClick={() => setOpenId(n.id)}
-            style={{ cursor: 'pointer' }}>
-            <div className="nc" style={{ background: n.is_read === false ? 'rgba(191,255,0,.12)' : 'rgba(0,255,127,.08)' }}>🔔</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 12, fontWeight: n.is_read === false ? 700 : 500 }}>{n.title}</span>
-                <span className="bdg bm" style={{ fontSize: 9 }}>{targetLabel(n.target, courses)}</span>
-                {n.is_read === false && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#BFFF00', display: 'inline-block' }} />}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>{n.message}</div>
-              <div style={{ fontSize: 10, color: 'var(--mu)', fontFamily: 'JetBrains Mono', marginTop: 2 }}>{n.sent_at?.slice(0, 16).replace('T', ' ')}</div>
+      <div className="card" style={{ padding: 0 }}>
+        {notifs.length === 0 && (
+          <div style={{ color: 'var(--mu)', textAlign: 'center', padding: 48, fontFamily: 'JetBrains Mono', fontSize: 11 }}>
+            No notifications yet
+          </div>
+        )}
+        {notifs.map((n, i) => (
+          <div key={n.id} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 14, padding: '16px 20px',
+            borderBottom: i < notifs.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none',
+            background: !n.is_read ? 'rgba(191,255,0,.03)' : 'transparent',
+          }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+              background: !n.is_read ? 'rgba(191,255,0,.1)' : 'rgba(255,255,255,.05)',
+              border: `1px solid ${!n.is_read ? 'rgba(191,255,0,.2)' : 'rgba(255,255,255,.08)'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+            }}>
+              {getIcon(n.title)}
             </div>
-            <div style={{ fontSize: 11, color: '#444' }}>→</div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 13, fontWeight: !n.is_read ? 700 : 500, color: !n.is_read ? '#fff' : '#bbb' }}>
+                  {n.title}
+                </span>
+                {!n.is_read && (
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--neon)', flexShrink: 0, display: 'inline-block' }} />
+                )}
+              </div>
+
+              <div style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
+                {n.message}
+                {n.link && (
+                  <> — <Link to={n.link} style={{ color: 'var(--neon)', textDecoration: 'underline', fontWeight: 600 }}>
+                    View →
+                  </Link></>
+                )}
+              </div>
+
+              <div style={{ fontSize: 10, color: 'var(--mu2)', fontFamily: 'JetBrains Mono', marginTop: 5 }}>
+                {timeAgo(n.sent_at)}
+              </div>
+            </div>
           </div>
         ))}
       </div>
-
-      {openId !== null && (
-        <NotificationDetailModal notifId={openId} onClose={() => setOpenId(null)} />
-      )}
     </div>
   )
 }

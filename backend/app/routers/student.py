@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models import get_db, User, Course, Enrollment, Payment, LiveSession, Quiz, Lesson, Message, Review, Notification, NotificationRead, RoleEnum
 from app.auth import require_role
+from app.notify import notify
 
 router = APIRouter(prefix="/api/student", tags=["student"])
 guard = require_role(RoleEnum.student)
@@ -55,6 +56,11 @@ def enroll(course_id: int, db: Session = Depends(get_db), current_user: User = D
     course = db.query(Course).filter(Course.id == course_id, Course.status == "published").first()
     if not course: return {"error": "Course not found"}
     db.add(Enrollment(student_id=current_user.id, course_id=course_id))
+    db.commit()
+    # Notify instructor
+    notify(db, title="🎓 New Enrollment",
+           message=f"{current_user.name} just enrolled in your course '{course.title}'.",
+           target=str(course.instructor_id), link="/instructor/students", course_id=course_id)
     db.commit()
     return {"ok": True, "enrolled": True}
 
@@ -126,7 +132,12 @@ def get_conversation(peer_id: int, db: Session = Depends(get_db), current_user: 
 @router.post("/messages/{peer_id}")
 def send_message(peer_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     msg = Message(sender_id=current_user.id, receiver_id=peer_id, content=body["content"])
-    db.add(msg); db.commit()
+    db.add(msg)
+    # Notify recipient
+    notify(db, title="💬 New Message",
+           message=f"{current_user.name} sent you a message.",
+           target=str(peer_id), link="/dashboard/messages")
+    db.commit()
     return {"ok": True}
 
 @router.get("/notifications")
@@ -135,21 +146,22 @@ def notifications(db: Session = Depends(get_db), current_user: User = Depends(gu
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
     targets = ["all", "students", str(current_user.id)] + course_targets
     notifs = db.query(Notification).filter(
-        Notification.target.in_(targets)
+        Notification.target.in_(targets),
+        Notification.notif_type == "notification"
     ).order_by(Notification.sent_at.desc()).limit(50).all()
     read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
-    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "is_read": n.id in read_ids} for n in notifs]
+    return [{"id": n.id, "title": n.title, "message": n.message, "link": n.link, "sent_at": n.sent_at, "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
     targets = ["all", "students", str(current_user.id)] + course_targets
-    total = db.query(Notification).filter(Notification.target.in_(targets)).count()
+    total = db.query(Notification).filter(Notification.target.in_(targets), Notification.notif_type == "notification").count()
     read = db.query(NotificationRead).filter(
         NotificationRead.user_id == current_user.id,
         NotificationRead.notification_id.in_(
-            db.query(Notification.id).filter(Notification.target.in_(targets))
+            db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "notification")
         )
     ).count()
     return {"count": max(0, total - read)}
@@ -159,7 +171,7 @@ def mark_notifications_read(db: Session = Depends(get_db), current_user: User = 
     enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
     targets = ["all", "students", str(current_user.id)] + course_targets
-    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets)).all()]
+    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "notification").all()]
     existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
     for nid in notif_ids:
         if nid not in existing:

@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, Payout, LiveSession, Quiz, Lesson, Message, Review, MonthlyRevenue, Notification, NotificationRead, RoleEnum
+from datetime import datetime
+from app.models import get_db, User, Course, CourseSection, Enrollment, Payment, Payout, LiveSession, Quiz, Lesson, Message, Review, MonthlyRevenue, Notification, NotificationRead, RoleEnum, CourseStatusEnum
 from app.auth import require_role, get_current_user
+from app.notify import notify
 from typing import Optional
 
 router = APIRouter(prefix="/api/instructor", tags=["instructor"])
@@ -38,47 +40,73 @@ def dashboard(db: Session = Depends(get_db), current_user: User = Depends(guard)
 
 @router.get("/courses")
 def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    courses = db.query(Course).filter(Course.instructor_id == current_user.id).all()
+    courses = db.query(Course).filter(Course.instructor_id == current_user.id).order_by(Course.updated_at.desc()).all()
     result = []
     for c in courses:
         students = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
         rev = db.query(func.sum(Payment.amount)).filter(Payment.course_id == c.id, Payment.status == "completed").scalar() or 0
-        avg_comp = db.query(func.avg(Enrollment.completion_pct)).filter(Enrollment.course_id == c.id).scalar() or 0
-        avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
         lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
-        result.append({"id": c.id, "title": c.title, "description": c.description, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "thumbnail_url": c.thumbnail_url, "status": c.status, "price": c.price, "students": students, "revenue": round(rev * 0.7, 2), "completion": round(avg_comp, 1), "rating": round(avg_rat, 1), "lesson_count": lesson_count})
+        section_count = db.query(CourseSection).filter(CourseSection.course_id == c.id).count()
+        result.append({
+            "id": c.id, "title": c.title, "subtitle": c.subtitle, "description": c.description,
+            "category": c.category, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
+            "thumbnail_url": c.thumbnail_url, "intro_video_url": c.intro_video_url,
+            "status": c.status, "price": c.price, "is_free": c.is_free,
+            "what_you_learn": c.what_you_learn, "requirements": c.requirements, "target_audience": c.target_audience,
+            "rejection_feedback": c.rejection_feedback, "admin_notes": c.admin_notes,
+            "students": students, "revenue": round(rev * 0.7, 2), "lesson_count": lesson_count, "section_count": section_count,
+            "submitted_at": c.submitted_at, "approved_at": c.approved_at, "published_at": c.published_at,
+            "created_at": c.created_at, "updated_at": c.updated_at,
+        })
     return result
 
-@router.get("/courses/{course_id}/lessons")
-def course_lessons(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    lessons = db.query(Lesson).filter(Lesson.course_id == course_id).order_by(Lesson.order).all()
-    return [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "order": l.order, "description": l.description, "video_url": l.video_url} for l in lessons]
-
-@router.post("/courses/{course_id}/lessons")
-def create_lesson(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    lesson = Lesson(course_id=course_id, title=body["title"], lesson_type=body.get("lesson_type","video"), duration_min=body.get("duration_min",15), description=body.get("description",""), video_url=body.get("video_url",""), order=body.get("order",0))
-    db.add(lesson); db.commit(); db.refresh(lesson)
-    return {"id": lesson.id}
-
-@router.patch("/courses/{course_id}/lessons/{lesson_id}")
-def update_lesson(course_id: int, lesson_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
-    if lesson:
-        for k, v in body.items(): setattr(lesson, k, v)
-        db.commit()
-    return {"ok": True}
+@router.get("/courses/{course_id}")
+def get_course(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    c = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not c: raise HTTPException(status_code=404, detail="Not found")
+    sections = db.query(CourseSection).filter(CourseSection.course_id == c.id).order_by(CourseSection.order).all()
+    section_data = []
+    for s in sections:
+        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
+        section_data.append({
+            "id": s.id, "title": s.title, "order": s.order,
+            "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
+                         "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
+                         "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in lessons]
+        })
+    # Lessons not in any section
+    loose = db.query(Lesson).filter(Lesson.course_id == c.id, Lesson.section_id == None).order_by(Lesson.order).all()
+    return {
+        "id": c.id, "title": c.title, "subtitle": c.subtitle, "description": c.description,
+        "category": c.category, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
+        "thumbnail_url": c.thumbnail_url, "intro_video_url": c.intro_video_url,
+        "status": c.status, "price": c.price, "is_free": c.is_free,
+        "what_you_learn": c.what_you_learn, "requirements": c.requirements, "target_audience": c.target_audience,
+        "rejection_feedback": c.rejection_feedback, "admin_notes": c.admin_notes,
+        "sections": section_data,
+        "loose_lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
+                           "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
+                           "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in loose],
+        "submitted_at": c.submitted_at, "approved_at": c.approved_at, "published_at": c.published_at,
+        "created_at": c.created_at, "updated_at": c.updated_at,
+    }
 
 @router.post("/courses")
 def create_course(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    lang = body.get("language", "")
+    flag_map = {"French":"🇫🇷","English":"🇬🇧","Spanish":"🇪🇸","German":"🇩🇪","Japanese":"🇯🇵",
+                "Mandarin":"🇨🇳","Portuguese":"🇵🇹","Italian":"🇮🇹","Russian":"🇷🇺","Korean":"🇰🇷","Arabic":"🇸🇦","Dutch":"🇳🇱"}
     course = Course(
-        title=body["title"],
-        description=body.get("description", ""),
-        language=body.get("language", ""),
-        level=body.get("level", ""),
-        flag_emoji=body.get("flag_emoji", ""),
-        thumbnail_url=body.get("thumbnail_url", ""),
+        title=body["title"], subtitle=body.get("subtitle"),
+        description=body.get("description"), category=body.get("category"),
+        language=lang, level=body.get("level"),
+        flag_emoji=body.get("flag_emoji") or flag_map.get(lang, "📚"),
+        thumbnail_url=body.get("thumbnail_url"), intro_video_url=body.get("intro_video_url"),
         instructor_id=current_user.id,
-        price=body.get("price", 49.99)
+        price=body.get("price", 49.99), is_free=body.get("is_free", False),
+        what_you_learn=body.get("what_you_learn"), requirements=body.get("requirements"),
+        target_audience=body.get("target_audience"),
+        status=CourseStatusEnum.draft,
     )
     db.add(course); db.commit(); db.refresh(course)
     return {"id": course.id, "title": course.title, "status": course.status}
@@ -86,22 +114,149 @@ def create_course(body: dict, db: Session = Depends(get_db), current_user: User 
 @router.patch("/courses/{course_id}")
 def update_course(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
-    if not course: return {"error": "not found"}
-    for k, v in body.items():
-        if hasattr(course, k): setattr(course, k, v)
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    if course.status == CourseStatusEnum.pending:
+        raise HTTPException(status_code=403, detail="Cannot edit a course under review")
+    allowed = ["title","subtitle","description","category","language","level","flag_emoji",
+               "thumbnail_url","intro_video_url","price","is_free","what_you_learn","requirements","target_audience"]
+    for k in allowed:
+        if k in body: setattr(course, k, body[k])
+    course.updated_at = datetime.utcnow()
     db.commit()
     return {"ok": True}
 
 @router.delete("/courses/{course_id}")
 def delete_course(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
-    if course: db.delete(course); db.commit()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    if course.status in (CourseStatusEnum.published, CourseStatusEnum.pending):
+        raise HTTPException(status_code=403, detail="Cannot delete a published or pending course")
+    db.delete(course); db.commit()
     return {"ok": True}
+
+# ── Sections ──────────────────────────────────────────────────────────────
+
+@router.get("/courses/{course_id}/sections")
+def get_sections(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    sections = db.query(CourseSection).filter(CourseSection.course_id == course_id).order_by(CourseSection.order).all()
+    result = []
+    for s in sections:
+        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
+        result.append({"id": s.id, "title": s.title, "order": s.order,
+            "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
+                         "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
+                         "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in lessons]})
+    return result
+
+@router.post("/courses/{course_id}/sections")
+def create_section(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    max_order = db.query(func.max(CourseSection.order)).filter(CourseSection.course_id == course_id).scalar() or 0
+    s = CourseSection(course_id=course_id, title=body["title"], order=max_order + 1)
+    db.add(s); db.commit(); db.refresh(s)
+    return {"id": s.id, "title": s.title, "order": s.order, "lessons": []}
+
+@router.patch("/courses/{course_id}/sections/{section_id}")
+def update_section(course_id: int, section_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    s = db.query(CourseSection).filter(CourseSection.id == section_id, CourseSection.course_id == course_id).first()
+    if not s: raise HTTPException(status_code=404, detail="Not found")
+    if "title" in body: s.title = body["title"]
+    if "order" in body: s.order = body["order"]
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/courses/{course_id}/sections/{section_id}")
+def delete_section(course_id: int, section_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    s = db.query(CourseSection).filter(CourseSection.id == section_id, CourseSection.course_id == course_id).first()
+    if s: db.delete(s); db.commit()
+    return {"ok": True}
+
+# ── Lessons ───────────────────────────────────────────────────────────────
+
+@router.get("/courses/{course_id}/lessons")
+def course_lessons(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    lessons = db.query(Lesson).filter(Lesson.course_id == course_id).order_by(Lesson.order).all()
+    return [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
+             "order": l.order, "description": l.description, "video_url": l.video_url,
+             "content": l.content, "resource_url": l.resource_url, "section_id": l.section_id,
+             "is_preview": l.is_preview} for l in lessons]
+
+@router.post("/courses/{course_id}/lessons")
+def create_lesson(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    section_id = body.get("section_id")
+    max_order = db.query(func.max(Lesson.order)).filter(Lesson.course_id == course_id).scalar() or 0
+    lesson = Lesson(
+        course_id=course_id, section_id=section_id,
+        title=body["title"], lesson_type=body.get("lesson_type", "video"),
+        duration_min=body.get("duration_min", 15), description=body.get("description", ""),
+        video_url=body.get("video_url", ""), content=body.get("content", ""),
+        resource_url=body.get("resource_url", ""),
+        order=body.get("order", max_order + 1), is_preview=body.get("is_preview", False)
+    )
+    db.add(lesson); db.commit(); db.refresh(lesson)
+    return {"id": lesson.id, "title": lesson.title, "lesson_type": lesson.lesson_type,
+            "duration_min": lesson.duration_min, "order": lesson.order, "section_id": lesson.section_id}
+
+@router.patch("/courses/{course_id}/lessons/{lesson_id}")
+def update_lesson(course_id: int, lesson_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
+    if not lesson: raise HTTPException(status_code=404, detail="Not found")
+    for k in ["title","lesson_type","duration_min","description","video_url","content","resource_url","order","section_id","is_preview"]:
+        if k in body: setattr(lesson, k, body[k])
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/courses/{course_id}/lessons/{lesson_id}")
+def delete_lesson(course_id: int, lesson_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
+    if lesson: db.delete(lesson); db.commit()
+    return {"ok": True}
+
+# ── Submit / Publish ───────────────────────────────────────────────────────
 
 @router.post("/courses/{course_id}/submit")
 def submit_for_review(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
-    if course: course.status = "pending"; db.commit()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    if course.status == CourseStatusEnum.pending:
+        raise HTTPException(status_code=400, detail="Already under review")
+    if course.status == CourseStatusEnum.published:
+        raise HTTPException(status_code=400, detail="Already published")
+    # Validation
+    lesson_count = db.query(Lesson).filter(Lesson.course_id == course_id).count()
+    if not course.title or not course.description or not course.language or not course.level:
+        raise HTTPException(status_code=400, detail="Complete all required fields: title, description, language, level")
+    if lesson_count < 1:
+        raise HTTPException(status_code=400, detail="Add at least 1 lesson before submitting")
+    course.status = CourseStatusEnum.pending
+    course.submitted_at = datetime.utcnow()
+    course.rejection_feedback = None
+    db.commit()
+    notify(db, title="📚 Course Submitted for Review",
+           message=f"{current_user.name} submitted '{course.title}' for review.",
+           target="admins", link="/admin/approvals", course_id=course.id)
+    db.commit()
+    return {"ok": True}
+
+@router.post("/courses/{course_id}/publish")
+def publish_course(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    if course.status != CourseStatusEnum.approved:
+        raise HTTPException(status_code=403, detail="Course must be approved before publishing")
+    course.status = CourseStatusEnum.published
+    course.published_at = datetime.utcnow()
+    db.commit()
+    # Notify all enrolled students
+    enrolled = db.query(Enrollment).filter(Enrollment.course_id == course_id).all()
+    for e in enrolled:
+        notify(db, title="🚀 Course Now Live!",
+               message=f"'{course.title}' is now published and ready for you.",
+               target=str(e.student_id), link="/dashboard/courses", course_id=course_id)
+    db.commit()
     return {"ok": True}
 
 @router.get("/live-sessions")
@@ -118,7 +273,17 @@ def live_sessions(db: Session = Depends(get_db), current_user: User = Depends(gu
 def create_session(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     from datetime import datetime
     s = LiveSession(course_id=body["course_id"], title=body["title"], scheduled_at=datetime.fromisoformat(body["scheduled_at"]), duration_min=body.get("duration_min",60))
-    db.add(s); db.commit()
+    db.add(s)
+    db.commit()
+    # Notify enrolled students
+    course = db.query(Course).filter(Course.id == body["course_id"]).first()
+    enrolled = db.query(Enrollment).filter(Enrollment.course_id == body["course_id"]).all()
+    scheduled_str = datetime.fromisoformat(body["scheduled_at"]).strftime("%b %d at %H:%M")
+    for e in enrolled:
+        notify(db, title="🎤 Live Session Scheduled",
+               message=f"{current_user.name} scheduled '{body['title']}' for {scheduled_str}.",
+               target=str(e.student_id), link="/dashboard/live-sessions", course_id=body["course_id"])
+    db.commit()
     return {"ok": True}
 
 @router.get("/quizzes")
@@ -177,7 +342,11 @@ def get_conversation(student_id: int, db: Session = Depends(get_db), current_use
 @router.post("/messages/{student_id}")
 def send_message(student_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     msg = Message(sender_id=current_user.id, receiver_id=student_id, content=body["content"])
-    db.add(msg); db.commit()
+    db.add(msg)
+    notify(db, title="💬 New Message",
+           message=f"{current_user.name} sent you a message.",
+           target=str(student_id), link="/dashboard/messages")
+    db.commit()
     return {"ok": True}
 
 @router.get("/reviews")
@@ -233,25 +402,32 @@ def request_payout(body: dict, db: Session = Depends(get_db), current_user: User
     import random, string
     ref = "#PAY-" + "".join(random.choices(string.digits, k=4))
     p = Payout(instructor_id=current_user.id, amount=body["amount"], reference=ref)
-    db.add(p); db.commit()
+    db.add(p)
+    # Notify admins
+    notify(db, title="💸 Payout Requested",
+           message=f"{current_user.name} requested a payout of ${body['amount']:.2f} ({ref}).",
+           target="admins", link="/admin/payouts")
+    db.commit()
     return {"ok": True, "reference": ref}
 
 @router.get("/notifications")
 def notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    targets = ["all", "instructors", str(current_user.id)]
     notifs = db.query(Notification).filter(
-        Notification.target.in_(["all", "instructors", str(current_user.id)])
+        Notification.target.in_(targets),
+        Notification.notif_type == "notification"
     ).order_by(Notification.sent_at.desc()).limit(50).all()
     read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
-    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "target": n.target or "", "is_read": n.id in read_ids} for n in notifs]
+    return [{"id": n.id, "title": n.title, "message": n.message, "link": n.link, "sent_at": n.sent_at, "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     targets = ["all", "instructors", str(current_user.id)]
-    total = db.query(Notification).filter(Notification.target.in_(targets)).count()
+    total = db.query(Notification).filter(Notification.target.in_(targets), Notification.notif_type == "notification").count()
     read = db.query(NotificationRead).filter(
         NotificationRead.user_id == current_user.id,
         NotificationRead.notification_id.in_(
-            db.query(Notification.id).filter(Notification.target.in_(targets))
+            db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "notification")
         )
     ).count()
     return {"count": max(0, total - read)}
@@ -259,7 +435,7 @@ def notifications_unread_count(db: Session = Depends(get_db), current_user: User
 @router.post("/notifications/mark-read")
 def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     targets = ["all", "instructors", str(current_user.id)]
-    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets)).all()]
+    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "notification").all()]
     existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
     for nid in notif_ids:
         if nid not in existing:
@@ -267,8 +443,16 @@ def mark_notifications_read(db: Session = Depends(get_db), current_user: User = 
     db.commit()
     return {"ok": True}
 
-@router.post("/notifications")
-def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+@router.get("/announcements")
+def list_announcements(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    notifs = db.query(Notification).filter(
+        Notification.sender_id == current_user.id,
+        Notification.notif_type == "announcement"
+    ).order_by(Notification.sent_at.desc()).limit(50).all()
+    return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target or "", "sent_at": n.sent_at, "recipients": n.recipients, "allow_replies": n.allow_replies} for n in notifs]
+
+@router.post("/announcements")
+def send_announcement(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     target = body.get("target", "all_students")
     course_id = body.get("course_id")
     recipients = 0
@@ -280,10 +464,16 @@ def send_notification(body: dict, db: Session = Depends(get_db), current_user: U
     n = Notification(
         title=body["title"], message=body["message"],
         target=target, recipients=recipients, sender_id=current_user.id,
-        course_id=course_id, allow_replies=body.get("allow_replies", False)
+        course_id=course_id, allow_replies=body.get("allow_replies", False),
+        notif_type="announcement"
     )
     db.add(n); db.commit()
     return {"ok": True}
+
+@router.post("/notifications")
+def send_notification(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    """Legacy endpoint — kept for backward compat."""
+    return send_announcement(body, db, current_user)
 
 @router.get("/analytics")
 def analytics(db: Session = Depends(get_db), current_user: User = Depends(guard)):

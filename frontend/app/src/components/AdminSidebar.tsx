@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import api from '../api/client'
+import { useSidebar } from './SidebarContext'
 
 export default function AdminSidebar() {
+  const { collapsed } = useSidebar()
   const [counts, setCounts] = useState({ students: 0, instructors: 0, admins: 0, pendingPayouts: 0, openReports: 0 })
 
   useEffect(() => {
@@ -49,37 +51,33 @@ export default function AdminSidebar() {
       { to: '/admin/revenue',  label: 'Revenue Reports', icon: '💰' },
     ]},
     { section: 'System', items: [
-      { to: '/admin/pulse',      label: 'PULSE Engine',      icon: '🧠' },
-      { to: '/admin/messages',   label: 'Messages',          icon: '💬' },
-      { to: '/admin/notifications', label: 'Notifications',  icon: '🔔' },
-      { to: '/admin/audit-log',  label: 'Audit Log',         icon: '🚨' },
-      { to: '/admin/settings',   label: 'Platform Settings', icon: '⚙️' },
+      { to: '/admin/pulse',         label: 'PULSE Engine',      icon: '🧠' },
+      { to: '/admin/messages',      label: 'Messages',          icon: '💬' },
+      { to: '/admin/announcements', label: 'Announcements',     icon: '📢' },
+      { to: '/admin/notifications', label: 'Notifications',     icon: '🔔' },
+      { to: '/admin/audit-log',     label: 'Audit Log',         icon: '🚨' },
+      { to: '/admin/settings',      label: 'Platform Settings', icon: '⚙️' },
     ]},
   ]
 
   return (
-    <aside className="sb">
-      {links.map(group => (
-        <React.Fragment key={group.section}>
-          <div className="ss">{group.section}</div>
-          {group.items.map((item: any) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/admin'}
-              className={({ isActive }) => `si${isActive ? ' active' : ''}`}
-            >
-              <span>{item.icon}</span> {item.label}
-              {item.badge && (
-                <span className={`sbg${item.badgeClass ? ' ' + item.badgeClass : ''}`}>{item.badge}</span>
-              )}
-            </NavLink>
-          ))}
-        </React.Fragment>
-      ))}
-      <div className="sb-bot">
-        <div className="pl"><span className="pd" />ADMIN · PROD</div>
-      </div>
+    <aside className="sb" style={{ width: collapsed ? 0 : 'var(--sw)', overflow: collapsed ? 'hidden' : 'auto', transition: 'width .25s ease' }}>
+      {!collapsed && <>
+        {links.map(group => (
+          <React.Fragment key={group.section}>
+            <div className="ss">{group.section}</div>
+            {group.items.map((item: any) => (
+              <NavLink key={item.to} to={item.to} end={item.to === '/admin'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}>
+                <span>{item.icon}</span> {item.label}
+                {item.badge && <span className={`sbg${item.badgeClass ? ' ' + item.badgeClass : ''}`}>{item.badge}</span>}
+              </NavLink>
+            ))}
+          </React.Fragment>
+        ))}
+        <div className="sb-bot">
+          <div className="pl"><span className="pd" />ADMIN · PROD</div>
+        </div>
+      </>}
     </aside>
   )
 }

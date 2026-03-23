@@ -39,6 +39,7 @@ class StatusEnum(str, enum.Enum):
 class CourseStatusEnum(str, enum.Enum):
     draft = "draft"
     pending = "pending"
+    approved = "approved"
     published = "published"
     rejected = "rejected"
 
@@ -88,32 +89,60 @@ class Course(Base):
     __tablename__ = "courses"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
+    subtitle = Column(String, nullable=True)
     description = Column(Text, nullable=True)
+    category = Column(String, nullable=True)
     language = Column(String)
     level = Column(String)
     flag_emoji = Column(String(4))
     thumbnail_url = Column(String, nullable=True)
+    intro_video_url = Column(String, nullable=True)
     status = Column(Enum(CourseStatusEnum), default=CourseStatusEnum.draft)
     instructor_id = Column(Integer, ForeignKey("users.id"))
     price = Column(Float, default=49.99)
+    is_free = Column(Boolean, default=False)
+    what_you_learn = Column(Text, nullable=True)   # newline-separated
+    requirements = Column(Text, nullable=True)
+    target_audience = Column(Text, nullable=True)
+    rejection_feedback = Column(Text, nullable=True)
+    admin_notes = Column(Text, nullable=True)
+    submitted_at = Column(DateTime, nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     instructor = relationship("User", back_populates="courses", foreign_keys=[instructor_id])
+    sections = relationship("CourseSection", back_populates="course", order_by="CourseSection.order", cascade="all, delete-orphan")
     lessons = relationship("Lesson", back_populates="course")
     enrollments = relationship("Enrollment", back_populates="course")
     sessions = relationship("LiveSession", back_populates="course")
     quizzes = relationship("Quiz", back_populates="course")
 
+class CourseSection(Base):
+    __tablename__ = "course_sections"
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    title = Column(String, nullable=False)
+    order = Column(Integer, default=0)
+    course = relationship("Course", back_populates="sections")
+    lessons = relationship("Lesson", back_populates="section", order_by="Lesson.order", cascade="all, delete-orphan")
+
 class Lesson(Base):
     __tablename__ = "lessons"
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("courses.id"))
+    section_id = Column(Integer, ForeignKey("course_sections.id"), nullable=True)
     title = Column(String)
-    lesson_type = Column(String, default="video")
-    video_url = Column(String)
+    lesson_type = Column(String, default="video")  # video | text | pdf | quiz
+    video_url = Column(String, nullable=True)
+    content = Column(Text, nullable=True)          # for text lessons
+    resource_url = Column(String, nullable=True)   # for PDFs
     duration_min = Column(Integer, default=15)
     description = Column(Text)
     order = Column(Integer, default=0)
+    is_preview = Column(Boolean, default=False)
     course = relationship("Course", back_populates="lessons")
+    section = relationship("CourseSection", back_populates="lessons")
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
@@ -179,6 +208,9 @@ class Notification(Base):
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
     allow_replies = Column(Boolean, default=False)
+    # 'notification' = system-generated event alert | 'announcement' = human-composed broadcast
+    notif_type = Column(String, default="announcement")
+    link = Column(String, nullable=True)   # e.g. "/dashboard/quizzes" — rendered as clickable link
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { useSidebar } from './SidebarContext'
 
 const links = [
   { section: 'Overview', items: [
@@ -23,28 +24,32 @@ const links = [
     { to: '/instructor/payouts', label: 'Payouts', icon: '🧾' },
   ]},
   { section: 'Settings', items: [
+    { to: '/instructor/announcements', label: 'Announcements', icon: '📢' },
     { to: '/instructor/notifications', label: 'Notifications', icon: '🔔' },
     { to: '/instructor/settings', label: 'Profile & Settings', icon: '⚙️' },
   ]},
 ]
 
 export default function Sidebar() {
+  const { collapsed } = useSidebar()
   return (
-    <aside className="sb">
-      {links.map(group => (
-        <React.Fragment key={group.section}>
-          <div className="ss">{group.section}</div>
-          {group.items.map(item => (
-            <NavLink key={item.to} to={item.to} end={item.to === '/instructor'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}>
-              <span>{item.icon}</span> {item.label}
-              {item.badge && <span className="sbg">{item.badge}</span>}
-            </NavLink>
-          ))}
-        </React.Fragment>
-      ))}
-      <div className="sb-bot">
-        <div className="pl"><span className="pd" />PULSE Active · v2.0</div>
-      </div>
+    <aside className="sb" style={{ width: collapsed ? 0 : 'var(--sw)', overflow: collapsed ? 'hidden' : 'auto', transition: 'width .25s ease', flexShrink: 0 }}>
+      {!collapsed && <>
+        {links.map(group => (
+          <React.Fragment key={group.section}>
+            <div className="ss">{group.section}</div>
+            {group.items.map((item: any) => (
+              <NavLink key={item.to} to={item.to} end={item.to === '/instructor'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}>
+                <span>{item.icon}</span> {item.label}
+                {item.badge && <span className="sbg">{item.badge}</span>}
+              </NavLink>
+            ))}
+          </React.Fragment>
+        ))}
+        <div className="sb-bot">
+          <div className="pl"><span className="pd" />PULSE Active · v2.0</div>
+        </div>
+      </>}
     </aside>
   )
 }
