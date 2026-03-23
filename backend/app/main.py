@@ -10,13 +10,15 @@ Base.metadata.create_all(bind=engine)
 # Safe column migrations — add new columns if they don't exist yet
 def _run_migrations():
     from sqlalchemy import text
+    migrations = [
+        ("notifications", "notif_type", "VARCHAR DEFAULT 'announcement'"),
+        ("notifications", "link",       "VARCHAR"),
+        ("users",         "avatar_url", "VARCHAR"),
+    ]
     with engine.connect() as conn:
-        for col, definition in [
-            ("notif_type", "VARCHAR DEFAULT 'announcement'"),
-            ("link",       "VARCHAR"),
-        ]:
+        for table, col, definition in migrations:
             try:
-                conn.execute(text(f"ALTER TABLE notifications ADD COLUMN {col} {definition}"))
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {definition}"))
                 conn.commit()
             except Exception:
                 conn.rollback()
