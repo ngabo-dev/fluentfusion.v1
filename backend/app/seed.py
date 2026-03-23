@@ -19,60 +19,46 @@ def clear():
 def seed():
     clear()
 
-    # Super Admin (Jean Pierre — ngabo470@gmail.com)
-    super_admin = User(
+    # Admin
+    admin = User(
         name="Jean Pierre Niyongabo",
         email="ngabo470@gmail.com",
-        hashed_password=hash_password("superadmin123"),
-        role=RoleEnum.super_admin,
+        hashed_password=hash_password("Admin@123"),
+        role=RoleEnum.admin,
         status=StatusEnum.active,
         avatar_initials="JP",
         is_verified=True,
         last_active=datetime.utcnow(),
     )
-    db.add(super_admin)
+    db.add(admin)
 
-    # Admins
-    admins = [
-        User(name="Chidi Okafor", email="c.okafor@fluentfusion.com", hashed_password=hash_password("admin123"), role=RoleEnum.admin, status=StatusEnum.active, avatar_initials="CO", is_verified=True, last_active=datetime.utcnow()),
-        User(name="Rania Ahmed", email="r.ahmed@fluentfusion.com", hashed_password=hash_password("admin123"), role=RoleEnum.admin, status=StatusEnum.active, avatar_initials="RA", is_verified=True, last_active=datetime.utcnow() - timedelta(hours=3)),
-        User(name="Bola Mensah", email="b.mensah@fluentfusion.com", hashed_password=hash_password("admin123"), role=RoleEnum.admin, status=StatusEnum.active, avatar_initials="BM", is_verified=True, last_active=datetime.utcnow() - timedelta(days=1)),
-    ]
-    for a in admins: db.add(a)
+    # Instructor
+    instructor = User(
+        name="Jean Pierre Niyongabo",
+        email="j.niyongabo@alustudent.com",
+        hashed_password=hash_password("Instructor@123"),
+        role=RoleEnum.instructor,
+        status=StatusEnum.active,
+        avatar_initials="JN",
+        bio="Language educator and ALU student — teaching French, English, and Kinyarwanda.",
+        is_verified=True,
+        last_active=datetime.utcnow(),
+    )
+    db.add(instructor)
     db.commit()
 
-    # Instructors
-    instructors_data = [
-        ("Amara Ndiaye", "a.ndiaye@ff.com", "AN", "Passionate language educator with 10+ years teaching French, Spanish, and English."),
-        ("Lena Chen", "l.chen@ff.com", "LC", "Mandarin and Japanese specialist with HSK certification."),
-        ("Malik Braun", "m.braun@ff.com", "MB", "German language expert, native speaker, 8 years teaching experience."),
-        ("Riku Tanaka", "r.tanaka@ff.com", "RT", "Japanese language instructor, JLPT N1 certified."),
-        ("Lucas Ferreira", "l.ferreira@ff.com", "LF", "Brazilian Portuguese instructor, linguistics PhD."),
-        ("Claude Hiroshi", "c.hiroshi@teach.net", "CH", "Pending verification — Japanese and Korean instructor."),
-    ]
-    instructors = []
-    for name, email, initials, bio in instructors_data:
-        status = StatusEnum.pending if email == "c.hiroshi@teach.net" else StatusEnum.active
-        verified = email != "c.hiroshi@teach.net"
-        u = User(name=name, email=email, hashed_password=hash_password("instructor123"), role=RoleEnum.instructor, status=status, avatar_initials=initials, bio=bio, is_verified=verified, last_active=datetime.utcnow() - timedelta(hours=random.randint(1,48)))
-        db.add(u)
-        instructors.append(u)
-    db.commit()
-
-    amara = db.query(User).filter(User.email == "a.ndiaye@ff.com").first()
-    lena = db.query(User).filter(User.email == "l.chen@ff.com").first()
-    malik = db.query(User).filter(User.email == "m.braun@ff.com").first()
+    ins = db.query(User).filter(User.email == "j.niyongabo@alustudent.com").first()
 
     # Courses
     courses_data = [
-        (amara.id, "French B2 — Advanced Grammar", "French", "Advanced", "🇫🇷", CourseStatusEnum.published, 49.99),
-        (amara.id, "Spanish A2 — Conversation", "Spanish", "Elementary", "🇪🇸", CourseStatusEnum.published, 39.99),
-        (amara.id, "IELTS Writing Mastery", "English", "Intermediate", "🇬🇧", CourseStatusEnum.published, 59.99),
-        (amara.id, "German A1 — Absolute Beginner", "German", "Beginner", "🇩🇪", CourseStatusEnum.pending, 34.99),
-        (lena.id, "Mandarin HSK 1", "Mandarin", "Beginner", "🇨🇳", CourseStatusEnum.published, 44.99),
-        (lena.id, "Japanese N5 — Complete Starter", "Japanese", "Beginner", "🇯🇵", CourseStatusEnum.pending, 49.99),
-        (malik.id, "German A2 — Daily Life", "German", "Elementary", "🇩🇪", CourseStatusEnum.published, 39.99),
-        (malik.id, "German B1 — Intermediate", "German", "Intermediate", "🇩🇪", CourseStatusEnum.published, 49.99),
+        (ins.id, "French B2 — Advanced Grammar", "French", "Advanced", "🇫🇷", CourseStatusEnum.published, 49.99),
+        (ins.id, "Spanish A2 — Conversation", "Spanish", "Elementary", "🇪🇸", CourseStatusEnum.published, 39.99),
+        (ins.id, "IELTS Writing Mastery", "English", "Intermediate", "🇬🇧", CourseStatusEnum.published, 59.99),
+        (ins.id, "German A1 — Absolute Beginner", "German", "Beginner", "🇩🇪", CourseStatusEnum.pending, 34.99),
+        (ins.id, "Mandarin HSK 1", "Mandarin", "Beginner", "🇨🇳", CourseStatusEnum.published, 44.99),
+        (ins.id, "Japanese N5 — Complete Starter", "Japanese", "Beginner", "🇯🇵", CourseStatusEnum.pending, 49.99),
+        (ins.id, "German A2 — Daily Life", "German", "Elementary", "🇩🇪", CourseStatusEnum.published, 39.99),
+        (ins.id, "German B1 — Intermediate", "German", "Intermediate", "🇩🇪", CourseStatusEnum.published, 49.99),
     ]
     courses = []
     for ins_id, title, lang, level, flag, status, price in courses_data:
@@ -137,68 +123,37 @@ def seed():
     for s in sessions: db.add(s)
     db.commit()
 
-    # Students
-    students_data = [
-        ("Kwame Larbi", "k.larbi@gmail.com", "KL", PulseStateEnum.thriving, 12400),
-        ("Fatima Al-Rashid", "f.rashid@univ.edu", "FA", PulseStateEnum.coasting, 11100),
-        ("Amara Diallo", "amara.d@school.rw", "AD", PulseStateEnum.struggling, 9800),
-        ("Jean-Paul Nkurikiye", "jp.nkurikiye@alu.edu", "JN", PulseStateEnum.burning_out, 8600),
-        ("Sofia Mendez", "s.mendez@mail.es", "SM", PulseStateEnum.disengaged, 7900),
-        ("Aisha Kamara", "a.kamara@gmail.com", "AK", PulseStateEnum.thriving, 13200),
-        ("Yuki Tanaka", "y.tanaka@mail.jp", "YT", PulseStateEnum.coasting, 10500),
-        ("Omar Hassan", "o.hassan@edu.ke", "OH", PulseStateEnum.struggling, 8200),
-        ("Marie Dupont", "m.dupont@mail.fr", "MD", PulseStateEnum.thriving, 14100),
-        ("Carlos Rivera", "c.rivera@mail.mx", "CR", PulseStateEnum.coasting, 9300),
-    ]
-    students = []
-    for name, email, initials, pulse, xp in students_data:
-        last_active = datetime.utcnow() - timedelta(days=random.randint(0,10))
-        u = User(name=name, email=email, hashed_password=hash_password("student123"), role=RoleEnum.student, status=StatusEnum.active, avatar_initials=initials, pulse_state=pulse, xp=xp, is_verified=True, last_active=last_active, created_at=datetime.utcnow() - timedelta(days=random.randint(60,400)))
-        db.add(u)
-        students.append(u)
-
-    # Banned user
-    banned = User(name="Unknown_7841", email="spam@temp-mail.org", hashed_password=hash_password("x"), role=RoleEnum.student, status=StatusEnum.banned, avatar_initials="X", created_at=datetime.utcnow() - timedelta(days=1))
-    db.add(banned)
+    # Student
+    student = User(
+        name="Jean Pierre Niyongabo",
+        email="ngabo7834@gmail.com",
+        hashed_password=hash_password("Student@123"),
+        role=RoleEnum.student,
+        status=StatusEnum.active,
+        avatar_initials="JN",
+        pulse_state=PulseStateEnum.thriving,
+        xp=12400,
+        is_verified=True,
+        last_active=datetime.utcnow(),
+        created_at=datetime.utcnow() - timedelta(days=90),
+    )
+    db.add(student)
     db.commit()
 
-    kwame = db.query(User).filter(User.email == "k.larbi@gmail.com").first()
-    fatima = db.query(User).filter(User.email == "f.rashid@univ.edu").first()
-    amara_d = db.query(User).filter(User.email == "amara.d@school.rw").first()
-    jean_paul = db.query(User).filter(User.email == "jp.nkurikiye@alu.edu").first()
-    sofia = db.query(User).filter(User.email == "s.mendez@mail.es").first()
+    stu = db.query(User).filter(User.email == "ngabo7834@gmail.com").first()
 
     # Enrollments
-    enrollments = [
-        (kwame.id, french_b2.id, 88.0),
-        (kwame.id, spanish_a2.id, 72.0),
-        (fatima.id, spanish_a2.id, 72.0),
-        (fatima.id, ielts.id, 65.0),
-        (amara_d.id, french_b2.id, 54.0),
-        (jean_paul.id, ielts.id, 41.0),
-        (sofia.id, spanish_a2.id, 28.0),
-    ]
-    for sid, cid, comp in enrollments:
-        db.add(Enrollment(student_id=sid, course_id=cid, completion_pct=comp, enrolled_at=datetime.utcnow() - timedelta(days=random.randint(10,120))))
-
-    # Add more enrollments for realistic counts
     published_courses = [french_b2.id, spanish_a2.id, ielts.id, mandarin.id]
-    all_students = db.query(User).filter(User.role == RoleEnum.student).all()
-    for student in all_students:
-        for cid in random.sample(published_courses, random.randint(1,3)):
-            existing = db.query(Enrollment).filter(Enrollment.student_id == student.id, Enrollment.course_id == cid).first()
-            if not existing:
-                db.add(Enrollment(student_id=student.id, course_id=cid, completion_pct=random.uniform(10,95), enrolled_at=datetime.utcnow() - timedelta(days=random.randint(5,200))))
+    for cid in random.sample(published_courses, 3):
+        db.add(Enrollment(student_id=stu.id, course_id=cid, completion_pct=random.uniform(20, 90), enrolled_at=datetime.utcnow() - timedelta(days=random.randint(10, 80))))
     db.commit()
 
     # Payments
-    for student in all_students:
-        enrolls = db.query(Enrollment).filter(Enrollment.student_id == student.id).all()
-        for e in enrolls:
-            course = db.query(Course).filter(Course.id == e.course_id).first()
-            if course:
-                status = random.choices(["completed","failed","refunded"], weights=[90,7,3])[0]
-                db.add(Payment(user_id=student.id, course_id=course.id, amount=course.price, method=random.choice(["Card","Mobile","PayPal"]), status=status, created_at=e.enrolled_at))
+    enrolls = db.query(Enrollment).filter(Enrollment.student_id == stu.id).all()
+    for e in enrolls:
+        course = db.query(Course).filter(Course.id == e.course_id).first()
+        if course:
+            db.add(Payment(user_id=stu.id, course_id=course.id, amount=course.price, method=random.choice(["Card", "Mobile", "PayPal"]), status="completed", created_at=e.enrolled_at))
     db.commit()
 
     # Monthly Revenue (platform-wide)
@@ -206,43 +161,34 @@ def seed():
     for yr, mo, gross in months_data:
         db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7,2), instructor_id=None))
 
-    # Monthly Revenue (Amara)
-    amara_months = [(2025,3,2800),(2025,4,3200),(2025,5,3600),(2025,6,3900),(2025,7,3400),(2025,8,3700),(2025,9,4200),(2025,10,4500),(2025,11,4100),(2025,12,4700),(2026,1,5100),(2026,2,5400),(2026,3,6114)]
-    for yr, mo, gross in amara_months:
-        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7,2), instructor_id=amara.id))
+    # Monthly Revenue (instructor)
+    ins_months = [(2025,3,2800),(2025,4,3200),(2025,5,3600),(2025,6,3900),(2025,7,3400),(2025,8,3700),(2025,9,4200),(2025,10,4500),(2025,11,4100),(2025,12,4700),(2026,1,5100),(2026,2,5400),(2026,3,6114)]
+    for yr, mo, gross in ins_months:
+        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7,2), instructor_id=ins.id))
     db.commit()
 
     # Payouts
     payouts = [
-        Payout(instructor_id=amara.id, amount=2996, status=PayoutStatusEnum.pending, reference="#PAY-0042", requested_at=datetime.utcnow()),
-        Payout(instructor_id=amara.id, amount=3240, status=PayoutStatusEnum.paid, reference="#PAY-0038", requested_at=datetime.utcnow()-timedelta(days=29), paid_at=datetime.utcnow()-timedelta(days=24)),
-        Payout(instructor_id=amara.id, amount=2780, status=PayoutStatusEnum.paid, reference="#PAY-0031", requested_at=datetime.utcnow()-timedelta(days=61), paid_at=datetime.utcnow()-timedelta(days=56)),
-        Payout(instructor_id=lena.id, amount=4120, status=PayoutStatusEnum.pending, reference="#PAY-0041", requested_at=datetime.utcnow()),
-        Payout(instructor_id=malik.id, amount=2340, status=PayoutStatusEnum.approved, reference="#PAY-0039", requested_at=datetime.utcnow()-timedelta(days=1)),
+        Payout(instructor_id=ins.id, amount=2996, status=PayoutStatusEnum.pending, reference="#PAY-0042", requested_at=datetime.utcnow()),
+        Payout(instructor_id=ins.id, amount=3240, status=PayoutStatusEnum.paid, reference="#PAY-0038", requested_at=datetime.utcnow()-timedelta(days=29), paid_at=datetime.utcnow()-timedelta(days=24)),
+        Payout(instructor_id=ins.id, amount=2780, status=PayoutStatusEnum.paid, reference="#PAY-0031", requested_at=datetime.utcnow()-timedelta(days=61), paid_at=datetime.utcnow()-timedelta(days=56)),
     ]
     for p in payouts: db.add(p)
     db.commit()
 
     # Reviews
     reviews = [
-        Review(student_id=kwame.id, course_id=french_b2.id, rating=5, comment="Absolutely the best French course I've found online. The live sessions are gold.", reply="Thank you Kwame! Your dedication makes teaching so rewarding.", created_at=datetime.utcnow()-timedelta(days=2)),
-        Review(student_id=fatima.id, course_id=spanish_a2.id, rating=5, comment="I went from zero Spanish to holding conversations in 2 months. Really well thought-out.", created_at=datetime.utcnow()-timedelta(days=4)),
-        Review(student_id=jean_paul.id, course_id=ielts.id, rating=3, comment="Good content but the pacing felt fast for Task 2. Would love more example essays.", created_at=datetime.utcnow()-timedelta(days=7)),
-        Review(student_id=amara_d.id, course_id=french_b2.id, rating=4, comment="Very comprehensive. The grammar explanations are crystal clear.", created_at=datetime.utcnow()-timedelta(days=10)),
-        Review(student_id=sofia.id, course_id=spanish_a2.id, rating=4, comment="Great course structure. Would love more speaking exercises.", created_at=datetime.utcnow()-timedelta(days=14)),
+        Review(student_id=stu.id, course_id=french_b2.id, rating=5, comment="Absolutely the best French course I've found online. The live sessions are gold.", reply="Thank you! Your dedication makes teaching so rewarding.", created_at=datetime.utcnow()-timedelta(days=2)),
+        Review(student_id=stu.id, course_id=spanish_a2.id, rating=4, comment="Great course structure. Would love more speaking exercises.", created_at=datetime.utcnow()-timedelta(days=7)),
     ]
     for r in reviews: db.add(r)
     db.commit()
 
     # Messages
     messages = [
-        Message(sender_id=kwame.id, receiver_id=amara.id, content="Bonjour! I watched the subjunctive lesson — very clear. When is the next live session?", created_at=datetime.utcnow()-timedelta(hours=3)),
-        Message(sender_id=amara.id, receiver_id=kwame.id, content="Hi Kwame! The next session is today at 2PM — see it in your dashboard. See you there! 🎉", created_at=datetime.utcnow()-timedelta(hours=2, minutes=50)),
-        Message(sender_id=kwame.id, receiver_id=amara.id, content="Perfect! Also, is there a cheat sheet for the irregular verbs in lesson 3?", is_read=False, created_at=datetime.utcnow()-timedelta(hours=2, minutes=30)),
-        Message(sender_id=fatima.id, receiver_id=amara.id, content="Thank you for the feedback on my essay!", created_at=datetime.utcnow()-timedelta(hours=5)),
-        Message(sender_id=amara_d.id, receiver_id=amara.id, content="I'm struggling with lesson 4, the subjunctive forms are confusing.", is_read=False, created_at=datetime.utcnow()-timedelta(days=1)),
-        Message(sender_id=jean_paul.id, receiver_id=amara.id, content="Can I get an extension on the final assessment?", created_at=datetime.utcnow()-timedelta(days=2)),
-        Message(sender_id=sofia.id, receiver_id=amara.id, content="I might need to pause my subscription for a month.", is_read=False, created_at=datetime.utcnow()-timedelta(days=3)),
+        Message(sender_id=stu.id, receiver_id=ins.id, content="Bonjour! I watched the subjunctive lesson — very clear. When is the next live session?", created_at=datetime.utcnow()-timedelta(hours=3)),
+        Message(sender_id=ins.id, receiver_id=stu.id, content="The next session is today at 2PM — see it in your dashboard. See you there! 🎉", created_at=datetime.utcnow()-timedelta(hours=2, minutes=50)),
+        Message(sender_id=stu.id, receiver_id=ins.id, content="Perfect! Also, is there a cheat sheet for the irregular verbs in lesson 3?", is_read=False, created_at=datetime.utcnow()-timedelta(hours=2, minutes=30)),
     ]
     for m in messages: db.add(m)
     db.commit()
@@ -257,19 +203,13 @@ def seed():
     db.commit()
 
     # Audit Logs
-    chidi = db.query(User).filter(User.email == "c.okafor@fluentfusion.com").first()
-    rania = db.query(User).filter(User.email == "r.ahmed@fluentfusion.com").first()
-    bola = db.query(User).filter(User.email == "b.mensah@fluentfusion.com").first()
+    adm = db.query(User).filter(User.email == "ngabo470@gmail.com").first()
     logs = [
-        AuditLog(admin_id=chidi.id, action_type="USER", description="Admin Chidi Okafor banned user Unknown_7841 for spam", created_at=datetime.utcnow()-timedelta(minutes=45)),
-        AuditLog(admin_id=rania.id, action_type="COURSE", description='Admin Rania Ahmed rejected course "Python Basics" — not language learning', created_at=datetime.utcnow()-timedelta(hours=1)),
-        AuditLog(admin_id=chidi.id, action_type="FINANCE", description="Admin Chidi Okafor approved payout #PAY-0039 for $2,340 to Malik Braun", created_at=datetime.utcnow()-timedelta(hours=1, minutes=30)),
+        AuditLog(admin_id=adm.id, action_type="COURSE", description='Admin approved course "IELTS Writing Mastery"', created_at=datetime.utcnow()-timedelta(hours=1)),
         AuditLog(admin_id=None, action_type="SYSTEM", description="System auto-flagged: CDN latency breach · +340ms above threshold", created_at=datetime.utcnow()-timedelta(hours=2)),
-        AuditLog(admin_id=rania.id, action_type="USER", description="Admin Rania Ahmed approved instructor Lena Chen verification", created_at=datetime.utcnow()-timedelta(hours=2, minutes=30)),
-        AuditLog(admin_id=None, action_type="SYSTEM", description="PULSE Engine re-evaluated 28,441 learners — classification updated", created_at=datetime.utcnow()-timedelta(hours=3)),
-        AuditLog(admin_id=None, action_type="SYSTEM", description="System health check passed · API ONLINE · DB HEALTHY · REDIS 12ms", created_at=datetime.utcnow()-timedelta(hours=4)),
-        AuditLog(admin_id=bola.id, action_type="USER", description="Admin Bola Mensah banned 3 spam accounts from moderation queue", created_at=datetime.utcnow()-timedelta(days=1)),
-        AuditLog(admin_id=chidi.id, action_type="COURSE", description='Admin Chidi Okafor approved course "IELTS Writing Mastery" by Amara Ndiaye', created_at=datetime.utcnow()-timedelta(days=2)),
+        AuditLog(admin_id=None, action_type="SYSTEM", description="PULSE Engine re-evaluated learners — classification updated", created_at=datetime.utcnow()-timedelta(hours=3)),
+        AuditLog(admin_id=None, action_type="SYSTEM", description="System health check passed · API ONLINE · DB HEALTHY", created_at=datetime.utcnow()-timedelta(hours=4)),
+        AuditLog(admin_id=adm.id, action_type="USER", description="Admin verified instructor j.niyongabo@alustudent.com", created_at=datetime.utcnow()-timedelta(days=1)),
     ]
     for l in logs: db.add(l)
     db.commit()
@@ -286,8 +226,7 @@ def seed():
     db.commit()
 
     print("✅ Seed complete!")
-    print(f"  Super Admin: 1")
-    print(f"  Admins: {db.query(User).filter(User.role==RoleEnum.admin).count()}")
+    print(f"  Admin: 1")
     print(f"  Instructors: {db.query(User).filter(User.role==RoleEnum.instructor).count()}")
     print(f"  Students: {db.query(User).filter(User.role==RoleEnum.student).count()}")
     print(f"  Courses: {db.query(Course).count()}")
@@ -295,10 +234,9 @@ def seed():
     print(f"  Payments: {db.query(Payment).count()}")
     print()
     print("Login credentials:")
-    print("  Super Admin: ngabo470@gmail.com / superadmin123")
-    print("  Admin:       c.okafor@fluentfusion.com / admin123")
-    print("  Instructor:  a.ndiaye@ff.com / instructor123")
-    print("  Student:     k.larbi@gmail.com / student123")
+    print("  Admin:      ngabo470@gmail.com / Admin@123")
+    print("  Instructor: j.niyongabo@alustudent.com / Instructor@123")
+    print("  Student:    ngabo7834@gmail.com / Student@123")
 
 if __name__ == "__main__":
     seed()

@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
+import PasswordStrength, { validatePassword } from '../../components/PasswordStrength'
 
 export default function Settings() {
   const [profile, setProfile] = useState<any>(null)
   const [activeSection, setActiveSection] = useState('👤 Profile')
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
+  const [pwErr, setPwErr] = useState('')
+  const [pwOk, setPwOk] = useState('')
   useEffect(() => { api.get('/api/instructor/profile').then(r => setProfile(r.data)) }, [])
   if (!profile) return <div className="loading" />
 
   async function save() {
     await api.patch('/api/instructor/profile', { name: profile.name, bio: profile.bio })
     alert('Profile saved!')
+  }
+
+  async function changePassword() {
+    setPwErr(''); setPwOk('')
+    const err = validatePassword(pwForm.next)
+    if (err) return setPwErr(err)
+    if (pwForm.next !== pwForm.confirm) return setPwErr('Passwords do not match')
+    try {
+      await api.patch('/api/instructor/profile/password', { current_password: pwForm.current, new_password: pwForm.next })
+      setPwOk('Password updated successfully!')
+      setPwForm({ current: '', next: '', confirm: '' })
+    } catch (e: any) { setPwErr(e?.response?.data?.detail || 'Failed to update password') }
   }
 
   const sections = ['👤 Profile','🔒 Security','🔔 Notification Preferences','💳 Payment Details','🌐 Public Profile']
@@ -50,10 +66,12 @@ export default function Settings() {
           )}
           {activeSection === '🔒 Security' && (
             <>
-              <div className="fg"><label className="lbl">Current Password</label><input className="inp" type="password" placeholder="••••••••" /></div>
-              <div className="fg"><label className="lbl">New Password</label><input className="inp" type="password" placeholder="••••••••" /></div>
-              <div className="fg"><label className="lbl">Confirm New Password</label><input className="inp" type="password" placeholder="••••••••" /></div>
-              <button className="btn bp">Update Password</button>
+              {pwErr && <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '8px 12px', color: '#FF4444', fontSize: 13, marginBottom: 14 }}>⚠ {pwErr}</div>}
+              {pwOk && <div style={{ background: 'rgba(0,255,127,0.08)', border: '1px solid rgba(0,255,127,0.25)', borderRadius: 8, padding: '8px 12px', color: '#00FF7F', fontSize: 13, marginBottom: 14 }}>✓ {pwOk}</div>}
+              <div className="fg"><label className="lbl">Current Password</label><input className="inp" type="password" placeholder="••••••••" value={pwForm.current} onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))} /></div>
+              <div className="fg"><label className="lbl">New Password</label><input className="inp" type="password" placeholder="Min. 8 characters" value={pwForm.next} onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))} /><PasswordStrength password={pwForm.next} /></div>
+              <div className="fg"><label className="lbl">Confirm New Password</label><input className="inp" type="password" placeholder="Repeat new password" value={pwForm.confirm} onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))} /></div>
+              <button className="btn bp" onClick={changePassword}>Update Password</button>
             </>
           )}
           {!['👤 Profile','🔒 Security'].includes(activeSection) && (

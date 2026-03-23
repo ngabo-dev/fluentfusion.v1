@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../components/AuthContext'
+import PasswordStrength, { validatePassword } from '../../components/PasswordStrength'
 
 export default function Signup() {
   const nav = useNavigate()
@@ -18,7 +19,8 @@ export default function Signup() {
     e.preventDefault()
     setErr('')
     if (!name.trim()) return setErr('Full name is required')
-    if (pw.length < 6) return setErr('Password must be at least 6 characters')
+    const pwErr = validatePassword(pw)
+    if (pwErr) return setErr(pwErr)
     setLoading(true)
     try {
       const res = await register(name, email, pw, role)
@@ -136,6 +138,7 @@ export default function Signup() {
                     onBlur={e => (e.target.style.borderColor = '#2a2a2a')} />
                   <span onClick={() => setShowPw(p => !p)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: 15, color: '#555', userSelect: 'none' }}>{showPw ? '🙈' : '👁'}</span>
                 </div>
+                <PasswordStrength password={pw} />
               </div>
 
               {/* Role */}

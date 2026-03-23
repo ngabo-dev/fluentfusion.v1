@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api/client'
+import PasswordStrength, { validatePassword } from '../../components/PasswordStrength'
 
 export default function ResetPassword() {
   const nav = useNavigate()
@@ -16,7 +17,8 @@ export default function ResetPassword() {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setErr('')
-    if (pw.length < 6) return setErr('Password must be at least 6 characters')
+    const pwErr = validatePassword(pw)
+    if (pwErr) return setErr(pwErr)
     if (pw !== confirm) return setErr('Passwords do not match')
     if (!token) return setErr('Invalid reset link. Please request a new one.')
     setLoading(true)
@@ -67,10 +69,11 @@ export default function ResetPassword() {
               <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#888', display: 'block', marginBottom: 7 }}>New Password</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: '#555' }}>🔒</span>
-                <input style={inputStyle} type={showPw ? 'text' : 'password'} placeholder="Min. 6 characters" value={pw} onChange={e => setPw(e.target.value)} required
+                <input style={inputStyle} type={showPw ? 'text' : 'password'} placeholder="Min. 8 characters" value={pw} onChange={e => setPw(e.target.value)} required
                   onFocus={e => (e.target.style.borderColor = '#BFFF00')} onBlur={e => (e.target.style.borderColor = '#2a2a2a')} />
                 <span onClick={() => setShowPw(p => !p)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', fontSize: 15, color: '#555', userSelect: 'none' }}>{showPw ? '🙈' : '👁'}</span>
               </div>
+              <PasswordStrength password={pw} />
             </div>
             <div style={{ marginBottom: 24 }}>
               <label style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#888', display: 'block', marginBottom: 7 }}>Confirm Password</label>

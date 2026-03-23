@@ -30,8 +30,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     if body.role not in ("student", "instructor"):
         raise HTTPException(status_code=400, detail="Role must be student or instructor")
-    if len(body.password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    validate_password(body.password)
     parts = body.name.strip().split()
     initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) >= 2 else parts[0][:2].upper()
     otp = str(random.randint(100000, 999999))
@@ -143,6 +142,16 @@ class ResetPasswordRequest(BaseModel):
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+PASSWORD_RULES = "Password must be at least 8 characters and include an uppercase letter, lowercase letter, number, and special character."
+
+def validate_password(pw: str):
+    import re
+    if len(pw) < 8: raise HTTPException(status_code=400, detail=PASSWORD_RULES)
+    if not re.search(r'[A-Z]', pw): raise HTTPException(status_code=400, detail=PASSWORD_RULES)
+    if not re.search(r'[a-z]', pw): raise HTTPException(status_code=400, detail=PASSWORD_RULES)
+    if not re.search(r'[0-9]', pw): raise HTTPException(status_code=400, detail=PASSWORD_RULES)
+    if not re.search(r'[^A-Za-z0-9]', pw): raise HTTPException(status_code=400, detail=PASSWORD_RULES)
+
 @router.post("/forgot-password")
 def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email.lower().strip()).first()
@@ -157,8 +166,7 @@ def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db)):
 
 @router.post("/reset-password")
 def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
-    if len(body.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    validate_password(body.new_password)
     user = db.query(User).filter(User.reset_token == body.token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset link")
