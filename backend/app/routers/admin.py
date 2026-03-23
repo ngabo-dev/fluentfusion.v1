@@ -269,8 +269,12 @@ def pulse_run(db: Session = Depends(get_db), _=Depends(guard)):
     return {"updated": len(user_ids), "distribution": distribution}
 
 @router.get("/notifications")
-def list_notifications(db: Session = Depends(get_db), _=Depends(guard)):
-    notifs = db.query(Notification).order_by(Notification.sent_at.desc()).all()
+def list_notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    from app.models import Notification
+    notifs = db.query(Notification).filter(
+        Notification.target.in_(["all", "admins", str(current_user.id)]) |
+        Notification.target.notin_(["students", "instructors"])
+    ).order_by(Notification.sent_at.desc()).limit(50).all()
     return [{"id": n.id, "title": n.title, "message": n.message, "target": n.target, "sent_at": n.sent_at, "recipients": n.recipients, "read_rate": n.read_rate} for n in notifs]
 
 @router.post("/notifications")

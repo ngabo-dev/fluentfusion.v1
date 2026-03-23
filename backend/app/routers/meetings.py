@@ -193,6 +193,16 @@ def list_meetings(db: Session = Depends(get_db), current_user: User = Depends(ge
     return result
 
 
+# ── List users available to invite ───────────────────────────────────────
+@router.get("/contacts/search")
+def search_contacts(q: str = "", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    query = db.query(User).filter(User.id != current_user.id, User.is_verified == True)
+    if q:
+        query = query.filter(or_(User.name.ilike(f"%{q}%"), User.email.ilike(f"%{q}%")))
+    users = query.limit(20).all()
+    return [{"id": u.id, "name": u.name, "email": u.email, "role": u.role, "avatar_initials": u.avatar_initials} for u in users]
+
+
 # ── Get single meeting ────────────────────────────────────────────────────
 @router.get("/{room_id}")
 def get_meeting(room_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -249,16 +259,6 @@ def cancel_meeting(room_id: str, db: Session = Depends(get_db), current_user: Us
     m.status = MeetingStatusEnum.cancelled
     db.commit()
     return {"status": "cancelled"}
-
-
-# ── List users available to invite ───────────────────────────────────────
-@router.get("/contacts/search")
-def search_contacts(q: str = "", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    query = db.query(User).filter(User.id != current_user.id, User.is_verified == True)
-    if q:
-        query = query.filter(or_(User.name.ilike(f"%{q}%"), User.email.ilike(f"%{q}%")))
-    users = query.limit(20).all()
-    return [{"id": u.id, "name": u.name, "email": u.email, "role": u.role, "avatar_initials": u.avatar_initials} for u in users]
 
 
 # ── WebSocket signaling endpoint ──────────────────────────────────────────

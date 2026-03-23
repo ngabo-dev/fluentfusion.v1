@@ -239,7 +239,9 @@ def request_payout(body: dict, db: Session = Depends(get_db), current_user: User
 @router.get("/notifications")
 def notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     from app.models import Notification
-    notifs = db.query(Notification).filter(Notification.target.in_(["all","instructors"])).order_by(Notification.sent_at.desc()).limit(20).all()
+    notifs = db.query(Notification).filter(
+        Notification.target.in_(["all", "instructors", str(current_user.id)])
+    ).order_by(Notification.sent_at.desc()).limit(50).all()
     return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at} for n in notifs]
 
 @router.get("/analytics")
