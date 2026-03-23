@@ -223,3 +223,40 @@ class MonthlyRevenue(Base):
     gross = Column(Float, default=0)
     net = Column(Float, default=0)
     instructor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+class MeetingStatusEnum(str, enum.Enum):
+    scheduled = "scheduled"
+    live = "live"
+    ended = "ended"
+    cancelled = "cancelled"
+
+class MeetingAudienceEnum(str, enum.Enum):
+    individual = "individual"
+    course = "course"
+    all_students = "all_students"
+    all_instructors = "all_instructors"
+    everyone = "everyone"
+
+class Meeting(Base):
+    __tablename__ = "meetings"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    host_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
+    audience = Column(Enum(MeetingAudienceEnum), default=MeetingAudienceEnum.individual)
+    scheduled_at = Column(DateTime, nullable=False)
+    duration_min = Column(Integer, default=60)
+    status = Column(Enum(MeetingStatusEnum), default=MeetingStatusEnum.scheduled)
+    room_id = Column(String, unique=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    invites = relationship("MeetingInvite", back_populates="meeting")
+
+class MeetingInvite(Base):
+    __tablename__ = "meeting_invites"
+    id = Column(Integer, primary_key=True, index=True)
+    meeting_id = Column(Integer, ForeignKey("meetings.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    accepted = Column(Boolean, default=False)
+    notified_email = Column(Boolean, default=False)
+    meeting = relationship("Meeting", back_populates="invites")

@@ -165,3 +165,17 @@ def send_welcome_email(to: str, name: str, role: str) -> bool:
         """
 
     return send_email(to, subject, _BASE.format(body=body))
+
+
+def send_meeting_invite_email(to: str, name: str, host_name: str, title: str, scheduled_at: str, join_url: str) -> bool:
+    body = f"""
+      <h2 style="color:#BFFF00;margin:0 0 8px;">📅 You're Invited to a Session</h2>
+      <p style="color:#aaa;margin-bottom:20px;">Hi {name}, <b style="color:#fff;">{host_name}</b> has invited you to a live session.</p>
+      <div style="background:#151515;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:24px;">
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px;">{title}</div>
+        <div style="font-size:13px;color:#888;margin-bottom:16px;">🕐 {scheduled_at}</div>
+        <a href="{join_url}" style="display:inline-block;background:#BFFF00;color:#0a0a0a;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:14px;">Join Session →</a>
+      </div>
+      <p style="color:#555;font-size:12px;">If you can't attend, you can decline from your notifications on the platform.</p>
+    """
+    return send_email(to, f"📅 Session Invite: {title}", _BASE.format(body=body))

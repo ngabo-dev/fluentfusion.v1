@@ -1,67 +1,94 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
+import ScheduleMeetingModal from '../../components/ScheduleMeetingModal'
 
 export default function LiveSessions() {
-  const [sessions, setSessions] = useState<any[]>([])
-  useEffect(() => { api.get('/api/instructor/live-sessions').then(r => setSessions(r.data)) }, [])
+  const nav = useNavigate()
+  const [meetings, setMeetings] = useState<any[]>([])
+  const [courses, setCourses] = useState<any[]>([])
+  const [showModal, setShowModal] = useState(false)
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
 
-  const live = sessions.filter(s => s.status === 'live')
-  const upcoming = sessions.filter(s => s.status === 'scheduled')
-  const past = sessions.filter(s => s.status === 'completed')
+  useEffect(() => {
+    api.get('/api/meetings').then(r => setMeetings(r.data)).catch(() => {})
+    api.get('/api/instructor/courses').then(r => setCourses(r.data)).catch(() => {})
+  }, [])
+
+  async function cancel(roomId: string) {
+    if (!confirm('Cancel this session?')) return
+    await api.delete(`/api/meetings/${roomId}`)
+    setMeetings(prev => prev.map(m => m.room_id === roomId ? { ...m, status: 'cancelled' } : m))
+  }
+
+  const now = new Date()
+  const upcoming = meetings.filter(m => m.status === 'scheduled' || m.status === 'live')
+  const past = meetings.filter(m => m.status === 'ended' || m.status === 'cancelled')
+  const list = tab === 'upcoming' ? upcoming : past
 
   return (
     <div className="pg">
       <div className="ph">
-        <div><h1>Live Sessions</h1><p>Schedule and manage your live classes</p></div>
-        <div className="pa"><button className="btn bp">+ Schedule Session</button></div>
+        <div><h1>Sessions & Meetings</h1><p>Schedule and manage your live sessions</p></div>
+        <div className="pa"><button className="btn bp" onClick={() => setShowModal(true)}>+ Schedule Session</button></div>
       </div>
-      {live.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-            <span className="lv">● LIVE NOW</span>
-            <span style={{ fontSize: 11, color: 'var(--mu)' }}>{live.length} session{live.length > 1 ? 's' : ''} in progress</span>
-          </div>
-          {live.map(s => {
-            const dt = new Date(s.scheduled_at)
-            return (
-              <div key={s.id} className="sesk" style={{ borderColor: 'rgba(255,68,68,.4)', background: 'rgba(255,68,68,.03)' }}>
-                <div className="stb"><div className="hr">{dt.getHours().toString().padStart(2,'0')}</div><div className="ap">{dt.getHours() < 12 ? 'AM' : 'PM'}</div></div>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 600 }}>{s.title}</div><div style={{ fontSize: 10, color: 'var(--mu)' }}>{s.flag_emoji} {s.course} · {s.attendees} attendees live</div></div>
-                <button className="btn bp sm">JOIN LIVE</button>
-              </div>
-            )
-          })}
+
+      {showModal && (
+        <ScheduleMeetingModal
+          courses={courses.map((c: any) => ({ id: c.id, title: c.title }))}
+          onClose={() => setShowModal(false)}
+          onCreated={m => setMeetings(prev => [m, ...prev])}
+        />
+      )}
+
+      <div className="tabs" style={{ marginBottom: 16 }}>
+        <div className={`tab${tab === 'upcoming' ? ' active' : ''}`} onClick={() => setTab('upcoming')}>Upcoming ({upcoming.length})</div>
+        <div className={`tab${tab === 'past' ? ' active' : ''}`} onClick={() => setTab('past')}>Past ({past.length})</div>
+      </div>
+
+      {list.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 60, color: 'var(--mu)', fontFamily: 'JetBrains Mono', fontSize: 11 }}>
+          {tab === 'upcoming' ? 'No upcoming sessions. Schedule one above.' : 'No past sessions.'}
         </div>
       )}
-      {upcoming.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: 'JetBrains Mono', fontSize: 8, textTransform: 'uppercase', letterSpacing: '.15em', color: 'var(--mu)', marginBottom: 8 }}>Upcoming</div>
-          {upcoming.map(s => {
-            const dt = new Date(s.scheduled_at)
-            return (
-              <div key={s.id} className="sesk">
-                <div className="stb"><div className="hr">{dt.getHours().toString().padStart(2,'0')}</div><div className="ap">{dt.getHours() < 12 ? 'AM' : 'PM'}</div></div>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 500 }}>{s.title}</div><div style={{ fontSize: 10, color: 'var(--mu)' }}>{s.flag_emoji} {s.course} · {dt.toLocaleDateString()}</div></div>
-                <button className="btn bg sm">Cancel</button>
-                <button className="btn bo sm">Start</button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {list.map(m => {
+          const dt = new Date(m.scheduled_at)
+          const isLive = m.status === 'live'
+          const isCancelled = m.status === 'cancelled'
+          return (
+            <div key={m.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, opacity: isCancelled ? 0.5 : 1 }}>
+              <div style={{ textAlign: 'center', minWidth: 52, background: isLive ? 'rgba(255,68,68,0.1)' : 'rgba(191,255,0,0.07)', borderRadius: 8, padding: '8px 10px' }}>
+                <div style={{ fontFamily: 'Syne', fontSize: 20, fontWeight: 800, color: isLive ? '#FF4444' : 'var(--neon)', lineHeight: 1 }}>{dt.getDate()}</div>
+                <div style={{ fontSize: 9, color: 'var(--mu)', fontFamily: 'JetBrains Mono', textTransform: 'uppercase' }}>{dt.toLocaleString('en', { month: 'short' })}</div>
               </div>
-            )
-          })}
-        </div>
-      )}
-      <div className="card">
-        <div className="ch"><span className="ch-t">Past Sessions</span></div>
-        <table className="tbl"><thead><tr><th>Session</th><th>Course</th><th>Date</th><th>Attendees</th><th>Duration</th><th>Recording</th></tr></thead>
-        <tbody>{past.map(s => (
-          <tr key={s.id}>
-            <td>{s.title}</td>
-            <td>{s.course}</td>
-            <td style={{ color: 'var(--mu)' }}>{new Date(s.scheduled_at).toLocaleDateString()}</td>
-            <td>{s.attendees}</td>
-            <td>{s.duration_min} min</td>
-            <td>{s.recording_url ? <span style={{ color: 'var(--in)', cursor: 'pointer' }}>Watch →</span> : <span style={{ color: 'var(--mu)' }}>—</span>}</td>
-          </tr>
-        ))}</tbody></table>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>{m.title}</span>
+                  {isLive && <span className="lv">● LIVE</span>}
+                  {isCancelled && <span className="bdg bk">Cancelled</span>}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--mu)' }}>
+                  {dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {m.duration_min} min · {m.invite_count} invited · {m.is_host ? '👑 You host' : `Host: ${m.host_name}`}
+                </div>
+                {m.description && <div style={{ fontSize: 11, color: '#555', marginTop: 3 }}>{m.description}</div>}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {!isCancelled && (
+                  <>
+                    <button className="btn bp sm" onClick={() => nav(`/meeting/${m.room_id}`)}>
+                      {isLive ? '🔴 Join' : '▶ Open'}
+                    </button>
+                    {m.is_host && tab === 'upcoming' && (
+                      <button className="btn bg sm" onClick={() => cancel(m.room_id)}>Cancel</button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

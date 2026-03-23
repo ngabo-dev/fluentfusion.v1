@@ -8,6 +8,7 @@ import Signup from './pages/student/Signup'
 import ForgotPassword from './pages/student/ForgotPassword'
 import ResetPassword from './pages/student/ResetPassword'
 import EmailVerify from './pages/student/EmailVerify'
+import MeetingRoom from './pages/MeetingRoom'
 import Pricing from './pages/student/Pricing'
 import Features from './pages/student/Features'
 import Community from './pages/student/Community'
@@ -240,6 +241,7 @@ export default function App() {
           <Route path="/instructor/*" element={<InstructorLayout />} />
 
           {/* Fallback */}
+          <Route path="/meeting/:roomId" element={<MeetingRoom />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
