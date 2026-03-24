@@ -29,7 +29,7 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       - key: FROM_EMAIL
-        value: ngabo470@gmail.com
+        value: a5a28e001@smtp-brevo.com
       - key: FROM_NAME
         value: FluentFusion AI
 
