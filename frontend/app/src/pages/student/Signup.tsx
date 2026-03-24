@@ -26,7 +26,7 @@ export default function Signup() {
       const res = await register(name, email, pw, role)
       setSuccess(`Account created! Welcome, ${res?.user?.name || name}. Check your email for a verification code.`)
       localStorage.setItem('verification_email', email)
-      setTimeout(() => nav('/verify-email'), 1200)
+      nav('/verify-email')
     } catch (ex: any) {
       const msg = ex?.message || 'Registration failed'
       if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) setErr('This email is already registered. Try signing in instead.')

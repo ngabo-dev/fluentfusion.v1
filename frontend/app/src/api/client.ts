@@ -156,12 +156,8 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ name: data.full_name, email: data.email, password: data.password, role: data.role || 'student' }),
     });
-    // Normalise to unified user shape and store
+    // Do NOT store token or user — account is unverified until OTP is confirmed
     const user = { id: response.id, name: response.name, email: data.email, role: response.role };
-    localStorage.setItem('ff_access_token', response.access_token);
-    localStorage.setItem('ff_user', JSON.stringify(user));
-    setTokenExpiry(response.access_token);
-    setupInactivityListeners();
     return { access_token: response.access_token, user };
   },
 

@@ -36,8 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function register(name: string, email: string, password: string, role = 'student') {
     const res = await authApi.register({ email, password, full_name: name, role })
-    setToken(res.access_token)
-    setUser(res.user)
+    // Do NOT set token/user here — user must verify email first
     return res
   }
 
