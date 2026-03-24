@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { messagesApi } from '../api/client'
 import { useAuth } from './AuthContext'
+import { playMessageSound } from '../utils/sounds'
 
 const BACKEND = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api', '')
@@ -73,19 +74,36 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
   const chunksRef   = useRef<Blob[]>([])
   activeRef.current = active
 
-  const loadThreads = () => messagesApi.getThreads().then(setThreads).catch(() => {})
+  const prevUnreadRef = useRef(0)
+
+  const loadThreads = () => messagesApi.getThreads().then(data => {
+    const totalUnread = data.reduce((s: number, t: Thread) => s + (t.unread || 0), 0)
+    if (prevUnreadRef.current > 0 && totalUnread > prevUnreadRef.current) playMessageSound()
+    prevUnreadRef.current = totalUnread
+    setThreads(data)
+  }).catch(() => {})
 
   useEffect(() => { loadThreads() }, [])
 
+  const prevMsgCountRef = useRef(0)
+
   useEffect(() => {
     if (!active) return
-    messagesApi.getThread(active.id).then(setMsgs).catch(() => {})
+    prevMsgCountRef.current = 0
+    messagesApi.getThread(active.id).then(data => {
+      prevMsgCountRef.current = data.length
+      setMsgs(data)
+    }).catch(() => {})
   }, [active])
 
   useEffect(() => {
     const id = setInterval(() => {
       loadThreads()
-      if (activeRef.current) messagesApi.getThread(activeRef.current.id).then(setMsgs).catch(() => {})
+      if (activeRef.current) messagesApi.getThread(activeRef.current.id).then(data => {
+        if (prevMsgCountRef.current > 0 && data.length > prevMsgCountRef.current) playMessageSound()
+        prevMsgCountRef.current = data.length
+        setMsgs(data)
+      }).catch(() => {})
     }, 3000)
     return () => clearInterval(id)
   }, [])

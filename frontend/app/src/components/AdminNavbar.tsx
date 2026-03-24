@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import api from '../api/client'
 import { useSidebar } from './SidebarContext'
+import { playNotificationSound } from '../utils/sounds'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -11,9 +12,15 @@ export default function Navbar() {
   const [dropOpen, setDropOpen] = useState(false)
   const [unread, setUnread] = useState(0)
   const dropRef = useRef<HTMLDivElement>(null)
+  const prevUnread = useRef(0)
 
   useEffect(() => {
-    const fetch = () => api.get('/api/admin/notifications/unread-count').then(r => setUnread(r.data.count ?? 0)).catch(() => {})
+    const fetch = () => api.get('/api/admin/notifications/unread-count').then(r => {
+      const count = r.data.count ?? 0
+      if (prevUnread.current > 0 && count > prevUnread.current) playNotificationSound()
+      prevUnread.current = count
+      setUnread(count)
+    }).catch(() => {})
     fetch()
     const t = setInterval(fetch, 30000)
     return () => clearInterval(t)
