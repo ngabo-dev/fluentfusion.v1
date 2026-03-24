@@ -39,6 +39,7 @@ import StreakTracker from './pages/student/StreakTracker'
 import DailyChallenge from './pages/student/DailyChallenge'
 import Flashcards from './pages/student/Flashcards'
 import SpeakingPractice from './pages/student/SpeakingPractice'
+import StudentAnnouncements from './pages/student/Announcements'
 
 // Admin pages
 import AdminNavbar from './components/AdminNavbar'
@@ -138,6 +139,7 @@ function StudentLayoutInner() {
           <Route path="/daily-challenge" element={<DailyChallenge />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/speaking" element={<SpeakingPractice />} />
+          <Route path="/announcements" element={<StudentAnnouncements />} />
         </Routes>
       </main>
     </div>

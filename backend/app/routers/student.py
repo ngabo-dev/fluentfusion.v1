@@ -202,15 +202,22 @@ def notifications(db: Session = Depends(get_db), current_user: User = Depends(gu
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
-    targets = ["all", "students", str(current_user.id)] + course_targets
-    total = db.query(Notification).filter(Notification.target.in_(targets), Notification.notif_type == "notification").count()
+    notif_targets = ["all", "students", str(current_user.id)] + course_targets
+    annc_targets  = ["all", "students"] + course_targets
+
+    # unread system notifications
+    notif_ids = [n.id for n in db.query(Notification.id).filter(
+        Notification.target.in_(notif_targets), Notification.notif_type == "notification").all()]
+    # unread announcements
+    annc_ids = [n.id for n in db.query(Notification.id).filter(
+        Notification.target.in_(annc_targets), Notification.notif_type == "announcement").all()]
+
+    all_ids = list(set(notif_ids + annc_ids))
     read = db.query(NotificationRead).filter(
         NotificationRead.user_id == current_user.id,
-        NotificationRead.notification_id.in_(
-            db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "notification")
-        )
-    ).count()
-    return {"count": max(0, total - read)}
+        NotificationRead.notification_id.in_(all_ids)
+    ).count() if all_ids else 0
+    return {"count": max(0, len(all_ids) - read)}
 
 @router.post("/notifications/mark-read")
 def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
@@ -253,6 +260,31 @@ def leaderboard(db: Session = Depends(get_db), current_user: User = Depends(guar
             "is_me": s.id == current_user.id,
         })
     return result
+
+@router.get("/announcements")
+def get_announcements(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
+    course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
+    targets = ["all", "students"] + course_targets
+    notifs = db.query(Notification).filter(
+        Notification.target.in_(targets),
+        Notification.notif_type == "announcement"
+    ).order_by(Notification.sent_at.desc()).limit(50).all()
+    read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    return [{"id": n.id, "title": n.title, "message": n.message, "sent_at": n.sent_at, "is_read": n.id in read_ids, "allow_replies": n.allow_replies} for n in notifs]
+
+@router.post("/announcements/mark-read")
+def mark_announcements_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
+    course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
+    targets = ["all", "students"] + course_targets
+    annc_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "announcement").all()]
+    existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
+    for nid in annc_ids:
+        if nid not in existing:
+            db.add(NotificationRead(user_id=current_user.id, notification_id=nid))
+    db.commit()
+    return {"ok": True}
 
 @router.post("/onboarding")
 def save_onboarding(body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):

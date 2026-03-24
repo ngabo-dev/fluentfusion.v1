@@ -29,6 +29,7 @@ const links: NavGroup[] = [
   ]},
   { section: 'Community', items: [
     { to: '/dashboard/messages', label: 'Messages', icon: '💬', badge: '2' },
+    { to: '/dashboard/announcements', label: 'Announcements', icon: '📢' },
   ]},
   { section: 'Account', items: [
     { to: '/dashboard/notifications', label: 'Notifications', icon: '🔔' },
