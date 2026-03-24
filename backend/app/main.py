@@ -65,22 +65,12 @@ def health():
 
 @app.get("/test-email")
 def test_email():
-    import smtplib, ssl
-    from app.email_utils import EMAIL_ENABLED, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL, send_email
-    smtp_ok = False
-    smtp_error = None
+    from app.email_utils import EMAIL_ENABLED, SENDGRID_API_KEY, FROM_EMAIL, send_email
     delivery_ok = False
     delivery_error = None
     try:
-        ctx = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=15) as s:
-            s.login(SMTP_USER, SMTP_PASSWORD.strip())
-            smtp_ok = True
-    except Exception as e:
-        smtp_error = str(e)
-    try:
         ok = send_email(FROM_EMAIL, "FluentFusion — Email Delivery Test",
-            "<p>Test email from FluentFusion backend. Emails are working ✅</p>")
+            "<p>Test email from FluentFusion backend. SendGrid is working ✅</p>")
         delivery_ok = ok
         if not ok:
             delivery_error = "send_email() returned False"
@@ -88,13 +78,9 @@ def test_email():
         delivery_error = str(e)
     return {
         "EMAIL_ENABLED": EMAIL_ENABLED,
-        "SMTP_HOST": SMTP_HOST,
-        "SMTP_PORT": SMTP_PORT,
-        "SMTP_USER": SMTP_USER,
+        "provider": "sendgrid",
         "FROM_EMAIL": FROM_EMAIL,
-        "SMTP_PASSWORD_LEN": len(SMTP_PASSWORD),
-        "smtp_login_ok": smtp_ok,
-        "smtp_login_error": smtp_error,
+        "api_key_set": bool(SENDGRID_API_KEY),
         "delivery_ok": delivery_ok,
         "delivery_error": delivery_error,
     }

@@ -3,10 +3,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-FROM_EMAIL    = os.getenv("FROM_EMAIL", "")
-FROM_NAME     = os.getenv("FROM_NAME", "FluentFusion AI")
-EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
-SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
+FROM_EMAIL       = os.getenv("FROM_EMAIL", "ngabo7834@gmail.com")
+FROM_NAME        = os.getenv("FROM_NAME", "FluentFusion AI")
+EMAIL_ENABLED    = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
+
+# keep SMTP vars so /test-email endpoint doesn't break
+SMTP_HOST     = os.getenv("SMTP_HOST", "")
 SMTP_PORT     = int(os.getenv("SMTP_PORT", "465"))
 SMTP_USER     = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
@@ -16,26 +19,24 @@ def send_email(to: str, subject: str, html: str) -> bool:
     if not EMAIL_ENABLED:
         print(f"[EMAIL DISABLED] To: {to} | Subject: {subject}")
         return False
-    if not (SMTP_HOST and SMTP_USER and SMTP_PASSWORD):
-        print(f"[EMAIL FAILED] SMTP not configured. To: {to}")
+    if not SENDGRID_API_KEY:
+        print(f"[EMAIL FAILED] SENDGRID_API_KEY not set")
         return False
     try:
-        import smtplib, ssl
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"]    = f"{FROM_NAME} <{SMTP_USER}>"
-        msg["To"]      = to
-        msg.attach(MIMEText(html, "html"))
-        ctx = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=10) as s:
-            s.login(SMTP_USER, SMTP_PASSWORD)
-            s.sendmail(SMTP_USER, to, msg.as_string())
-        print(f"[EMAIL SENT] To: {to} | Subject: {subject}")
-        return True
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+        msg = Mail(
+            from_email=f"{FROM_NAME} <{FROM_EMAIL}>",
+            to_emails=to,
+            subject=subject,
+            html_content=html,
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        r = sg.send(msg)
+        print(f"[EMAIL SENT via SendGrid] Status: {r.status_code} | To: {to}")
+        return r.status_code in (200, 202)
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        print(f"[SENDGRID ERROR] {e}")
         return False
 
 
