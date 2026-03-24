@@ -107,7 +107,17 @@ export default function MeetingRoom() {
         const data = JSON.parse(e.data)
 
         if (data.type === 'room-info') {
-          // Initiate offers to all existing peers
+          // Populate existing peers into the Map
+          for (const p of (data.peer_details ?? [])) {
+            setPeers(prev => {
+              const next = new Map(prev)
+              if (!next.has(p.user_id)) {
+                next.set(p.user_id, { user_id: p.user_id, name: p.name, initials: p.initials, audio: true, video: true })
+              }
+              return next
+            })
+          }
+          // Initiate WebRTC offers to all existing peers
           for (const peerId of data.peers) {
             const pc = createPC(peerId)
             const offer = await pc.createOffer()

@@ -290,16 +290,24 @@ async def meeting_ws(room_id: str, user_id: int, ws: WebSocket, db: Session = De
         "type": "user-joined",
         "user_id": user_id,
         "name": user.name,
-        "initials": user.avatar_initials,
+        "initials": user.avatar_initials or "?",
         "peers": peers,
     })
 
-    # Send current peer list to the new joiner
+    # Send full peer info to the new joiner
+    peer_details = []
+    for uid, _ in manager.rooms[room_id]:
+        if uid != user_id:
+            u = db.query(User).filter(User.id == uid).first()
+            if u:
+                peer_details.append({"user_id": uid, "name": u.name, "initials": u.avatar_initials or "?"})
+
     await ws.send_text(json.dumps({
         "type": "room-info",
         "room_id": room_id,
         "user_id": user_id,
-        "peers": peers,
+        "peers": [p["user_id"] for p in peer_details],
+        "peer_details": peer_details,
     }))
 
     try:
