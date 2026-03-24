@@ -253,9 +253,12 @@ export default function MeetingRoom() {
 
   function sendChat(e: React.FormEvent) {
     e.preventDefault()
-    if (!chatInput.trim()) return
-    sendWS({ type: 'chat', text: chatInput.trim() })
-    setChat(prev => [...prev, { from: user!.id, name: user!.name, initials: user!.avatar_initials || '?', text: chatInput.trim(), ts: new Date().toISOString() }])
+    const text = chatInput.trim()
+    if (!text) return
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({ type: 'chat', text }))
+    setChat(prev => [...prev, { from: user!.id, name: user!.name, initials: user!.avatar_initials || '?', text, ts: new Date().toISOString() }])
     setChatInput('')
   }
 
@@ -388,6 +391,7 @@ export default function MeetingRoom() {
                 </div>
                 <form onSubmit={sendChat} style={{ padding: 10, borderTop: '1px solid #1f1f1f', display: 'flex', gap: 8 }}>
                   <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message..."
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(e as any) } }}
                     style={{ flex: 1, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
                   <button type="submit" style={{ padding: '8px 14px', background: '#BFFF00', border: 'none', borderRadius: 8, color: '#0a0a0a', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>→</button>
                 </form>
@@ -463,13 +467,17 @@ function RemoteVideoTile({ peer }: { peer: Peer }) {
   useEffect(() => {
     if (videoRef.current && peer.stream) videoRef.current.srcObject = peer.stream
   }, [peer.stream])
+  const hasStream = !!peer.stream
   return (
     <div style={{ position: 'relative', background: '#151515', borderRadius: 12, overflow: 'hidden', border: '1px solid #2a2a2a' }}>
       <video ref={videoRef} autoPlay playsInline
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: peer.video ? 'block' : 'none' }} />
-      {!peer.video && (
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: hasStream && peer.video ? 'block' : 'none' }} />
+      {(!hasStream || !peer.video) && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a1a' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#BFFF00' }}>{peer.initials}</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#BFFF00', margin: '0 auto 8px' }}>{peer.initials}</div>
+            {!hasStream && <div style={{ fontSize: 10, color: '#555', fontFamily: "'JetBrains Mono', monospace" }}>connecting...</div>}
+          </div>
         </div>
       )}
       <div style={{ position: 'absolute', bottom: 8, left: 10, display: 'flex', alignItems: 'center', gap: 6 }}>

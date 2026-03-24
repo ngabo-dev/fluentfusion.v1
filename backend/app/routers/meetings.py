@@ -328,7 +328,7 @@ async def meeting_ws(room_id: str, user_id: int, ws: WebSocket, db: Session = De
                     "type": "chat",
                     "from": user_id,
                     "name": user.name,
-                    "initials": user.avatar_initials,
+                    "initials": user.avatar_initials or "?",
                     "text": data.get("text", ""),
                     "ts": datetime.utcnow().isoformat(),
                 })
