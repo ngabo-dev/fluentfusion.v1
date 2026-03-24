@@ -1,17 +1,16 @@
-import os
+import os, smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
-FROM_EMAIL       = os.getenv("FROM_EMAIL", "ngabo7834@gmail.com")
-FROM_NAME        = os.getenv("FROM_NAME", "FluentFusion AI")
-EMAIL_ENABLED    = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
-
-# keep SMTP vars so /test-email endpoint doesn't break
-SMTP_HOST     = os.getenv("SMTP_HOST", "")
-SMTP_PORT     = int(os.getenv("SMTP_PORT", "465"))
-SMTP_USER     = os.getenv("SMTP_USER", "")
+FROM_EMAIL    = os.getenv("FROM_EMAIL", "ngabo470@gmail.com")
+FROM_NAME     = os.getenv("FROM_NAME", "FluentFusion AI")
+EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
+SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT     = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER     = os.getenv("SMTP_USER", "ngabo470@gmail.com")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
 
@@ -19,28 +18,22 @@ def send_email(to: str, subject: str, html: str) -> bool:
     if not EMAIL_ENABLED:
         print(f"[EMAIL DISABLED] To: {to} | Subject: {subject}")
         return False
-    if not SENDGRID_API_KEY:
-        print(f"[EMAIL FAILED] SENDGRID_API_KEY not set")
-        return False
     try:
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail
-        msg = Mail(
-            from_email=f"{FROM_NAME} <{FROM_EMAIL}>",
-            to_emails=to,
-            subject=subject,
-            html_content=html,
-        )
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        r = sg.send(msg)
-        print(f"[EMAIL SENT via SendGrid] Status: {r.status_code} | To: {to}")
-        return r.status_code in (200, 202)
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"{FROM_NAME} <{FROM_EMAIL}>"
+        msg["To"] = to
+        msg.attach(MIMEText(html, "html"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+            s.ehlo()
+            s.starttls()
+            s.ehlo()
+            s.login(SMTP_USER, SMTP_PASSWORD.strip())
+            s.sendmail(FROM_EMAIL, to, msg.as_string())
+        print(f"[EMAIL SENT via Gmail SMTP] To: {to} | Subject: {subject}")
+        return True
     except Exception as e:
-        print(f"[SENDGRID ERROR] {type(e).__name__}: {e}")
-        try:
-            print(f"[SENDGRID ERROR BODY] {e.body}")
-        except Exception:
-            pass
+        print(f"[EMAIL ERROR] {type(e).__name__}: {e}")
         return False
 
 

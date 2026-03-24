@@ -14,9 +14,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/api/admin/dashboard'),
-      api.get('/api/admin/geo'),
-      api.get('/api/admin/reports'),
+      api.get('/api/admin/dashboard').catch(() => ({ data: null })),
+      api.get('/api/admin/geo').catch(() => ({ data: null })),
+      api.get('/api/admin/reports').catch(() => ({ data: [] })),
     ]).then(([d, g, r]) => {
       setDash(d.data)
       setGeo(g.data)
@@ -24,7 +24,8 @@ export default function AdminDashboard() {
     }).finally(() => setLoading(false))
   }, [])
 
-  if (loading || !dash) return <div className="loading" />
+  if (loading) return <div className="loading" />
+  if (!dash) return <div className="pg"><div style={{ color: 'var(--er)', padding: 40, fontFamily: 'JetBrains Mono', fontSize: 12 }}>Failed to load dashboard. Check backend connection.</div></div>
 
   const monthly = dash.monthly_revenue ?? []
   const grossBars = monthly.map((m: any) => ({ value: Math.round(m.gross / 1000), label: MONTHS[m.month - 1] ?? '' }))

@@ -453,6 +453,8 @@ def platform_activity(limit: int = 50, db: Session = Depends(get_db), _=Depends(
     # Sort all events by timestamp descending
     events.sort(key=lambda x: x["ts"] or datetime.min, reverse=True)
     return events[:limit]
+
+@router.get("/audit-log")
 def audit_log(db: Session = Depends(get_db), _=Depends(guard)):
     from app.models import AuditLog
     logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(100).all()
