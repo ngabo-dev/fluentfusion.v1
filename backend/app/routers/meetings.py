@@ -150,6 +150,8 @@ def schedule_meeting(body: ScheduleRequest, db: Session = Depends(get_db), curre
             target=str(user.id),
             sent_at=datetime.utcnow(),
             recipients=1,
+            notif_type="notification",
+            link=f"/meeting/{room_id}",
         )
         db.add(notif)
 
@@ -215,7 +217,13 @@ def get_meeting(room_id: str, db: Session = Depends(get_db), current_user: User 
         MeetingInvite.meeting_id == m.id,
         MeetingInvite.user_id == current_user.id
     ).first() is not None
-    if not is_host and not is_invited:
+    # Broad-audience meetings are open to their target group
+    broad = m.audience in (MeetingAudienceEnum.everyone,)
+    if m.audience == MeetingAudienceEnum.all_students and current_user.role == RoleEnum.student:
+        broad = True
+    if m.audience == MeetingAudienceEnum.all_instructors and current_user.role == RoleEnum.instructor:
+        broad = True
+    if not is_host and not is_invited and not broad:
         raise HTTPException(status_code=403, detail="Not invited to this meeting")
     d = _meeting_dict(m, db)
     d["is_host"] = is_host

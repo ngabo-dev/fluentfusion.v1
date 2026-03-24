@@ -4,7 +4,8 @@ import { useAuth } from '../components/AuthContext'
 import api from '../api/client'
 
 const WS_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api')
-  .replace(/^http/, 'ws').replace('/api', '')
+  .replace(/\/api$/, '')
+  .replace(/^http/, 'ws')
 
 interface Peer {
   user_id: number
