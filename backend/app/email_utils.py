@@ -36,7 +36,11 @@ def send_email(to: str, subject: str, html: str) -> bool:
         print(f"[EMAIL SENT via SendGrid] Status: {r.status_code} | To: {to}")
         return r.status_code in (200, 202)
     except Exception as e:
-        print(f"[SENDGRID ERROR] {e}")
+        print(f"[SENDGRID ERROR] {type(e).__name__}: {e}")
+        try:
+            print(f"[SENDGRID ERROR BODY] {e.body}")
+        except Exception:
+            pass
         return False
 
 

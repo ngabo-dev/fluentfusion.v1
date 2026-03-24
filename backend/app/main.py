@@ -73,7 +73,7 @@ def test_email():
             "<p>Test email from FluentFusion backend. SendGrid is working ✅</p>")
         delivery_ok = ok
         if not ok:
-            delivery_error = "send_email() returned False"
+            delivery_error = "send_email() returned False — check Render logs for SENDGRID ERROR"
     except Exception as e:
         delivery_error = str(e)
     return {
