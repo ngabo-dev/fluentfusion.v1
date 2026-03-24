@@ -11,9 +11,17 @@ Base.metadata.create_all(bind=engine)
 def _run_migrations():
     from sqlalchemy import text
     migrations = [
-        ("notifications", "notif_type", "VARCHAR DEFAULT 'announcement'"),
-        ("notifications", "link",       "VARCHAR"),
-        ("users",         "avatar_url", "VARCHAR"),
+        ("notifications", "notif_type",   "VARCHAR DEFAULT 'announcement'"),
+        ("notifications", "link",          "VARCHAR"),
+        ("notifications", "sender_id",     "INTEGER"),
+        ("notifications", "course_id",     "INTEGER"),
+        ("notifications", "recipients",    "INTEGER DEFAULT 0"),
+        ("notifications", "read_rate",     "FLOAT DEFAULT 0.0"),
+        ("notifications", "allow_replies", "BOOLEAN DEFAULT FALSE"),
+        ("users",         "avatar_url",    "VARCHAR"),
+        ("users",         "first_login",   "BOOLEAN DEFAULT TRUE"),
+        ("users",         "xp",            "INTEGER DEFAULT 0"),
+        ("users",         "pulse_state",   "VARCHAR DEFAULT 'coasting'"),
     ]
     with engine.connect() as conn:
         for table, col, definition in migrations:
