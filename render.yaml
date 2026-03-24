@@ -18,8 +18,6 @@ services:
         value: https://fluentfusionv1.vercel.app
       - key: EMAIL_ENABLED
         value: "True"
-      - key: RESEND_API_KEY
-        value: re_UBSgYEG4_Pe8b8s9LwXrBuT9WVghyL7ox
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -29,7 +27,7 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       - key: FROM_EMAIL
-        value: onboarding@resend.dev
+        value: ngabo470@gmail.com
       - key: FROM_NAME
         value: FluentFusion AI
 

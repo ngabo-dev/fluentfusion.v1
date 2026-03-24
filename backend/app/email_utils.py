@@ -3,55 +3,40 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-FROM_EMAIL     = os.getenv("FROM_EMAIL", "onboarding@resend.dev")
-FROM_NAME      = os.getenv("FROM_NAME", "FluentFusion AI")
-EMAIL_ENABLED  = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
-SMTP_HOST      = os.getenv("SMTP_HOST", "")
-SMTP_PORT      = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER      = os.getenv("SMTP_USER", "")
-SMTP_PASSWORD  = os.getenv("SMTP_PASSWORD", "")
+FROM_EMAIL    = os.getenv("FROM_EMAIL", "")
+FROM_NAME     = os.getenv("FROM_NAME", "FluentFusion AI")
+EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "False").lower() == "true"
+SMTP_HOST     = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT     = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USER     = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
 
 def send_email(to: str, subject: str, html: str) -> bool:
     if not EMAIL_ENABLED:
         print(f"[EMAIL DISABLED] To: {to} | Subject: {subject}")
         return False
-    # Try Resend first (production), fall back to SMTP (local dev)
-    if RESEND_API_KEY:
-        try:
-            import resend as _resend
-            _resend.api_key = RESEND_API_KEY
-            _resend.Emails.send({
-                "from": f"{FROM_NAME} <{FROM_EMAIL}>",
-                "to": [to],
-                "subject": subject,
-                "html": html,
-            })
-            print(f"[EMAIL SENT via Resend] To: {to} | Subject: {subject}")
-            return True
-        except Exception as e:
-            print(f"[RESEND ERROR] {e}")
-    if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
-        try:
-            import smtplib, ssl
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"]    = f"{FROM_NAME} <{SMTP_USER}>"
-            msg["To"]      = to
-            msg.attach(MIMEText(html, "html"))
-            ctx = ssl.create_default_context()
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=10) as s:
-                s.login(SMTP_USER, SMTP_PASSWORD)
-                s.sendmail(SMTP_USER, to, msg.as_string())
-            print(f"[EMAIL SENT via SMTP] To: {to} | Subject: {subject}")
-            return True
-        except Exception as e:
-            print(f"[SMTP ERROR] {e}")
-    print(f"[EMAIL FAILED] No working provider. To: {to}")
-    return False
+    if not (SMTP_HOST and SMTP_USER and SMTP_PASSWORD):
+        print(f"[EMAIL FAILED] SMTP not configured. To: {to}")
+        return False
+    try:
+        import smtplib, ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = f"{FROM_NAME} <{SMTP_USER}>"
+        msg["To"]      = to
+        msg.attach(MIMEText(html, "html"))
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=10) as s:
+            s.login(SMTP_USER, SMTP_PASSWORD)
+            s.sendmail(SMTP_USER, to, msg.as_string())
+        print(f"[EMAIL SENT] To: {to} | Subject: {subject}")
+        return True
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        return False
 
 
 _BASE = """

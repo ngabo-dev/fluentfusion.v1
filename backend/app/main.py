@@ -65,43 +65,31 @@ def health():
 
 @app.get("/test-email")
 def test_email():
-    import smtplib
-    from app.email_utils import (
-        EMAIL_ENABLED, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD,
-        FROM_EMAIL, FROM_NAME, RESEND_API_KEY, send_email
-    )
+    import smtplib, ssl
+    from app.email_utils import EMAIL_ENABLED, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, FROM_EMAIL, send_email
     smtp_ok = False
     smtp_error = None
     delivery_ok = False
     delivery_error = None
-
-    # 1. Test SMTP login
     try:
-        import ssl as _ssl
-        ctx = _ssl.create_default_context()
+        ctx = ssl.create_default_context()
         with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=15) as s:
             s.login(SMTP_USER, SMTP_PASSWORD.strip())
             smtp_ok = True
     except Exception as e:
         smtp_error = str(e)
-
-    # 2. Send a real test email to FROM_EMAIL to confirm delivery
     try:
-        ok = send_email(
-            FROM_EMAIL,
-            "FluentFusion — Email Delivery Test",
-            "<p>This is a delivery test from the FluentFusion backend. If you see this, emails are working ✅</p>"
-        )
+        ok = send_email(FROM_EMAIL, "FluentFusion — Email Delivery Test",
+            "<p>Test email from FluentFusion backend. Emails are working ✅</p>")
         delivery_ok = ok
         if not ok:
-            delivery_error = "send_email() returned False — check provider config"
+            delivery_error = "send_email() returned False"
     except Exception as e:
         delivery_error = str(e)
-
     return {
         "EMAIL_ENABLED": EMAIL_ENABLED,
-        "provider": "resend" if RESEND_API_KEY else "smtp",
         "SMTP_HOST": SMTP_HOST,
+        "SMTP_PORT": SMTP_PORT,
         "SMTP_USER": SMTP_USER,
         "FROM_EMAIL": FROM_EMAIL,
         "SMTP_PASSWORD_LEN": len(SMTP_PASSWORD),
