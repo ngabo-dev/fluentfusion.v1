@@ -77,8 +77,9 @@ def test_email():
 
     # 1. Test SMTP login
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
-            s.ehlo(); s.starttls(); s.ehlo()
+        import ssl as _ssl
+        ctx = _ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=15) as s:
             s.login(SMTP_USER, SMTP_PASSWORD.strip())
             smtp_ok = True
     except Exception as e:

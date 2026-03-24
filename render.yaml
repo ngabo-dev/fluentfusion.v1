@@ -19,17 +19,17 @@ services:
       - key: EMAIL_ENABLED
         value: "True"
       - key: RESEND_API_KEY
-        value: re_UBSgYEG4_Pe8b8s9LwXrBuT9WVghyL7ox
+        value: ""
       - key: SMTP_HOST
-        value: smtp-relay.brevo.com
+        value: smtp.gmail.com
       - key: SMTP_PORT
-        value: "587"
+        value: "465"
       - key: SMTP_USER
-        value: a5a28e001@smtp-brevo.com
+        value: ngabo470@gmail.com
       - key: SMTP_PASSWORD
         sync: false
       - key: FROM_EMAIL
-        value: onboarding@resend.dev
+        value: ngabo470@gmail.com
       - key: FROM_NAME
         value: FluentFusion AI
 

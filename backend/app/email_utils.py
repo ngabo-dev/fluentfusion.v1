@@ -34,7 +34,7 @@ def send_email(to: str, subject: str, html: str) -> bool:
             print(f"[RESEND ERROR] {e}")
     if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
         try:
-            import smtplib
+            import smtplib, ssl
             from email.mime.multipart import MIMEMultipart
             from email.mime.text import MIMEText
             msg = MIMEMultipart("alternative")
@@ -42,8 +42,9 @@ def send_email(to: str, subject: str, html: str) -> bool:
             msg["From"]    = f"{FROM_NAME} <{SMTP_USER}>"
             msg["To"]      = to
             msg.attach(MIMEText(html, "html"))
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as s:
-                s.ehlo(); s.starttls(); s.login(SMTP_USER, SMTP_PASSWORD)
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=ctx, timeout=10) as s:
+                s.login(SMTP_USER, SMTP_PASSWORD)
                 s.sendmail(SMTP_USER, to, msg.as_string())
             print(f"[EMAIL SENT via SMTP] To: {to} | Subject: {subject}")
             return True
