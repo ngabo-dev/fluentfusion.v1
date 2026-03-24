@@ -67,7 +67,7 @@ export default function CourseCatalog() {
 
       <div className="g3">
         {courses.map(c => (
-          <div key={c.id} className="card" style={{ padding: 0, cursor: 'pointer' }} onClick={() => nav('/dashboard/courses')}>
+          <div key={c.id} className="card" style={{ padding: 0, cursor: 'pointer' }} onClick={() => nav(`/dashboard/catalog/${c.id}`)}>
             <div style={{ height: 120, background: c.thumbnail_url ? undefined : 'linear-gradient(135deg,#1a2a0a,#0f1f05)', backgroundImage: c.thumbnail_url ? `url(${c.thumbnail_url})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, position: 'relative', borderRadius: '14px 14px 0 0' }}>
               {!c.thumbnail_url && c.flag_emoji}
               <div style={{ position: 'absolute', top: 8, left: 8 }}>

@@ -77,10 +77,56 @@ def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard
             result.append({"id": c.id, "title": c.title, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "instructor": instructor.name if instructor else "", "instructor_initials": instructor.avatar_initials if instructor else "", "completion": round(e.completion_pct, 1), "lesson_count": lesson_count, "rating": round(avg_rat, 1), "price": c.price, "enrolled_at": e.enrolled_at})
     return result
 
+@router.get("/catalog/{course_id}")
+def course_detail(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    c = db.query(Course).filter(Course.id == course_id, Course.status == "published").first()
+    if not c:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Course not found")
+    instructor = db.query(User).filter(User.id == c.instructor_id).first()
+    lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
+    student_count = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
+    avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
+    enrolled = db.query(Enrollment).filter(Enrollment.student_id == current_user.id, Enrollment.course_id == c.id).first() is not None
+    from app.models import CourseSection
+    sections = db.query(CourseSection).filter(CourseSection.course_id == c.id).order_by(CourseSection.order).all()
+    curriculum = []
+    for s in sections:
+        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
+        curriculum.append({"title": s.title, "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "is_preview": l.is_preview} for l in lessons]})
+    if not curriculum:
+        all_lessons = db.query(Lesson).filter(Lesson.course_id == c.id).order_by(Lesson.order).all()
+        if all_lessons:
+            curriculum = [{"title": "Course Content", "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "is_preview": l.is_preview} for l in all_lessons]}]
+    return {
+        "id": c.id, "title": c.title, "subtitle": c.subtitle, "description": c.description,
+        "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
+        "thumbnail_url": c.thumbnail_url, "price": c.price, "is_free": c.is_free,
+        "what_you_learn": c.what_you_learn, "requirements": c.requirements, "target_audience": c.target_audience,
+        "instructor": instructor.name if instructor else "",
+        "instructor_initials": instructor.avatar_initials if instructor else "",
+        "instructor_bio": instructor.bio if instructor else "",
+        "lesson_count": lesson_count, "student_count": student_count,
+        "rating": round(avg_rat, 1), "enrolled": enrolled, "curriculum": curriculum,
+    }
+
 @router.get("/courses/{course_id}/lessons")
 def course_lessons(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     lessons = db.query(Lesson).filter(Lesson.course_id == course_id).order_by(Lesson.order).all()
     return [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "order": l.order, "description": l.description} for l in lessons]
+
+@router.post("/courses/{course_id}/lessons/{lesson_id}/complete")
+def complete_lesson(course_id: int, lesson_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    enrollment = db.query(Enrollment).filter(Enrollment.student_id == current_user.id, Enrollment.course_id == course_id).first()
+    if not enrollment:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Not enrolled")
+    total = db.query(Lesson).filter(Lesson.course_id == course_id).count()
+    if total > 0:
+        enrollment.completion_pct = min(100.0, enrollment.completion_pct + round(100.0 / total, 1))
+    current_user.xp = (current_user.xp or 0) + 10
+    db.commit()
+    return {"ok": True, "completion": round(enrollment.completion_pct, 1), "xp": current_user.xp}
 
 @router.get("/live-sessions")
 def live_sessions(db: Session = Depends(get_db), current_user: User = Depends(guard)):

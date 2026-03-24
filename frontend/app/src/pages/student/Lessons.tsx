@@ -11,6 +11,8 @@ export default function Lessons() {
   const [selectedCourse, setSelectedCourse] = useState<any>(null)
   const [lessons, setLessons] = useState<any[]>([])
   const [activeLesson, setActiveLesson] = useState<any>(null)
+  const [completed, setCompleted] = useState<Set<number>>(new Set())
+  const [marking, setMarking] = useState(false)
 
   useEffect(() => {
     api.get('/api/student/courses').then(r => {
@@ -84,8 +86,19 @@ export default function Lessons() {
                     <div style={{ fontSize: 10, color: 'var(--mu)' }}>{activeLesson.duration_min} min · {activeLesson.lesson_type}</div>
                   </div>
                   <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                    <button className="btn bp sm">▶ Start Lesson</button>
-                    <button className="btn bo sm">✓ Mark Done</button>
+                    {completed.has(activeLesson.id) ? (
+                      <span style={{ fontSize: 12, color: 'var(--ok)', fontFamily: 'JetBrains Mono' }}>✓ Completed</span>
+                    ) : (
+                      <button className="btn bo sm" disabled={marking} onClick={async () => {
+                        setMarking(true)
+                        const r = await api.post(`/api/student/courses/${selectedCourse.id}/lessons/${activeLesson.id}/complete`, {}).catch(() => null)
+                        if (r) {
+                          setCompleted(p => new Set([...p, activeLesson.id]))
+                          setSelectedCourse((c: any) => ({ ...c, completion: r.data.completion }))
+                        }
+                        setMarking(false)
+                      }}>✓ Mark Done</button>
+                    )}
                   </div>
                 </div>
 
