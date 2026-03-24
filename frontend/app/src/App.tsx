@@ -9,6 +9,7 @@ import Signup from './pages/student/Signup'
 import ForgotPassword from './pages/student/ForgotPassword'
 import ResetPassword from './pages/student/ResetPassword'
 import EmailVerify from './pages/student/EmailVerify'
+import ConfirmEmailChange from './pages/student/ConfirmEmailChange'
 import MeetingRoom from './pages/MeetingRoom'
 import Pricing from './pages/student/Pricing'
 import Features from './pages/student/Features'
@@ -255,6 +256,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<EmailVerify />} />
+          <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/features" element={<Features />} />
           <Route path="/community" element={<Community />} />

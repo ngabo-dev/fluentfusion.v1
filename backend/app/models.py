@@ -84,6 +84,9 @@ class User(Base):
     xp = Column(Integer, default=0)
     first_login = Column(Boolean, default=True)
     avatar_url = Column(String, nullable=True)
+    pending_email = Column(String, nullable=True)
+    email_change_token = Column(String, nullable=True)
+    email_change_expiry = Column(DateTime, nullable=True)
 
 class Course(Base):
     __tablename__ = "courses"

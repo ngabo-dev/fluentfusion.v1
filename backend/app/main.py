@@ -18,10 +18,13 @@ def _run_migrations():
         ("notifications", "recipients",    "INTEGER DEFAULT 0"),
         ("notifications", "read_rate",     "FLOAT DEFAULT 0.0"),
         ("notifications", "allow_replies", "BOOLEAN DEFAULT FALSE"),
-        ("users",         "avatar_url",    "VARCHAR"),
-        ("users",         "first_login",   "BOOLEAN DEFAULT TRUE"),
-        ("users",         "xp",            "INTEGER DEFAULT 0"),
-        ("users",         "pulse_state",   "VARCHAR DEFAULT 'coasting'"),
+        ("users",         "avatar_url",          "VARCHAR"),
+        ("users",         "first_login",         "BOOLEAN DEFAULT TRUE"),
+        ("users",         "xp",                  "INTEGER DEFAULT 0"),
+        ("users",         "pulse_state",         "VARCHAR DEFAULT 'coasting'"),
+        ("users",         "pending_email",       "VARCHAR"),
+        ("users",         "email_change_token",  "VARCHAR"),
+        ("users",         "email_change_expiry", "TIMESTAMP"),
     ]
     with engine.connect() as conn:
         for table, col, definition in migrations:

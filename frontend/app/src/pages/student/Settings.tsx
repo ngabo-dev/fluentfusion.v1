@@ -7,13 +7,50 @@ const PULSE_LABELS: Record<string, string> = { thriving: '🔥 Thriving', coasti
 export default function Settings() {
   const [tab, setTab] = useState('profile')
   const [profile, setProfile] = useState<any>(null)
-  const [saved, setSaved] = useState(false)
+  const [form, setForm] = useState({ name: '', bio: '' })
+  const [profilePw, setProfilePw] = useState('')
+  const [profileMsg, setProfileMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [emailForm, setEmailForm] = useState({ new_email: '', password: '' })
+  const [emailMsg, setEmailMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [notifPrefs, setNotifPrefs] = useState({ email: true, sessions: true, quizzes: true, achievements: true })
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
   const [pwErr, setPwErr] = useState('')
   const [pwOk, setPwOk] = useState('')
 
-  useEffect(() => { api.get('/api/student/profile').then(r => setProfile(r.data)) }, [])
+  useEffect(() => {
+    api.get('/api/student/profile').then(r => {
+      setProfile(r.data)
+      setForm({ name: r.data.name, bio: r.data.bio ?? '' })
+    })
+  }, [])
+
+  async function saveProfile() {
+    setProfileMsg(null)
+    if (!profilePw) return setProfileMsg({ ok: false, text: 'Enter your password to save changes' })
+    try {
+      const r = await api.patch('/api/auth/profile', { current_password: profilePw, name: form.name, bio: form.bio })
+      setProfile((p: any) => ({ ...p, name: r.data.name, avatar_initials: r.data.avatar_initials, bio: form.bio }))
+      // Update stored user name so it reflects everywhere in the UI
+      const stored = localStorage.getItem('ff_user')
+      if (stored) {
+        const u = JSON.parse(stored)
+        u.name = r.data.name
+        u.avatar_initials = r.data.avatar_initials
+        localStorage.setItem('ff_user', JSON.stringify(u))
+      }
+      setProfilePw('')
+      setProfileMsg({ ok: true, text: 'Profile updated!' })
+    } catch (e: any) { setProfileMsg({ ok: false, text: e?.response?.data?.detail || e?.message || 'Failed' }) }
+  }
+
+  async function requestEmailChange() {
+    setEmailMsg(null)
+    try {
+      await api.post('/api/auth/request-email-change', { current_password: emailForm.password, new_email: emailForm.new_email })
+      setEmailMsg({ ok: true, text: 'Confirmation link sent to your new email. Click it to confirm.' })
+      setEmailForm({ new_email: '', password: '' })
+    } catch (e: any) { setEmailMsg({ ok: false, text: e?.response?.data?.detail || e?.message || 'Failed' }) }
+  }
 
   async function changePassword() {
     setPwErr(''); setPwOk('')
@@ -27,12 +64,13 @@ export default function Settings() {
     } catch (e: any) { setPwErr(e?.response?.data?.detail || 'Failed to update password') }
   }
 
-  async function saveProfile() {
-    await api.patch('/api/student/profile', { name: profile.name, bio: profile.bio })
-    setSaved(true); setTimeout(() => setSaved(false), 2000)
-  }
-
   if (!profile) return <div className="loading" />
+
+  const msg = (m: { ok: boolean; text: string }) => (
+    <div style={{ background: m.ok ? 'rgba(0,255,127,0.08)' : 'rgba(255,68,68,0.08)', border: `1px solid ${m.ok ? 'rgba(0,255,127,0.25)' : 'rgba(255,68,68,0.2)'}`, borderRadius: 8, padding: '8px 12px', color: m.ok ? '#00FF7F' : '#FF4444', fontSize: 13, marginBottom: 14 }}>
+      {m.ok ? '✓' : '⚠'} {m.text}
+    </div>
+  )
 
   return (
     <div className="pg">
@@ -41,7 +79,7 @@ export default function Settings() {
       </div>
       <div className="slay">
         <div className="snv">
-          {[['profile', '👤 Profile'], ['notifications', '🔔 Notifications'], ['security', '🔒 Security'], ['pulse', '🧠 PULSE']].map(([k, label]) => (
+          {[['profile', '👤 Profile'], ['email', '📧 Email'], ['notifications', '🔔 Notifications'], ['security', '🔒 Security'], ['pulse', '🧠 PULSE']].map(([k, label]) => (
             <div key={k} className={`sni${tab === k ? ' active' : ''}`} onClick={() => setTab(k)}>{label}</div>
           ))}
         </div>
@@ -61,14 +99,24 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              <div className="fg"><label className="lbl">Full Name</label><input className="inp" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} /></div>
-              <div className="fg"><label className="lbl">Email</label><input className="inp" value={profile.email} disabled style={{ opacity: .5 }} /></div>
-              <div className="fg"><label className="lbl">Bio</label><textarea className="inp" rows={3} style={{ resize: 'vertical' }} value={profile.bio ?? ''} onChange={e => setProfile({ ...profile, bio: e.target.value })} placeholder="Tell us about yourself..." /></div>
-              <div className="fg">
-                <label className="lbl">Member Since</label>
-                <div style={{ fontSize: 12, color: 'var(--mu)', padding: '9px 0' }}>{new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-              </div>
-              <button className="btn bp" onClick={saveProfile}>{saved ? '✓ Saved!' : 'Save Changes'}</button>
+              {profileMsg && msg(profileMsg)}
+              <div className="fg"><label className="lbl">Full Name</label><input className="inp" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+              <div className="fg"><label className="lbl">Bio</label><textarea className="inp" rows={3} style={{ resize: 'vertical' }} value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} placeholder="Tell us about yourself..." /></div>
+              <div className="fg"><label className="lbl">Member Since</label><div style={{ fontSize: 12, color: 'var(--mu)', padding: '9px 0' }}>{new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div></div>
+              <div className="fg"><label className="lbl">Current Password <span style={{ color: 'var(--er)', fontSize: 11 }}>required to save</span></label><input className="inp" type="password" placeholder="Enter your password to confirm changes" value={profilePw} onChange={e => setProfilePw(e.target.value)} /></div>
+              <button className="btn bp" onClick={saveProfile}>Save Changes</button>
+            </div>
+          )}
+
+          {tab === 'email' && (
+            <div className="card">
+              <div className="ch"><span className="ch-t">Change Email</span></div>
+              <div style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 16 }}>Current email: <b style={{ color: 'var(--fg)' }}>{profile.email}</b></div>
+              {emailMsg && msg(emailMsg)}
+              <div className="fg"><label className="lbl">New Email Address</label><input className="inp" type="email" placeholder="your@newemail.com" value={emailForm.new_email} onChange={e => setEmailForm(f => ({ ...f, new_email: e.target.value }))} /></div>
+              <div className="fg"><label className="lbl">Current Password <span style={{ color: 'var(--er)', fontSize: 11 }}>required</span></label><input className="inp" type="password" placeholder="••••••••" value={emailForm.password} onChange={e => setEmailForm(f => ({ ...f, password: e.target.value }))} /></div>
+              <button className="btn bp" onClick={requestEmailChange}>Send Confirmation Link</button>
+              <div style={{ marginTop: 12, fontSize: 11, color: 'var(--mu)', lineHeight: 1.6 }}>A confirmation link will be sent to your new email. Your email only changes after you click it.</div>
             </div>
           )}
 
@@ -116,9 +164,7 @@ export default function Settings() {
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🧠</div>
                 <div style={{ fontFamily: 'Syne', fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Your Learning State</div>
                 <span className={`pulse-badge pulse-${profile.pulse_state}`} style={{ fontSize: 13, padding: '6px 16px' }}>{PULSE_LABELS[profile.pulse_state]}</span>
-                <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 12, lineHeight: 1.6 }}>
-                  PULSE tracks your engagement, completion rates, and activity patterns to give you personalized insights.
-                </div>
+                <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 12, lineHeight: 1.6 }}>PULSE tracks your engagement, completion rates, and activity patterns to give you personalized insights.</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {[['⚡ XP Points', `${profile.xp} XP`, 'var(--neon)'], ['📚 Courses', 'Active learner', 'var(--in)'], ['🔥 Streak', '7 days', 'var(--wa)'], ['🏆 Rank', 'Top 20%', 'var(--ok)']].map(([label, val, color]) => (

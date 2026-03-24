@@ -177,3 +177,71 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
     user.reset_token_expiry = None
     db.commit()
     return {"message": "Password reset successfully"}
+
+
+# ── Profile Update (password-gated) ──────────────────────────────────────
+class ProfileUpdateRequest(BaseModel):
+    current_password: str
+    name: str | None = None
+    bio: str | None = None
+
+@router.patch("/profile")
+def update_profile(body: ProfileUpdateRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    if body.name is not None:
+        name = body.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        current_user.name = name
+        parts = name.split()
+        current_user.avatar_initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) >= 2 else parts[0][:2].upper()
+    if body.bio is not None:
+        current_user.bio = body.bio
+    db.commit()
+    return {"ok": True, "name": current_user.name, "avatar_initials": current_user.avatar_initials}
+
+
+# ── Email Change (password-gated, confirmation link) ─────────────────────
+class EmailChangeRequest(BaseModel):
+    current_password: str
+    new_email: str
+
+@router.post("/request-email-change")
+def request_email_change(body: EmailChangeRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    new_email = body.new_email.lower().strip()
+    if new_email == current_user.email:
+        raise HTTPException(status_code=400, detail="That is already your current email")
+    if db.query(User).filter(User.email == new_email).first():
+        raise HTTPException(status_code=400, detail="Email already in use")
+    token = secrets.token_urlsafe(32)
+    current_user.pending_email = new_email
+    current_user.email_change_token = token
+    current_user.email_change_expiry = datetime.utcnow() + timedelta(hours=1)
+    db.commit()
+    confirm_link = f"{FRONTEND_URL}/confirm-email-change?token={token}"
+    from app.email_utils import send_email, _BASE
+    html = _BASE.format(body=f"""
+      <h2 style="color:#BFFF00;margin:0 0 8px;">Confirm Your New Email</h2>
+      <p style="color:#888;margin-bottom:24px;">Hi {current_user.name}, click below to confirm <b style="color:#fff;">{new_email}</b> as your new email address.</p>
+      <a href="{confirm_link}" style="display:inline-block;background:#BFFF00;color:#0a0a0a;font-weight:700;padding:14px 32px;border-radius:10px;text-decoration:none;font-size:15px;margin-bottom:24px;">Confirm New Email →</a>
+      <p style="color:#555;font-size:12px;">This link expires in 1 hour. If you didn't request this, ignore it — your email stays unchanged.</p>
+    """)
+    send_email(new_email, "Confirm your new FluentFusion email", html)
+    return {"message": "Confirmation link sent to your new email"}
+
+@router.get("/confirm-email-change")
+def confirm_email_change(token: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email_change_token == token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired link")
+    if user.email_change_expiry and datetime.utcnow() > user.email_change_expiry:
+        raise HTTPException(status_code=400, detail="Link has expired. Request a new one.")
+    user.email = user.pending_email
+    user.pending_email = None
+    user.email_change_token = None
+    user.email_change_expiry = None
+    db.commit()
+    return {"message": "Email updated successfully", "email": user.email}
