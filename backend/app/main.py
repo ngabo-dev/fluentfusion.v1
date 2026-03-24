@@ -11,20 +11,41 @@ Base.metadata.create_all(bind=engine)
 def _run_migrations():
     from sqlalchemy import text
     migrations = [
-        ("notifications", "notif_type",   "VARCHAR DEFAULT 'announcement'"),
-        ("notifications", "link",          "VARCHAR"),
-        ("notifications", "sender_id",     "INTEGER"),
-        ("notifications", "course_id",     "INTEGER"),
-        ("notifications", "recipients",    "INTEGER DEFAULT 0"),
-        ("notifications", "read_rate",     "FLOAT DEFAULT 0.0"),
-        ("notifications", "allow_replies", "BOOLEAN DEFAULT FALSE"),
-        ("users",         "avatar_url",          "VARCHAR"),
-        ("users",         "first_login",         "BOOLEAN DEFAULT TRUE"),
-        ("users",         "xp",                  "INTEGER DEFAULT 0"),
-        ("users",         "pulse_state",         "VARCHAR DEFAULT 'coasting'"),
-        ("users",         "pending_email",       "VARCHAR"),
-        ("users",         "email_change_token",  "VARCHAR"),
-        ("users",         "email_change_expiry", "TIMESTAMP"),
+        # notifications
+        ("notifications", "notif_type",           "VARCHAR DEFAULT 'announcement'"),
+        ("notifications", "link",                  "VARCHAR"),
+        ("notifications", "sender_id",             "INTEGER"),
+        ("notifications", "course_id",             "INTEGER"),
+        ("notifications", "recipients",            "INTEGER DEFAULT 0"),
+        ("notifications", "read_rate",             "FLOAT DEFAULT 0.0"),
+        ("notifications", "allow_replies",         "BOOLEAN DEFAULT FALSE"),
+        # users
+        ("users",         "avatar_url",            "VARCHAR"),
+        ("users",         "first_login",           "BOOLEAN DEFAULT TRUE"),
+        ("users",         "xp",                    "INTEGER DEFAULT 0"),
+        ("users",         "pulse_state",           "VARCHAR DEFAULT 'coasting'"),
+        ("users",         "pending_email",         "VARCHAR"),
+        ("users",         "email_change_token",    "VARCHAR"),
+        ("users",         "email_change_expiry",   "TIMESTAMP"),
+        # courses
+        ("courses",       "subtitle",              "VARCHAR"),
+        ("courses",       "category",              "VARCHAR"),
+        ("courses",       "is_free",               "BOOLEAN DEFAULT FALSE"),
+        ("courses",       "intro_video_url",        "VARCHAR"),
+        ("courses",       "what_you_learn",         "TEXT"),
+        ("courses",       "requirements",           "TEXT"),
+        ("courses",       "target_audience",        "TEXT"),
+        ("courses",       "rejection_feedback",     "TEXT"),
+        ("courses",       "admin_notes",            "TEXT"),
+        ("courses",       "submitted_at",           "TIMESTAMP"),
+        ("courses",       "approved_at",            "TIMESTAMP"),
+        ("courses",       "published_at",           "TIMESTAMP"),
+        ("courses",       "updated_at",             "TIMESTAMP"),
+        # lessons
+        ("lessons",       "section_id",             "INTEGER"),
+        ("lessons",       "content",                "TEXT"),
+        ("lessons",       "resource_url",           "VARCHAR"),
+        ("lessons",       "is_preview",             "BOOLEAN DEFAULT FALSE"),
     ]
     with engine.connect() as conn:
         for table, col, definition in migrations:
