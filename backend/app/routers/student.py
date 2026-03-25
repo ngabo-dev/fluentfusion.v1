@@ -265,7 +265,7 @@ def leaderboard(db: Session = Depends(get_db), current_user: User = Depends(guar
 def get_announcements(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
-    targets = ["all", "students"] + course_targets
+    targets = ["all", "students", str(current_user.id)] + course_targets
     notifs = db.query(Notification).filter(
         Notification.target.in_(targets),
         Notification.notif_type == "announcement"
@@ -277,7 +277,7 @@ def get_announcements(db: Session = Depends(get_db), current_user: User = Depend
 def mark_announcements_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
     enrolled_course_ids = [e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()]
     course_targets = [f"course_{cid}" for cid in enrolled_course_ids]
-    targets = ["all", "students"] + course_targets
+    targets = ["all", "students", str(current_user.id)] + course_targets
     annc_ids = [n.id for n in db.query(Notification.id).filter(Notification.target.in_(targets), Notification.notif_type == "announcement").all()]
     existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
     for nid in annc_ids:
