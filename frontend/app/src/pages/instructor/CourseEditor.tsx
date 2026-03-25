@@ -14,7 +14,7 @@ const LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'All Levels']
 const CATEGORIES = ['Language Basics', 'Conversation', 'Grammar', 'Business', 'Travel', 'Exam Prep', 'Culture', 'Writing', 'Pronunciation']
 
 type LessonDraft = { id?: number; title: string; lesson_type: 'video' | 'text' | 'audio'; duration_min: string; description: string; is_preview: boolean }
-type Section = { id?: number; title: string; lessons: LessonDraft[] }
+type Section = { id?: number; title: string; intro: string; outcomes: string; has_quiz: boolean; quiz_title: string; lessons: LessonDraft[] }
 const emptyLesson = (): LessonDraft => ({ title: '', lesson_type: 'video', duration_min: '', description: '', is_preview: false })
 
 const NAV = [
@@ -39,7 +39,7 @@ export default function CourseEditor() {
     level: '', thumbnail_url: '', intro_video_url: '',
     what_you_learn: '', requirements: '', target_audience: '',
   })
-  const [sections, setSections] = useState<Section[]>([{ title: 'Section 1', lessons: [] }])
+  const [sections, setSections] = useState<Section[]>([{ title: 'Module 1', intro: '', outcomes: '', has_quiz: false, quiz_title: '', lessons: [] }])
   const [activeSec, setActiveSec] = useState(0)
   const [lessonDraft, setLessonDraft] = useState<LessonDraft>(emptyLesson())
   const [pricing, setPricing] = useState({ price: 49.99, is_free: false })
@@ -53,9 +53,9 @@ export default function CourseEditor() {
       setForm({ title: c.title || '', subtitle: c.subtitle || '', description: c.description || '', category: c.category || '', language: c.language || '', flag_emoji: c.flag_emoji || '', level: c.level || '', thumbnail_url: c.thumbnail_url || '', intro_video_url: c.intro_video_url || '', what_you_learn: c.what_you_learn || '', requirements: c.requirements || '', target_audience: c.target_audience || '' })
       setPricing({ price: c.price || 49.99, is_free: c.is_free || false })
       if (c.sections?.length > 0) {
-        setSections(c.sections.map((s: any) => ({ id: s.id, title: s.title, lessons: (s.lessons || []).map((l: any) => ({ id: l.id, title: l.title, lesson_type: l.lesson_type || 'video', duration_min: l.duration_min?.toString() || '', description: l.description || '', is_preview: l.is_preview || false })) })))
+        setSections(c.sections.map((s: any) => ({ id: s.id, title: s.title, intro: s.intro || '', outcomes: s.outcomes || '', has_quiz: s.has_quiz || false, quiz_title: s.quiz_title || '', lessons: (s.lessons || []).map((l: any) => ({ id: l.id, title: l.title, lesson_type: l.lesson_type || 'video', duration_min: l.duration_min?.toString() || '', description: l.description || '', is_preview: l.is_preview || false })) })))
       } else if (c.loose_lessons?.length > 0) {
-        setSections([{ title: 'Section 1', lessons: c.loose_lessons.map((l: any) => ({ id: l.id, title: l.title, lesson_type: l.lesson_type || 'video', duration_min: l.duration_min?.toString() || '', description: l.description || '', is_preview: l.is_preview || false })) }])
+        setSections([{ title: 'Module 1', intro: '', outcomes: '', has_quiz: false, quiz_title: '', lessons: c.loose_lessons.map((l: any) => ({ id: l.id, title: l.title, lesson_type: l.lesson_type || 'video', duration_min: l.duration_min?.toString() || '', description: l.description || '', is_preview: l.is_preview || false })) }])
       }
     }).catch(() => navigate('/instructor/courses')).finally(() => setLoading(false))
   }, [id])
@@ -74,7 +74,7 @@ export default function CourseEditor() {
     setSections(p => p.map((s, i) => i === si ? { ...s, lessons: s.lessons.filter((_, j) => j !== li) } : s))
   }
 
-  function addSection() { setSections(p => [...p, { title: `Section ${p.length + 1}`, lessons: [] }]); setActiveSec(sections.length) }
+  function addSection() { setSections(p => [...p, { title: `Module ${p.length + 1}`, intro: '', outcomes: '', has_quiz: false, quiz_title: '', lessons: [] }]); setActiveSec(sections.length) }
 
   async function save(andSubmit = false) {
     if (!form.title.trim() || !form.language || !form.level || !form.description.trim()) {
@@ -213,11 +213,22 @@ export default function CourseEditor() {
                   {sections.length > 1 && <span onClick={() => { setSections(p => p.filter((_, j) => j !== i)); setActiveSec(Math.max(0, i - 1)) }} style={{ cursor: 'pointer', color: 'var(--mu)', fontSize: 11, padding: '0 2px' }}>✕</span>}
                 </div>
               ))}
-              <button className="btn bo sm" onClick={addSection}>+ Add Section</button>
+              <button className="btn bo sm" onClick={addSection}>+ Add Module</button>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label className="lbl">Section Title</label>
+              <label className="lbl">Module Title</label>
               <input className="inp" value={sections[activeSec]?.title} onChange={e => setSections(p => p.map((s, i) => i === activeSec ? { ...s, title: e.target.value } : s))} />
+            </div>
+            {/* Module intro */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div className="fg" style={{ marginBottom: 0 }}>
+                <label className="lbl">📌 What to Expect (module intro)</label>
+                <textarea className="inp" rows={3} placeholder="Briefly describe what this module covers..." value={sections[activeSec]?.intro} onChange={e => setSections(p => p.map((s, i) => i === activeSec ? { ...s, intro: e.target.value } : s))} style={{ resize: 'vertical' }} />
+              </div>
+              <div className="fg" style={{ marginBottom: 0 }}>
+                <label className="lbl">🎯 Learning Outcomes (what learners will know)</label>
+                <textarea className="inp" rows={3} placeholder="By the end of this module, learners will be able to..." value={sections[activeSec]?.outcomes} onChange={e => setSections(p => p.map((s, i) => i === activeSec ? { ...s, outcomes: e.target.value } : s))} style={{ resize: 'vertical' }} />
+              </div>
             </div>
             {sections[activeSec]?.lessons.length > 0 && (
               <div style={{ marginBottom: 16 }}>
@@ -233,6 +244,17 @@ export default function CourseEditor() {
                 ))}
               </div>
             )}
+            {/* End-of-module quiz */}
+            <div style={{ margin: '16px 0', padding: 14, background: 'var(--bg2)', border: '1px solid var(--bdr)', borderRadius: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: sections[activeSec]?.has_quiz ? 12 : 0 }}>
+                <div className={`tgl${sections[activeSec]?.has_quiz ? ' on' : ''}`} onClick={() => setSections(p => p.map((s, i) => i === activeSec ? { ...s, has_quiz: !s.has_quiz } : s))} />
+                <span style={{ fontSize: 13, fontWeight: 600 }}>🧪 End-of-module test</span>
+                <span style={{ fontSize: 11, color: 'var(--mu)' }}>Students must pass before moving to the next module</span>
+              </label>
+              {sections[activeSec]?.has_quiz && (
+                <input className="inp" placeholder="Quiz title (e.g. Module 1 Assessment)" value={sections[activeSec]?.quiz_title} onChange={e => setSections(p => p.map((s, i) => i === activeSec ? { ...s, quiz_title: e.target.value } : s))} />
+              )}
+            </div>
             <div style={{ background: 'var(--bg2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 12 }}>Add Lesson</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10, marginBottom: 10 }}>
@@ -256,7 +278,7 @@ export default function CourseEditor() {
               </div>
             </div>
             <div style={{ marginTop: 14, fontSize: 11, color: 'var(--mu)', fontFamily: 'JetBrains Mono' }}>
-              {totalLessons} lesson{totalLessons !== 1 ? 's' : ''} across {sections.length} section{sections.length !== 1 ? 's' : ''}
+              {totalLessons} lesson{totalLessons !== 1 ? 's' : ''} across {sections.length} module{sections.length !== 1 ? 's' : ''}
             </div>
           </div>
         </div>

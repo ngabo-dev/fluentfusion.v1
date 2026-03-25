@@ -9,7 +9,6 @@ const links = [
   ]},
   { section: 'Teaching', items: [
     { to: '/instructor/courses', label: 'My Courses', icon: '📚', badge: '3' },
-    { to: '/instructor/lessons', label: 'Lessons', icon: '✏️' },
     { to: '/instructor/live-sessions', label: 'Live Sessions', icon: '🎙️' },
     { to: '/instructor/quizzes', label: 'Quizzes & Assessments', icon: '📝' },
   ]},

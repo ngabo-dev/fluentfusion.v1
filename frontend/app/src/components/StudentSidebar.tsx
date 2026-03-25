@@ -12,7 +12,6 @@ const links: NavGroup[] = [
   { section: 'Learning', items: [
     { to: '/dashboard/courses', label: 'My Courses', icon: '📚' },
     { to: '/dashboard/catalog', label: 'Course Catalog', icon: '🔍' },
-    { to: '/dashboard/lessons', label: 'Lessons', icon: '▶️' },
     { to: '/dashboard/live-sessions', label: 'Live Sessions', icon: '🎙️' },
     { to: '/dashboard/quizzes', label: 'Quizzes', icon: '📝' },
   ]},
