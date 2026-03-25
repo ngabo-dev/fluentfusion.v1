@@ -139,7 +139,7 @@ function StudentLayoutInner() {
           <Route path="/daily-challenge" element={<DailyChallenge />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/speaking" element={<SpeakingPractice />} />
-          <Route path="announcements" element={<StudentAnnouncements />} />
+          <Route path="/announcements" element={<StudentAnnouncements />} />
         </Routes>
       </main>
     </div>
