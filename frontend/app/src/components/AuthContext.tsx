@@ -25,7 +25,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
   const [ready, setReady] = useState(false)
 
-  useEffect(() => { setReady(true) }, [])
+  useEffect(() => {
+    const storedToken = localStorage.getItem('ff_access_token') || sessionStorage.getItem('ff_access_token')
+    if (!storedToken) { setReady(true); return }
+    // Validate token against backend on every app load
+    const base = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace('/api', '')
+    fetch(`${base}/api/auth/me`, { headers: { Authorization: `Bearer ${storedToken}` } })
+      .then(r => {
+        if (!r.ok) throw new Error('invalid')
+        return r.json()
+      })
+      .then(data => {
+        // Token is valid — update user from server
+        const updated = { id: data.id, name: data.name, email: data.email, role: data.role, avatar_initials: data.avatar_initials }
+        const storage = sessionStorage.getItem('ff_access_token') ? sessionStorage : localStorage
+        storage.setItem('ff_user', JSON.stringify(updated))
+        setUser(updated)
+      })
+      .catch(() => {
+        // Token invalid or backend unreachable — clear and force login
+        authApi.logout()
+        setToken(null)
+        setUser(null)
+      })
+      .finally(() => setReady(true))
+  }, [])
 
   async function login(email: string, password: string, remember = true) {
     const res = await authApi.login({ email, password, remember })

@@ -116,7 +116,12 @@ async function apiCall<T>(
   }
 
   if (!response.ok) {
-    console.error('API Error:', response.status, options.method || 'GET', endpoint);
+    console.error('API Error:', response.status, options.method || 'GET', endpoint)
+    if (response.status === 401 || response.status === 403) {
+      authApi.logout()
+      window.location.href = '/login?reason=expired'
+      throw new Error('Session expired')
+    }
     
     // Handle validation errors specially - extract the actual message
     let errorMessage = data.detail || data.error || `HTTP error ${response.status}`;
@@ -2251,7 +2256,7 @@ const _legacyBase = import.meta.env.VITE_API_URL
   : 'http://localhost:8000';
 
 async function _legacyCall(method: string, url: string, options?: { params?: Record<string, any>; data?: any }) {
-  const token = localStorage.getItem('ff_access_token');
+  const token = localStorage.getItem('ff_access_token') || sessionStorage.getItem('ff_access_token');
   let fullUrl = url.startsWith('http') ? url : `${_legacyBase}${url}`;
   if (options?.params) {
     const q = new URLSearchParams();
@@ -2265,7 +2270,14 @@ async function _legacyCall(method: string, url: string, options?: { params?: Rec
     ...(options?.data ? { body: JSON.stringify(options.data) } : {}),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      authApi.logout()
+      window.location.href = '/login?reason=expired'
+      throw new Error('Session expired')
+    }
+    throw new Error(data.detail || `HTTP ${res.status}`)
+  }
   return { data };
 }
 
