@@ -450,9 +450,9 @@ export default function CourseEditor() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10, marginBottom: 10 }}>
                 <input className="inp" placeholder="Lesson title *" value={lessonDraft.title} onChange={e => setLessonDraft(d => ({ ...d, title: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addLesson()} />
                 <select className="inp" value={lessonDraft.lesson_type} onChange={e => setLessonDraft(d => ({ ...d, lesson_type: e.target.value as any }))}>
-                  <option value="video"><Video size={16} /> Video</option>
-                  <option value="text"><FileText size={16} /> Text</option>
-                  <option value="audio"><Headphones size={16} /> Audio</option>
+                  <option value="video">Video</option>
+                  <option value="text">Text</option>
+                  <option value="audio">Audio</option>
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10, marginBottom: 10 }}>

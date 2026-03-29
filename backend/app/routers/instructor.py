@@ -255,6 +255,25 @@ def delete_lesson(course_id: int, lesson_id: int, db: Session = Depends(get_db),
 
 # ── Module Quizzes ─────────────────────────────────────────────────────────
 
+@router.get("/courses/{course_id}/modules/{module_id}/quizzes")
+def get_module_quizzes(course_id: int, module_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    module = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
+    if not module: raise HTTPException(status_code=404, detail="Module not found")
+    quizzes = db.query(ModuleQuiz).filter(ModuleQuiz.module_id == module_id).order_by(ModuleQuiz.order).all()
+    result = []
+    for q in quizzes:
+        questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == q.id).order_by(QuizQuestion.order).all()
+        result.append({
+            "id": q.id, "title": q.title, "position": q.position,
+            "passing_score": q.passing_score, "time_limit_min": q.time_limit_min,
+            "is_required": q.is_required, "order": q.order,
+            "questions": [{"id": qu.id, "question_text": qu.question_text, "question_type": qu.question_type,
+                           "options": qu.options, "correct_answer": qu.correct_answer,
+                           "explanation": qu.explanation, "points": qu.points, "order": qu.order}
+                          for qu in questions]
+        })
+    return result
+
 @router.post("/courses/{course_id}/modules/{module_id}/quizzes")
 def create_module_quiz(course_id: int, module_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     module = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
