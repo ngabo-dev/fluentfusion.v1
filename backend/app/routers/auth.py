@@ -75,7 +75,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), remember: bool = True, db
     if is_first:
         user.first_login = False
         db.commit()
-        send_welcome_email(user.email, user.name, str(user.role))
+        send_welcome_email(user.email, user.name, user.role.value)
     user.last_active = datetime.utcnow()
     db.commit()
     # Short-lived token (60 min) for session-only logins, full expiry for remember-me
@@ -111,7 +111,7 @@ def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)):
     user.otp_code = None
     user.otp_expiry = None
     db.commit()
-    send_welcome_email(user.email, user.name, str(user.role))
+    send_welcome_email(user.email, user.name, user.role.value)
     return {"message": "Email verified successfully", "role": str(user.role)}
 
 @router.post("/resend-verification")
@@ -175,7 +175,7 @@ def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
-        send_welcome_email(user.email, user.name, str(user.role))
+        send_welcome_email(user.email, user.name, user.role.value)
     else:
         if user.status == "banned":
             raise HTTPException(status_code=403, detail="Account suspended")
