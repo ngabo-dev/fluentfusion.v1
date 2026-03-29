@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
+import { Check, Search, Star, X } from 'lucide-react'
 
 const LANGUAGES = ['English','French','Spanish','German','Japanese','Mandarin','Portuguese','Italian','Russian','Korean','Arabic','Kinyarwanda']
 const LEVELS = ['Beginner','Intermediate','Advanced','All Levels']
@@ -43,7 +44,7 @@ export default function CourseCatalog() {
       {/* Search + filters */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
         <div className="sw" style={{ flex: 1, maxWidth: 480 }}>
-          <span className="si2">🔍</span>
+          <span className="si2"><Search size={16} /></span>
           <input className="inp" placeholder="Search courses, instructors, topics…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="inp" style={{ width: 'auto' }} value={lang} onChange={e => setLang(e.target.value)}>
@@ -54,7 +55,7 @@ export default function CourseCatalog() {
           <option value="">All Levels</option>
           {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
         </select>
-        {(lang || level || search) && <button className="btn bg sm" onClick={() => { setSearch(''); setLang(''); setLevel('') }}>Clear ✕</button>}
+        {(lang || level || search) && <button className="btn bg sm" onClick={() => { setSearch(''); setLang(''); setLevel('') }}>Clear <X size={16} /></button>}
       </div>
 
       <div style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 16, fontFamily: 'JetBrains Mono' }}>
@@ -82,7 +83,7 @@ export default function CourseCatalog() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                 <div className="av avs">{c.instructor_initials}</div>
                 <span style={{ fontSize: 11, color: 'var(--mu)', flex: 1 }}>{c.instructor}</span>
-                {c.rating > 0 && <span style={{ fontSize: 11, color: 'var(--wa)' }}>★ {c.rating}</span>}
+                {c.rating > 0 && <span style={{ fontSize: 11, color: 'var(--wa)' }}>⭐ {c.rating}</span>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <span style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 16, color: c.price === 0 ? 'var(--ok)' : 'var(--neon)' }}>
@@ -92,7 +93,7 @@ export default function CourseCatalog() {
               </div>
               {c.enrolled ? (
                 <button className="btn bo sm" style={{ width: '100%', color: 'var(--ok)', borderColor: 'var(--ok)' }} onClick={e => { e.stopPropagation(); nav('/dashboard/courses') }}>
-                  ✓ Enrolled — Continue
+                  <Check size={16} /> Enrolled — Continue
                 </button>
               ) : (
                 <button className="btn bp sm" style={{ width: '100%' }} disabled={enrolling === c.id} onClick={e => { e.stopPropagation(); enroll(c.id) }}>

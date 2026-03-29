@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime
-from app.models import get_db, User, Course, CourseSection, Enrollment, Payment, Payout, LiveSession, Quiz, Lesson, Message, Review, MonthlyRevenue, Notification, NotificationRead, RoleEnum, CourseStatusEnum
+import os, uuid
+from app.models import get_db, User, Course, Module, Enrollment, Payment, Payout, LiveSession, Quiz, Lesson, Message, Review, MonthlyRevenue, Notification, NotificationRead, RoleEnum, CourseStatusEnum, ModuleQuiz, QuizQuestion, QuizAttempt, QuizPositionEnum, ContentVersion, CourseDraft
 from app.auth import require_role, get_current_user
 from app.notify import notify
 from typing import Optional
+import json
+from datetime import timedelta
 
 router = APIRouter(prefix="/api/instructor", tags=["instructor"])
 guard = require_role(RoleEnum.instructor)
@@ -27,7 +30,8 @@ def dashboard(db: Session = Depends(get_db), current_user: User = Depends(guard)
         avg_comp = db.query(func.avg(Enrollment.completion_pct)).filter(Enrollment.course_id == c.id).scalar() or 0
         avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
         lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
-        course_data.append({"id": c.id, "title": c.title, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "status": c.status, "students": students, "revenue": round(rev * 0.7, 2), "completion": round(avg_comp, 1), "rating": round(avg_rat, 1), "lesson_count": lesson_count})
+        module_count = db.query(Module).filter(Module.course_id == c.id).count()
+        course_data.append({"id": c.id, "title": c.title, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "status": c.status, "students": students, "revenue": round(rev * 0.7, 2), "completion": round(avg_comp, 1), "rating": round(avg_rat, 1), "lesson_count": lesson_count, "module_count": module_count})
     return {
         "total_students": total_students,
         "revenue_mtd": round(revenue_gross * 0.7, 2),
@@ -46,7 +50,7 @@ def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard
         students = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
         rev = db.query(func.sum(Payment.amount)).filter(Payment.course_id == c.id, Payment.status == "completed").scalar() or 0
         lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
-        section_count = db.query(CourseSection).filter(CourseSection.course_id == c.id).count()
+        module_count = db.query(Module).filter(Module.course_id == c.id).count()
         result.append({
             "id": c.id, "title": c.title, "subtitle": c.subtitle, "description": c.description,
             "category": c.category, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
@@ -54,7 +58,7 @@ def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard
             "status": c.status, "price": c.price, "is_free": c.is_free,
             "what_you_learn": c.what_you_learn, "requirements": c.requirements, "target_audience": c.target_audience,
             "rejection_feedback": c.rejection_feedback, "admin_notes": c.admin_notes,
-            "students": students, "revenue": round(rev * 0.7, 2), "lesson_count": lesson_count, "section_count": section_count,
+            "students": students, "revenue": round(rev * 0.7, 2), "lesson_count": lesson_count, "module_count": module_count,
             "submitted_at": c.submitted_at, "approved_at": c.approved_at, "published_at": c.published_at,
             "created_at": c.created_at, "updated_at": c.updated_at,
         })
@@ -64,18 +68,32 @@ def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard
 def get_course(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     c = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
     if not c: raise HTTPException(status_code=404, detail="Not found")
-    sections = db.query(CourseSection).filter(CourseSection.course_id == c.id).order_by(CourseSection.order).all()
-    section_data = []
-    for s in sections:
-        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
-        section_data.append({
-            "id": s.id, "title": s.title, "order": s.order,
+    modules = db.query(Module).filter(Module.course_id == c.id).order_by(Module.order).all()
+    module_data = []
+    for m in modules:
+        lessons = db.query(Lesson).filter(Lesson.module_id == m.id).order_by(Lesson.order).all()
+        quizzes = db.query(ModuleQuiz).filter(ModuleQuiz.module_id == m.id).order_by(ModuleQuiz.order).all()
+        quiz_data = []
+        for q in quizzes:
+            questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == q.id).order_by(QuizQuestion.order).all()
+            quiz_data.append({
+                "id": q.id, "title": q.title, "position": q.position, "passing_score": q.passing_score,
+                "time_limit_min": q.time_limit_min, "is_required": q.is_required, "order": q.order,
+                "questions": [{
+                    "id": qu.id, "question_text": qu.question_text, "question_type": qu.question_type,
+                    "options": qu.options, "correct_answer": qu.correct_answer, "explanation": qu.explanation,
+                    "points": qu.points, "order": qu.order
+                } for qu in questions]
+            })
+        module_data.append({
+            "id": m.id, "title": m.title, "description": m.description, "order": m.order,
             "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
                          "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
-                         "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in lessons]
+                         "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in lessons],
+            "quizzes": quiz_data
         })
-    # Lessons not in any section
-    loose = db.query(Lesson).filter(Lesson.course_id == c.id, Lesson.section_id == None).order_by(Lesson.order).all()
+    # Lessons not in any module
+    loose = db.query(Lesson).filter(Lesson.course_id == c.id, Lesson.module_id == None).order_by(Lesson.order).all()
     return {
         "id": c.id, "title": c.title, "subtitle": c.subtitle, "description": c.description,
         "category": c.category, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji,
@@ -83,7 +101,7 @@ def get_course(course_id: int, db: Session = Depends(get_db), current_user: User
         "status": c.status, "price": c.price, "is_free": c.is_free,
         "what_you_learn": c.what_you_learn, "requirements": c.requirements, "target_audience": c.target_audience,
         "rejection_feedback": c.rejection_feedback, "admin_notes": c.admin_notes,
-        "sections": section_data,
+        "modules": module_data,
         "loose_lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
                            "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
                            "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in loose],
@@ -134,44 +152,61 @@ def delete_course(course_id: int, db: Session = Depends(get_db), current_user: U
     db.delete(course); db.commit()
     return {"ok": True}
 
-# ── Sections ──────────────────────────────────────────────────────────────
+# ── Modules ──────────────────────────────────────────────────────────────
 
-@router.get("/courses/{course_id}/sections")
-def get_sections(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+@router.get("/courses/{course_id}/modules")
+def get_modules(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
     if not course: raise HTTPException(status_code=404, detail="Not found")
-    sections = db.query(CourseSection).filter(CourseSection.course_id == course_id).order_by(CourseSection.order).all()
+    modules = db.query(Module).filter(Module.course_id == course_id).order_by(Module.order).all()
     result = []
-    for s in sections:
-        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
-        result.append({"id": s.id, "title": s.title, "order": s.order,
+    for m in modules:
+        lessons = db.query(Lesson).filter(Lesson.module_id == m.id).order_by(Lesson.order).all()
+        quizzes = db.query(ModuleQuiz).filter(ModuleQuiz.module_id == m.id).order_by(ModuleQuiz.order).all()
+        quiz_data = []
+        for q in quizzes:
+            questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == q.id).order_by(QuizQuestion.order).all()
+            quiz_data.append({
+                "id": q.id, "title": q.title, "position": q.position, "passing_score": q.passing_score,
+                "time_limit_min": q.time_limit_min, "is_required": q.is_required, "order": q.order,
+                "questions": [{
+                    "id": qu.id, "question_text": qu.question_text, "question_type": qu.question_type,
+                    "options": qu.options, "correct_answer": qu.correct_answer, "explanation": qu.explanation,
+                    "points": qu.points, "order": qu.order
+                } for qu in questions]
+            })
+        result.append({
+            "id": m.id, "title": m.title, "description": m.description, "order": m.order,
             "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
                          "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
-                         "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in lessons]})
+                         "description": l.description, "order": l.order, "is_preview": l.is_preview} for l in lessons],
+            "quizzes": quiz_data
+        })
     return result
 
-@router.post("/courses/{course_id}/sections")
-def create_section(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+@router.post("/courses/{course_id}/modules")
+def create_module(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
     if not course: raise HTTPException(status_code=404, detail="Not found")
-    max_order = db.query(func.max(CourseSection.order)).filter(CourseSection.course_id == course_id).scalar() or 0
-    s = CourseSection(course_id=course_id, title=body["title"], order=max_order + 1)
-    db.add(s); db.commit(); db.refresh(s)
-    return {"id": s.id, "title": s.title, "order": s.order, "lessons": []}
+    max_order = db.query(func.max(Module.order)).filter(Module.course_id == course_id).scalar() or 0
+    m = Module(course_id=course_id, title=body["title"], description=body.get("description", ""), order=max_order + 1)
+    db.add(m); db.commit(); db.refresh(m)
+    return {"id": m.id, "title": m.title, "description": m.description, "order": m.order, "lessons": [], "quizzes": []}
 
-@router.patch("/courses/{course_id}/sections/{section_id}")
-def update_section(course_id: int, section_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    s = db.query(CourseSection).filter(CourseSection.id == section_id, CourseSection.course_id == course_id).first()
-    if not s: raise HTTPException(status_code=404, detail="Not found")
-    if "title" in body: s.title = body["title"]
-    if "order" in body: s.order = body["order"]
+@router.patch("/courses/{course_id}/modules/{module_id}")
+def update_module(course_id: int, module_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    m = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
+    if not m: raise HTTPException(status_code=404, detail="Not found")
+    if "title" in body: m.title = body["title"]
+    if "description" in body: m.description = body["description"]
+    if "order" in body: m.order = body["order"]
     db.commit()
     return {"ok": True}
 
-@router.delete("/courses/{course_id}/sections/{section_id}")
-def delete_section(course_id: int, section_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    s = db.query(CourseSection).filter(CourseSection.id == section_id, CourseSection.course_id == course_id).first()
-    if s: db.delete(s); db.commit()
+@router.delete("/courses/{course_id}/modules/{module_id}")
+def delete_module(course_id: int, module_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    m = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
+    if m: db.delete(m); db.commit()
     return {"ok": True}
 
 # ── Lessons ───────────────────────────────────────────────────────────────
@@ -181,30 +216,33 @@ def course_lessons(course_id: int, db: Session = Depends(get_db), current_user: 
     lessons = db.query(Lesson).filter(Lesson.course_id == course_id).order_by(Lesson.order).all()
     return [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min,
              "order": l.order, "description": l.description, "video_url": l.video_url,
-             "content": l.content, "resource_url": l.resource_url, "section_id": l.section_id,
+             "content": l.content, "resource_url": l.resource_url, "module_id": l.module_id,
              "is_preview": l.is_preview} for l in lessons]
 
 @router.post("/courses/{course_id}/lessons")
 def create_lesson(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    section_id = body.get("section_id")
+    module_id = body.get("module_id")
     max_order = db.query(func.max(Lesson.order)).filter(Lesson.course_id == course_id).scalar() or 0
     lesson = Lesson(
-        course_id=course_id, section_id=section_id,
+        course_id=course_id, module_id=module_id,
         title=body["title"], lesson_type=body.get("lesson_type", "video"),
         duration_min=body.get("duration_min", 15), description=body.get("description", ""),
         video_url=body.get("video_url", ""), content=body.get("content", ""),
         resource_url=body.get("resource_url", ""),
-        order=body.get("order", max_order + 1), is_preview=body.get("is_preview", False)
+        order=body.get("order", max_order + 1), is_preview=body.get("is_preview", False),
+        external_embed_code=body.get("external_embed_code"),
+        transcript=body.get("transcript"),
+        is_downloadable=body.get("is_downloadable", False),
     )
     db.add(lesson); db.commit(); db.refresh(lesson)
     return {"id": lesson.id, "title": lesson.title, "lesson_type": lesson.lesson_type,
-            "duration_min": lesson.duration_min, "order": lesson.order, "section_id": lesson.section_id}
+            "duration_min": lesson.duration_min, "order": lesson.order, "module_id": lesson.module_id}
 
 @router.patch("/courses/{course_id}/lessons/{lesson_id}")
 def update_lesson(course_id: int, lesson_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
     if not lesson: raise HTTPException(status_code=404, detail="Not found")
-    for k in ["title","lesson_type","duration_min","description","video_url","content","resource_url","order","section_id","is_preview"]:
+    for k in ["title","lesson_type","duration_min","description","video_url","content","resource_url","order","module_id","is_preview","external_embed_code","transcript","is_downloadable","mime_type","file_size_bytes","thumbnail_url"]:
         if k in body: setattr(lesson, k, body[k])
     db.commit()
     return {"ok": True}
@@ -214,6 +252,191 @@ def delete_lesson(course_id: int, lesson_id: int, db: Session = Depends(get_db),
     lesson = db.query(Lesson).filter(Lesson.id == lesson_id, Lesson.course_id == course_id).first()
     if lesson: db.delete(lesson); db.commit()
     return {"ok": True}
+
+# ── Module Quizzes ─────────────────────────────────────────────────────────
+
+@router.post("/courses/{course_id}/modules/{module_id}/quizzes")
+def create_module_quiz(course_id: int, module_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    module = db.query(Module).filter(Module.id == module_id, Module.course_id == course_id).first()
+    if not module: raise HTTPException(status_code=404, detail="Module not found")
+    max_order = db.query(func.max(ModuleQuiz.order)).filter(ModuleQuiz.module_id == module_id).scalar() or 0
+    quiz = ModuleQuiz(
+        module_id=module_id,
+        title=body["title"],
+        position=body.get("position", "end"),
+        passing_score=body.get("passing_score", 70),
+        time_limit_min=body.get("time_limit_min"),
+        is_required=body.get("is_required", True),
+        order=max_order + 1
+    )
+    db.add(quiz); db.commit(); db.refresh(quiz)
+    return {"id": quiz.id, "title": quiz.title, "position": quiz.position, "passing_score": quiz.passing_score,
+            "time_limit_min": quiz.time_limit_min, "is_required": quiz.is_required, "order": quiz.order, "questions": []}
+
+@router.patch("/courses/{course_id}/modules/{module_id}/quizzes/{quiz_id}")
+def update_module_quiz(course_id: int, module_id: int, quiz_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    quiz = db.query(ModuleQuiz).filter(ModuleQuiz.id == quiz_id, ModuleQuiz.module_id == module_id).first()
+    if not quiz: raise HTTPException(status_code=404, detail="Quiz not found")
+    for k in ["title", "position", "passing_score", "time_limit_min", "is_required", "order"]:
+        if k in body: setattr(quiz, k, body[k])
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/courses/{course_id}/modules/{module_id}/quizzes/{quiz_id}")
+def delete_module_quiz(course_id: int, module_id: int, quiz_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    quiz = db.query(ModuleQuiz).filter(ModuleQuiz.id == quiz_id, ModuleQuiz.module_id == module_id).first()
+    if quiz: db.delete(quiz); db.commit()
+    return {"ok": True}
+
+@router.post("/courses/{course_id}/modules/{module_id}/quizzes/{quiz_id}/questions")
+def add_quiz_question(course_id: int, module_id: int, quiz_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    quiz = db.query(ModuleQuiz).filter(ModuleQuiz.id == quiz_id, ModuleQuiz.module_id == module_id).first()
+    if not quiz: raise HTTPException(status_code=404, detail="Quiz not found")
+    max_order = db.query(func.max(QuizQuestion.order)).filter(QuizQuestion.quiz_id == quiz_id).scalar() or 0
+    question = QuizQuestion(
+        quiz_id=quiz_id,
+        question_text=body["question_text"],
+        question_type=body.get("question_type", "multiple_choice"),
+        options=body.get("options"),  # JSON string
+        correct_answer=body["correct_answer"],
+        explanation=body.get("explanation"),
+        points=body.get("points", 1),
+        order=max_order + 1
+    )
+    db.add(question); db.commit(); db.refresh(question)
+    return {"id": question.id, "question_text": question.question_text, "question_type": question.question_type,
+            "options": question.options, "correct_answer": question.correct_answer, "explanation": question.explanation,
+            "points": question.points, "order": question.order}
+
+@router.patch("/courses/{course_id}/modules/{module_id}/quizzes/{quiz_id}/questions/{question_id}")
+def update_quiz_question(course_id: int, module_id: int, quiz_id: int, question_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    question = db.query(QuizQuestion).filter(QuizQuestion.id == question_id, QuizQuestion.quiz_id == quiz_id).first()
+    if not question: raise HTTPException(status_code=404, detail="Question not found")
+    for k in ["question_text", "question_type", "options", "correct_answer", "explanation", "points", "order"]:
+        if k in body: setattr(question, k, body[k])
+    db.commit()
+    return {"ok": True}
+
+@router.delete("/courses/{course_id}/modules/{module_id}/quizzes/{quiz_id}/questions/{question_id}")
+def delete_quiz_question(course_id: int, module_id: int, quiz_id: int, question_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    question = db.query(QuizQuestion).filter(QuizQuestion.id == question_id, QuizQuestion.quiz_id == quiz_id).first()
+    if question: db.delete(question); db.commit()
+    return {"ok": True}
+
+# ── Autosave / Versions ───────────────────────────────────────────────────
+
+@router.post("/courses/{course_id}/autosave")
+def autosave_course(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    # Upsert autosave draft
+    draft = db.query(CourseDraft).filter(
+        CourseDraft.course_id == course_id,
+        CourseDraft.instructor_id == current_user.id,
+        CourseDraft.is_autosave == True
+    ).first()
+    snapshot = json.dumps(body)
+    expires = datetime.utcnow() + timedelta(days=30)
+    if draft:
+        draft.draft_data = snapshot
+        draft.updated_at = datetime.utcnow()
+        draft.expires_at = expires
+    else:
+        draft = CourseDraft(course_id=course_id, instructor_id=current_user.id,
+                            draft_data=snapshot, is_autosave=True, expires_at=expires)
+        db.add(draft)
+    # Also create a version entry
+    last_ver = db.query(func.max(ContentVersion.version_number)).filter(
+        ContentVersion.content_type == "course", ContentVersion.content_id == course_id
+    ).scalar() or 0
+    db.add(ContentVersion(
+        content_type="course", content_id=course_id,
+        version_number=last_ver + 1, created_by=current_user.id,
+        change_summary="Autosave", snapshot_data=snapshot, is_autosave=True
+    ))
+    db.commit()
+    return {"ok": True, "version": last_ver + 1}
+
+@router.get("/courses/{course_id}/versions")
+def get_versions(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    versions = db.query(ContentVersion).filter(
+        ContentVersion.content_type == "course",
+        ContentVersion.content_id == course_id
+    ).order_by(ContentVersion.version_number.desc()).limit(50).all()
+    return [{"id": v.id, "version_number": v.version_number, "change_summary": v.change_summary,
+             "is_autosave": v.is_autosave, "created_at": v.created_at} for v in versions]
+
+@router.post("/courses/{course_id}/versions/{version_id}/restore")
+def restore_version(course_id: int, version_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    version = db.query(ContentVersion).filter(
+        ContentVersion.id == version_id,
+        ContentVersion.content_type == "course",
+        ContentVersion.content_id == course_id
+    ).first()
+    if not version: raise HTTPException(status_code=404, detail="Version not found")
+    return {"ok": True, "snapshot": json.loads(version.snapshot_data)}
+
+@router.post("/courses/{course_id}/versions/save")
+def save_version(course_id: int, body: dict, db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    """Manual save with a descriptive note."""
+    course = db.query(Course).filter(Course.id == course_id, Course.instructor_id == current_user.id).first()
+    if not course: raise HTTPException(status_code=404, detail="Not found")
+    last_ver = db.query(func.max(ContentVersion.version_number)).filter(
+        ContentVersion.content_type == "course", ContentVersion.content_id == course_id
+    ).scalar() or 0
+    db.add(ContentVersion(
+        content_type="course", content_id=course_id,
+        version_number=last_ver + 1, created_by=current_user.id,
+        change_summary=body.get("change_summary", "Manual save"),
+        snapshot_data=json.dumps(body.get("snapshot", {})),
+        is_autosave=False
+    ))
+    db.commit()
+    return {"ok": True, "version": last_ver + 1}
+
+# ── Lesson file uploads ────────────────────────────────────────────────────
+
+@router.post("/lessons/{lesson_id}/upload-video")
+async def upload_lesson_video(lesson_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson: raise HTTPException(status_code=404, detail="Not found")
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED["video"]:
+        raise HTTPException(status_code=400, detail=f"File type '{content_type}' not allowed for video")
+    ext = os.path.splitext(file.filename or "file")[1].lower() or ".mp4"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    path = os.path.join(UPLOAD_DIR, filename)
+    content = await file.read()
+    with open(path, "wb") as f:
+        f.write(content)
+    lesson.video_url = f"/uploads/{filename}"
+    lesson.mime_type = content_type
+    lesson.file_size_bytes = len(content)
+    db.commit()
+    return {"url": lesson.video_url, "filename": file.filename, "content_type": content_type}
+
+@router.post("/lessons/{lesson_id}/upload-resource")
+async def upload_lesson_resource(lesson_id: int, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(guard)):
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson: raise HTTPException(status_code=404, detail="Not found")
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED["resource"]:
+        raise HTTPException(status_code=400, detail=f"File type '{content_type}' not allowed for resource")
+    ext = os.path.splitext(file.filename or "file")[1].lower() or ".pdf"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    path = os.path.join(UPLOAD_DIR, filename)
+    content = await file.read()
+    with open(path, "wb") as f:
+        f.write(content)
+    lesson.resource_url = f"/uploads/{filename}"
+    lesson.mime_type = content_type
+    lesson.file_size_bytes = len(content)
+    db.commit()
+    return {"url": lesson.resource_url, "filename": file.filename, "content_type": content_type}
 
 # ── Submit / Publish ───────────────────────────────────────────────────────
 
@@ -226,11 +449,18 @@ def submit_for_review(course_id: int, db: Session = Depends(get_db), current_use
     if course.status == CourseStatusEnum.published:
         raise HTTPException(status_code=400, detail="Already published")
     # Validation
-    lesson_count = db.query(Lesson).filter(Lesson.course_id == course_id).count()
     if not course.title or not course.description or not course.language or not course.level:
         raise HTTPException(status_code=400, detail="Complete all required fields: title, description, language, level")
-    if lesson_count < 1:
-        raise HTTPException(status_code=400, detail="Add at least 1 lesson before submitting")
+    
+    # Validate modules and lessons
+    modules = db.query(Module).filter(Module.course_id == course_id).all()
+    if len(modules) < 1:
+        raise HTTPException(status_code=400, detail="Course must have at least 1 module before submitting")
+    
+    total_lessons = db.query(Lesson).filter(Lesson.course_id == course_id).count()
+    if total_lessons < 1:
+        raise HTTPException(status_code=400, detail="Course must have at least 1 lesson before submitting")
+    
     course.status = CourseStatusEnum.pending
     course.submitted_at = datetime.utcnow()
     course.rejection_feedback = None
@@ -509,3 +739,26 @@ def update_profile(body: dict, db: Session = Depends(get_db), current_user: User
         if hasattr(current_user, k): setattr(current_user, k, v)
     db.commit()
     return {"ok": True}
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+ALLOWED = {
+    "video": ["video/mp4", "video/webm", "video/ogg", "video/quicktime"],
+    "audio": ["audio/mpeg", "audio/mp3", "audio/ogg", "audio/wav", "audio/webm"],
+    "resource": ["application/pdf", "application/msword",
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+}
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...), _: User = Depends(guard)):
+    content_type = file.content_type or ""
+    all_allowed = [m for types in ALLOWED.values() for m in types]
+    if content_type not in all_allowed:
+        raise HTTPException(status_code=400, detail=f"File type '{content_type}' not allowed")
+    ext = os.path.splitext(file.filename or "file")[1].lower() or ".bin"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    path = os.path.join(UPLOAD_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(await file.read())
+    return {"url": f"/uploads/{filename}", "filename": file.filename, "content_type": content_type}

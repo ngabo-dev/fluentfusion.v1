@@ -403,11 +403,6 @@ def seed():
     print(f"  Modules:     {db.query(Module).count()}")
     print(f"  Lessons:     {db.query(Lesson).count()}")
     print(f"  Enrollments: {db.query(Enrollment).count()}")
-    print()
-    print("Login credentials:")
-    print("  Admin:      c.okafor@fluentfusion.com  / admin123")
-    print("  Instructor: a.ndiaye@ff.com             / instructor123")
-    print("  Student:    k.larbi@gmail.com           / student123")
 
 if __name__ == "__main__":
     seed()

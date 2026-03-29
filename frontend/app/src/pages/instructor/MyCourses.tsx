@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import Badge from '../../components/Badge'
 import Progress from '../../components/Progress'
+import { BookOpen, Check, Clock, List, Pencil, Plus, Rocket, Search, Star, Trash2, Upload, X } from 'lucide-react'
 
 type Variant = 'n' | 'k' | 'w' | 'e' | 'i' | 'm'
 const STATUS_VARIANT: Record<string, Variant> = { published: 'k', approved: 'k', pending: 'w', draft: 'm', rejected: 'e' }
@@ -58,19 +59,19 @@ export default function MyCourses() {
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
         {(c.status === 'draft' || c.status === 'rejected') && (
           <>
-            <button className="btn bo sm" onClick={() => navigate(`/instructor/courses/${c.id}/edit`)} disabled={busy}>✏️ Edit</button>
-            <button className="btn bp sm" onClick={() => submitForReview(c.id)} disabled={busy}>📤 Submit</button>
-            <button className="btn bd sm" onClick={() => deleteCourse(c.id)} disabled={busy}>🗑</button>
+            <button className="btn bo sm" onClick={() => navigate(`/instructor/courses/${c.id}/edit`)} disabled={busy}><Pencil size={16} />️ Edit</button>
+            <button className="btn bp sm" onClick={() => submitForReview(c.id)} disabled={busy}><Upload size={16} /> Submit</button>
+            <button className="btn bd sm" onClick={() => deleteCourse(c.id)} disabled={busy}><Trash2 size={16} /></button>
           </>
         )}
         {c.status === 'pending' && (
-          <span style={{ fontSize: 11, color: 'var(--mu)', fontFamily: 'JetBrains Mono' }}>⏳ Under review</span>
+          <span style={{ fontSize: 11, color: 'var(--mu)', fontFamily: 'JetBrains Mono' }}><Clock size={16} /> Under review</span>
         )}
         {c.status === 'approved' && (
-          <button className="btn bp sm" onClick={() => publish(c.id)} disabled={busy}>🚀 {busy ? '…' : 'Publish'}</button>
+          <button className="btn bp sm" onClick={() => publish(c.id)} disabled={busy}><Rocket size={16} /> {busy ? '…' : 'Publish'}</button>
         )}
         {c.status === 'published' && (
-          <span style={{ fontSize: 11, color: 'var(--ok)', fontFamily: 'JetBrains Mono' }}>✓ Live</span>
+          <span style={{ fontSize: 11, color: 'var(--ok)', fontFamily: 'JetBrains Mono' }}><Check size={16} /> Live</span>
         )}
       </div>
     )
@@ -80,7 +81,7 @@ export default function MyCourses() {
     <div className="pg">
       <div className="ph">
         <div><h1>My Courses</h1><p>Manage and monitor all your courses</p></div>
-        <button className="btn bp" onClick={() => navigate('/instructor/courses/new')}>＋ New Course</button>
+        <button className="btn bp" onClick={() => navigate('/instructor/courses/new')}><Plus size={16} /> New Course</button>
       </div>
 
       {/* Rejection alerts */}
@@ -100,7 +101,7 @@ export default function MyCourses() {
 
       <div className="ab">
         <div className="sw">
-          <span className="si2">🔍</span>
+          <span className="si2"><Search size={16} /></span>
           <input className="inp" placeholder="Search courses…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="sel" style={{ width: 'auto' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -112,7 +113,7 @@ export default function MyCourses() {
           <option value="rejected">Rejected</option>
         </select>
         <button className={`btn ${view === 'grid' ? 'bo' : 'bg'} sm`} onClick={() => setView('grid')}>⊞ Grid</button>
-        <button className={`btn ${view === 'list' ? 'bo' : 'bg'} sm`} onClick={() => setView('list')}>☰ List</button>
+        <button className={`btn ${view === 'list' ? 'bo' : 'bg'} sm`} onClick={() => setView('list')}><List size={16} /> List</button>
       </div>
 
       {loading && <div className="loading" />}
@@ -138,7 +139,7 @@ export default function MyCourses() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 42, position: 'relative', borderRadius: '14px 14px 0 0'
               }}>
-                {!c.thumbnail_url && (c.flag_emoji || '📚')}
+                {!c.thumbnail_url && (c.flag_emoji || <BookOpen size={16} />)}
                 <div style={{ position: 'absolute', top: 8, right: 8 }}>
                   <Badge variant={STATUS_VARIANT[c.status] || 'm'}>{c.status}</Badge>
                 </div>
@@ -149,7 +150,7 @@ export default function MyCourses() {
                 <div style={{ fontSize: 10, color: 'var(--mu)', marginBottom: 8 }}>{c.level} · {c.lesson_count ?? 0} lessons</div>
                 {c.status === 'rejected' && c.rejection_feedback && (
                   <div style={{ fontSize: 10, color: 'var(--er)', marginBottom: 8, padding: '6px 8px', background: 'rgba(255,68,68,.08)', borderRadius: 6, border: '1px solid rgba(255,68,68,.2)' }}>
-                    ✗ {c.rejection_feedback}
+                    <X size={16} /> {c.rejection_feedback}
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 11, textAlign: 'center' }}>
@@ -158,7 +159,7 @@ export default function MyCourses() {
                     <div style={{ fontSize: 8, color: 'var(--mu)' }}>STUDENTS</div>
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'Syne', fontSize: 15, fontWeight: 800, color: 'var(--wa)' }}>{c.rating ? `${c.rating}★` : '—'}</div>
+                    <div style={{ fontFamily: 'Syne', fontSize: 15, fontWeight: 800, color: 'var(--wa)' }}>{c.rating ? `${c.rating} ⭐` : '—'}</div>
                     <div style={{ fontSize: 8, color: 'var(--mu)' }}>RATING</div>
                   </div>
                   <div>
@@ -192,12 +193,12 @@ export default function MyCourses() {
                 <tr key={c.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 20 }}>{c.flag_emoji || '📚'}</span>
+                      <span style={{ fontSize: 20 }}>{c.flag_emoji || <BookOpen size={16} />}</span>
                       <div>
                         <div style={{ fontWeight: 500 }}>{c.title}</div>
                         <div style={{ fontSize: 10, color: 'var(--mu)' }}>{c.level} · {c.lesson_count ?? 0} lessons</div>
                         {c.status === 'rejected' && c.rejection_feedback && (
-                          <div style={{ fontSize: 10, color: 'var(--er)' }}>✗ {c.rejection_feedback}</div>
+                          <div style={{ fontSize: 10, color: 'var(--er)' }}><X size={16} /> {c.rejection_feedback}</div>
                         )}
                       </div>
                     </div>
@@ -205,7 +206,7 @@ export default function MyCourses() {
                   <td><Badge variant={STATUS_VARIANT[c.status] || 'm'}>{c.status}</Badge></td>
                   <td>{c.students ?? '—'}</td>
                   <td>{c.completion ? <Progress pct={Math.round(c.completion)} /> : '—'}</td>
-                  <td style={{ color: 'var(--wa)' }}>{c.rating ? `★ ${c.rating}` : '—'}</td>
+                  <td style={{ color: 'var(--wa)' }}>{c.rating ? `⭐ ${c.rating}` : '—'}</td>
                   <td style={{ color: 'var(--ok)', fontWeight: 600 }}>{c.revenue ? `$${c.revenue.toLocaleString()}` : '—'}</td>
                   <td><ActionButtons c={c} /></td>
                 </tr>
