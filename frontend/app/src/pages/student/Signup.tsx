@@ -35,32 +35,43 @@ export default function Signup() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
+  const roleRef = useRef(role)
+  useEffect(() => { roleRef.current = role }, [role])
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return
     const script = document.createElement('script')
     script.src = 'https://accounts.google.com/gsi/client'
     script.async = true
-    script.onload = () => {
-      ;(window as any).google?.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-      })
-      if (googleBtnRef.current) {
-        ;(window as any).google?.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black', size: 'large', width: 400, text: 'continue_with',
-        })
-      }
-    }
+    script.onload = () => initGoogle()
     document.body.appendChild(script)
     return () => { document.body.removeChild(script) }
   }, [])
+
+  function initGoogle() {
+    if (!GOOGLE_CLIENT_ID || !(window as any).google) return
+    ;(window as any).google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+    })
+    if (googleBtnRef.current) {
+      googleBtnRef.current.innerHTML = ''
+      ;(window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+        theme: 'filled_black', size: 'large', width: 400, text: 'continue_with',
+      })
+    }
+  }
+
+  // Re-render Google button whenever role changes so callback picks up new role
+  useEffect(() => {
+    if ((window as any).google) initGoogle()
+  }, [role])
 
   async function handleGoogleCredential(response: any) {
     setGoogleLoading(true)
     setErr('')
     try {
-      const res = await api.post('/api/auth/google', { credential: response.credential, role })
+      const res = await api.post('/api/auth/google', { credential: response.credential, role: roleRef.current })
       const { access_token, role: userRole, name: userName, id, is_first_login } = res.data
       loginWithToken(access_token, { role: userRole, name: userName, id })
       if (is_first_login && userRole === 'student') nav('/onboard/native-language')
@@ -240,7 +251,12 @@ export default function Signup() {
 
             {/* Social buttons */}
             {GOOGLE_CLIENT_ID ? (
-              <div ref={googleBtnRef} style={{ width: '100%', marginBottom: 10, opacity: googleLoading ? 0.6 : 1 }} />
+              <>
+                <div ref={googleBtnRef} style={{ width: '100%', marginBottom: 6, opacity: googleLoading ? 0.6 : 1 }} />
+                <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
+                  Will sign up as <span style={{ color: role === 'instructor' ? '#BFFF00' : '#00FF7F' }}>{role}</span> — change above if needed
+                </div>
+              </>
             ) : (
               <div style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff', marginBottom: 10 }}>
                 <GoogleIcon /> Continue with Google

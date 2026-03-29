@@ -45,6 +45,7 @@ export default function Login() {
         callback: handleGoogleCredential,
       })
       if (googleBtnRef.current) {
+        googleBtnRef.current.innerHTML = ''
         ;(window as any).google?.accounts.id.renderButton(googleBtnRef.current, {
           theme: 'filled_black', size: 'large', width: 400, text: 'continue_with',
         })
