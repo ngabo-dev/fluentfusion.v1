@@ -184,11 +184,14 @@ export default function Login() {
           </div>
 
           {/* Social */}
-          {[[<GoogleIcon />, 'Continue with Google'], [<AppleIcon />, 'Continue with Apple']].map(([icon, label]) => (
-            <div key={String(label)} style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff', marginBottom: 10, transition: 'border-color .15s' }}
+          {[
+            { icon: <GoogleIcon />, label: 'Continue with Google' },
+            { icon: <AppleIcon />,  label: 'Continue with Apple'  },
+          ].map(({ icon, label }) => (
+            <div key={label} style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff', marginBottom: 10, transition: 'border-color .15s' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#333')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a2a2a')}>
-              <span>{String(icon)}</span> {String(label)}
+              {icon} {label}
             </div>
           ))}
 
