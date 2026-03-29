@@ -529,17 +529,114 @@ export default function CourseEditor() {
                       Questions · {q.questions.length}
                     </div>
                     {q.questions.map((qu, qqi) => (
-                      <div key={qqi} style={{ background: 'var(--card2)', border: '1px solid var(--bdr)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600 }}>Q{qqi + 1}</div>
-                          <button className="btn bd sm" onClick={() => removeQuizQuestion(activeModule, qi, qqi)}><Trash2 size={16} /></button>
+                      <div key={qqi} style={{ background: 'var(--card2)', border: '1px solid var(--bdr)', borderRadius: 8, padding: 14, marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: 'var(--mu)' }}>Q{qqi + 1}</span>
+                            <select className="inp" style={{ fontSize: 11, padding: '3px 8px', width: 'auto' }}
+                              value={qu.question_type}
+                              onChange={e => updateQuizQuestion(activeModule, qi, qqi, {
+                                question_type: e.target.value,
+                                options: e.target.value === 'multiple_choice' ? JSON.stringify(['', '', '', '']) :
+                                         e.target.value === 'true_false' ? JSON.stringify(['True', 'False']) :
+                                         e.target.value === 'matching' ? JSON.stringify([['', ''], ['', ''], ['', '']]) : '[]',
+                                correct_answer: ''
+                              })}>
+                              <option value="multiple_choice">Multiple Choice</option>
+                              <option value="true_false">True / False</option>
+                              <option value="short_answer">Short Answer</option>
+                              <option value="matching">Matching</option>
+                            </select>
+                          </div>
+                          <button className="btn bd sm" onClick={() => removeQuizQuestion(activeModule, qi, qqi)}><Trash2 size={14} /></button>
                         </div>
-                        <input className="inp" placeholder="Question text" value={qu.question_text} onChange={e => updateQuizQuestion(activeModule, qi, qqi, { question_text: e.target.value })} style={{ marginBottom: 8 }} />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                          <input className="inp" placeholder="Options (JSON array)" value={qu.options} onChange={e => updateQuizQuestion(activeModule, qi, qqi, { options: e.target.value })} />
-                          <input className="inp" placeholder="Correct answer" value={qu.correct_answer} onChange={e => updateQuizQuestion(activeModule, qi, qqi, { correct_answer: e.target.value })} />
-                        </div>
-                        <input className="inp" placeholder="Explanation (optional)" value={qu.explanation} onChange={e => updateQuizQuestion(activeModule, qi, qqi, { explanation: e.target.value })} />
+
+                        {/* Question text */}
+                        <input className="inp" placeholder="Question text *" value={qu.question_text}
+                          onChange={e => updateQuizQuestion(activeModule, qi, qqi, { question_text: e.target.value })}
+                          style={{ marginBottom: 8 }} />
+
+                        {/* Multiple choice options */}
+                        {qu.question_type === 'multiple_choice' && (() => {
+                          let opts: string[] = []
+                          try { opts = JSON.parse(qu.options) } catch { opts = ['', '', '', ''] }
+                          return (
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ fontSize: 11, color: 'var(--mu)', marginBottom: 5 }}>Options — click radio to mark correct</div>
+                              {opts.map((opt, oi) => (
+                                <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                                  <input type="radio" name={`q${qqi}-correct`} checked={qu.correct_answer === opt && opt !== ''}
+                                    onChange={() => updateQuizQuestion(activeModule, qi, qqi, { correct_answer: opt })} />
+                                  <input className="inp" placeholder={`Option ${oi + 1}`} value={opt} style={{ flex: 1 }}
+                                    onChange={e => {
+                                      const next = [...opts]; next[oi] = e.target.value
+                                      updateQuizQuestion(activeModule, qi, qqi, { options: JSON.stringify(next) })
+                                    }} />
+                                </div>
+                              ))}
+                              <button className="btn bo sm" style={{ marginTop: 4 }} onClick={() => {
+                                updateQuizQuestion(activeModule, qi, qqi, { options: JSON.stringify([...opts, '']) })
+                              }}>+ Option</button>
+                            </div>
+                          )
+                        })()}
+
+                        {/* True / False */}
+                        {qu.question_type === 'true_false' && (
+                          <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                            {['True', 'False'].map(v => (
+                              <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                                <input type="radio" name={`q${qqi}-tf`} checked={qu.correct_answer === v}
+                                  onChange={() => updateQuizQuestion(activeModule, qi, qqi, { correct_answer: v })} />
+                                {v}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Short answer */}
+                        {qu.question_type === 'short_answer' && (
+                          <input className="inp" placeholder="Expected answer (used for auto-grading)" value={qu.correct_answer}
+                            onChange={e => updateQuizQuestion(activeModule, qi, qqi, { correct_answer: e.target.value })}
+                            style={{ marginBottom: 8 }} />
+                        )}
+
+                        {/* Matching */}
+                        {qu.question_type === 'matching' && (() => {
+                          let pairs: string[][] = []
+                          try { pairs = JSON.parse(qu.options) } catch { pairs = [['', ''], ['', '']] }
+                          return (
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ fontSize: 11, color: 'var(--mu)', marginBottom: 5 }}>Pairs — Left column matches Right column</div>
+                              {pairs.map((pair, pi) => (
+                                <div key={pi} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 6, marginBottom: 5 }}>
+                                  <input className="inp" placeholder={`Left ${pi + 1}`} value={pair[0]}
+                                    onChange={e => {
+                                      const next = pairs.map((p, i) => i === pi ? [e.target.value, p[1]] : p)
+                                      updateQuizQuestion(activeModule, qi, qqi, { options: JSON.stringify(next), correct_answer: JSON.stringify(next) })
+                                    }} />
+                                  <input className="inp" placeholder={`Right ${pi + 1}`} value={pair[1]}
+                                    onChange={e => {
+                                      const next = pairs.map((p, i) => i === pi ? [p[0], e.target.value] : p)
+                                      updateQuizQuestion(activeModule, qi, qqi, { options: JSON.stringify(next), correct_answer: JSON.stringify(next) })
+                                    }} />
+                                  <button className="btn bd sm" onClick={() => {
+                                    const next = pairs.filter((_, i) => i !== pi)
+                                    updateQuizQuestion(activeModule, qi, qqi, { options: JSON.stringify(next), correct_answer: JSON.stringify(next) })
+                                  }}><Trash2 size={12} /></button>
+                                </div>
+                              ))}
+                              <button className="btn bo sm" style={{ marginTop: 4 }} onClick={() => {
+                                const next = [...pairs, ['', '']]
+                                updateQuizQuestion(activeModule, qi, qqi, { options: JSON.stringify(next), correct_answer: JSON.stringify(next) })
+                              }}>+ Pair</button>
+                            </div>
+                          )
+                        })()}
+
+                        {/* Explanation */}
+                        <input className="inp" placeholder="Explanation shown after answer (optional)" value={qu.explanation}
+                          onChange={e => updateQuizQuestion(activeModule, qi, qqi, { explanation: e.target.value })} />
                       </div>
                     ))}
                     <button className="btn bo sm" onClick={() => addQuizQuestion(activeModule, qi)}><Plus size={16} /> Add Question</button>
