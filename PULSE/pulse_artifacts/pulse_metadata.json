@@ -1,16 +1,16 @@
 {
   "model_info": {
-    "algorithm": "GradientBoostingClassifier",
+    "algorithm": "XGBoost",
     "version": "1.0.0",
-    "n_estimators": 300,
-    "learning_rate": 0.08,
-    "max_depth": 5,
-    "n_features": 19,
+    "n_estimators": 500,
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "n_features": 31,
     "n_classes": 5,
-    "test_accuracy": 0.6959,
-    "test_f1": 0.6855,
-    "cv_mean_f1": 0.6925,
-    "cv_std_f1": 0.0038
+    "test_accuracy": 0.7293,
+    "test_f1": 0.7239,
+    "cv_mean_f1": 0.7271,
+    "cv_std_f1": 0.0085
   },
   "training_info": {
     "n_samples": 28785,
@@ -19,7 +19,7 @@
     "test_samples": 4318,
     "random_state": 42
   },
-  "features": [
+  "feature_columns": [
     "num_of_prev_attempts",
     "studied_credits",
     "gender",
@@ -29,16 +29,28 @@
     "disability",
     "total_clicks",
     "active_days",
+    "max_clicks_day",
+    "last_active_day",
+    "first_active_day",
     "avg_clicks_per_day",
+    "activity_span",
     "avg_score",
+    "max_score",
+    "min_score",
     "num_assessments",
     "days_to_first_submit",
+    "score_std",
+    "score_range",
     "days_registered_before_start",
     "withdrew_early",
     "engagement_score",
     "performance_score",
     "decline_index",
-    "consistency_score"
+    "consistency_score",
+    "clicks_per_assessment",
+    "score_per_credit",
+    "engagement_x_perf",
+    "active_days_x_score"
   ],
   "categorical_features": [
     "gender",
