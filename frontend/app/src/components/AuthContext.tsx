@@ -83,6 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const u = { id: userData.id, name: userData.name, email: '', role: userData.role, avatar_initials: (userData.name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2)) }
     localStorage.setItem('ff_access_token', accessToken)
     localStorage.setItem('ff_user', JSON.stringify(u))
+    // Set token expiry so isTokenExpired() doesn't immediately log the user out
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]))
+      const expiryMs = payload.exp ? payload.exp * 1000 : Date.now() + 24 * 60 * 60 * 1000
+      localStorage.setItem('ff_token_expiry', expiryMs.toString())
+    } catch {
+      localStorage.setItem('ff_token_expiry', (Date.now() + 24 * 60 * 60 * 1000).toString())
+    }
     setToken(accessToken)
     setUser(u)
     setupInactivityListeners()
