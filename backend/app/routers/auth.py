@@ -10,6 +10,8 @@ import random, secrets, os
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
@@ -61,7 +63,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer", "role": user.role, "name": user.name, "id": user.id, "is_first_login": True}
 
 @router.post("/login", response_model=TokenResponse)
-def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(form: OAuth2PasswordRequestForm = Depends(), remember: bool = True, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form.username).first()
     if not user or not verify_password(form.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -76,7 +78,9 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
         send_welcome_email(user.email, user.name, str(user.role))
     user.last_active = datetime.utcnow()
     db.commit()
-    token = create_access_token({"sub": str(user.id), "role": user.role})
+    # Short-lived token (60 min) for session-only logins, full expiry for remember-me
+    expires = None if remember else 60
+    token = create_access_token({"sub": str(user.id), "role": user.role}, expires_minutes=expires)
     return {"access_token": token, "token_type": "bearer", "role": user.role, "name": user.name, "id": user.id, "is_first_login": is_first}
 
 @router.get("/me")
@@ -130,6 +134,61 @@ def resend_verification(body: ResendRequest, db: Session = Depends(get_db)):
         db.commit()
         return {"message": "Email verified automatically"}
     return {"message": "Verification code resent"}
+
+
+# ── Google OAuth ─────────────────────────────────────────────────────────
+class GoogleAuthRequest(BaseModel):
+    credential: str
+    role: str = "student"  # only used on first sign-up
+
+@router.post("/google", response_model=TokenResponse)
+def google_auth(body: GoogleAuthRequest, db: Session = Depends(get_db)):
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Google OAuth not configured")
+    try:
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
+        info = id_token.verify_oauth2_token(
+            body.credential, google_requests.Request(), GOOGLE_CLIENT_ID
+        )
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+
+    email = info.get("email", "").lower().strip()
+    name  = info.get("name") or email.split("@")[0]
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account has no email")
+
+    user = db.query(User).filter(User.email == email).first()
+    is_new = user is None
+    if is_new:
+        role = body.role if body.role in ("student", "instructor") else "student"
+        parts = name.strip().split()
+        initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) >= 2 else parts[0][:2].upper()
+        user = User(
+            name=name, email=email,
+            hashed_password=hash_password(secrets.token_urlsafe(32)),  # unusable password
+            role=RoleEnum(role), status=StatusEnum.active,
+            avatar_initials=initials, xp=0,
+            is_verified=True, first_login=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        send_welcome_email(user.email, user.name, str(user.role))
+    else:
+        if user.status == "banned":
+            raise HTTPException(status_code=403, detail="Account suspended")
+
+    is_first = bool(user.first_login)
+    if is_first:
+        user.first_login = False
+    user.last_active = datetime.utcnow()
+    db.commit()
+
+    token = create_access_token({"sub": str(user.id), "role": user.role})
+    return {"access_token": token, "token_type": "bearer", "role": user.role,
+            "name": user.name, "id": user.id, "is_first_login": is_first}
 
 
 # ── Password Reset ────────────────────────────────────────────────────────

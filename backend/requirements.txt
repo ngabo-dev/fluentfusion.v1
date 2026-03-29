@@ -12,3 +12,4 @@ faker==24.11.0
 sendgrid==6.11.0
 numpy==2.4.3
 scikit-learn==1.6.1
+google-auth==2.49.1

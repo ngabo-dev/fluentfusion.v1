@@ -1,8 +1,11 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../components/AuthContext'
+import api from '../../api/client'
 import PasswordStrength, { validatePassword } from '../../components/PasswordStrength'
 import { AlertTriangle, Brain, Check, ClipboardList, Diamond, Eye, EyeOff, Flame, GraduationCap, Lock, Mail, Target, User, Video } from 'lucide-react'
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
 
 const GoogleIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -21,7 +24,7 @@ const AppleIcon = () => (
 
 export default function Signup() {
   const nav = useNavigate()
-  const { register } = useAuth()
+  const { register, login, loginWithToken } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
@@ -30,6 +33,45 @@ export default function Signup() {
   const [err, setErr] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const googleBtnRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.onload = () => {
+      ;(window as any).google?.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+      })
+      if (googleBtnRef.current) {
+        ;(window as any).google?.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'filled_black', size: 'large', width: 400, text: 'continue_with',
+        })
+      }
+    }
+    document.body.appendChild(script)
+    return () => { document.body.removeChild(script) }
+  }, [])
+
+  async function handleGoogleCredential(response: any) {
+    setGoogleLoading(true)
+    setErr('')
+    try {
+      const res = await api.post('/api/auth/google', { credential: response.credential, role })
+      const { access_token, role: userRole, name: userName, id, is_first_login } = res.data
+      loginWithToken(access_token, { role: userRole, name: userName, id })
+      if (is_first_login && userRole === 'student') nav('/onboard/native-language')
+      else if (userRole === 'instructor') nav('/instructor')
+      else nav('/dashboard')
+    } catch (e: any) {
+      setErr(e.response?.data?.detail || 'Google sign-in failed')
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -197,16 +239,17 @@ export default function Signup() {
             </div>
 
             {/* Social buttons */}
-            {[
-              { icon: <GoogleIcon />, label: 'Continue with Google' },
-              { icon: <AppleIcon />,  label: 'Continue with Apple'  },
-            ].map(({ icon, label }) => (
-              <div key={label} style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff', marginBottom: 10, transition: 'border-color .15s' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#333')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = '#2a2a2a')}>
-                {icon} {label}
+            {GOOGLE_CLIENT_ID ? (
+              <div ref={googleBtnRef} style={{ width: '100%', marginBottom: 10, opacity: googleLoading ? 0.6 : 1 }} />
+            ) : (
+              <div style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff', marginBottom: 10 }}>
+                <GoogleIcon /> Continue with Google
               </div>
-            ))}
+            )}
+            <div style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'not-allowed', color: '#555', marginBottom: 10 }}
+              title="Apple Sign-In coming soon">
+              <AppleIcon /> Continue with Apple
+            </div>
 
             <p style={{ fontSize: 12, color: '#888', textAlign: 'center', marginTop: 20 }}>
               By signing up you agree to our{' '}
