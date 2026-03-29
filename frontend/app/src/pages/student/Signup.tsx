@@ -100,15 +100,15 @@ export default function Signup() {
               Create your free account and start your language learning journey today.
             </p>
             {[
-              [<Target size={16} />, 'Personalized AI Learning', 'Adapts to your skill level automatically'],
-              [<Flame size={16} />, 'Daily Streaks & Gamification', 'Stay motivated with XP and achievements'],
-              [<Video size={16} />, 'Live Instructor Sessions', 'Practice with native speakers in real time'],
-            ].map(([icon, title, desc]) => (
-              <div key={String(title)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20 }}>
-                <div style={{ width: 36, height: 36, background: 'rgba(191,255,0,0.10)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{String(icon)}</div>
+              { icon: <Target size={16} />, title: 'Personalized AI Learning',    desc: 'Adapts to your skill level automatically' },
+              { icon: <Flame size={16} />,  title: 'Daily Streaks & Gamification', desc: 'Stay motivated with XP and achievements' },
+              { icon: <Video size={16} />,  title: 'Live Instructor Sessions',     desc: 'Practice with native speakers in real time' },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 36, height: 36, background: 'rgba(191,255,0,0.10)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#BFFF00', flexShrink: 0 }}>{icon}</div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{String(title)}</div>
-                  <div style={{ fontSize: 13, color: '#888' }}>{String(desc)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{title}</div>
+                  <div style={{ fontSize: 13, color: '#888' }}>{desc}</div>
                 </div>
               </div>
             ))}
