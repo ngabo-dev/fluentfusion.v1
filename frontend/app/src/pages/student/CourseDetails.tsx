@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../api/client'
+import { BookOpen, Check, FileText, Headphones, Infinity, Play, Star, Trophy } from 'lucide-react'
 
-const TYPE_ICON: Record<string, string> = { video: '▶️', text: '📝', audio: '🎧' }
+const TYPE_ICON: Record<string, string> = { video: <Play size={16} />, text: <FileText size={16} />, audio: <Headphones size={16} /> }
 
 export default function CourseDetails() {
   const { id } = useParams()
@@ -49,7 +50,7 @@ export default function CourseDetails() {
             </div>
             {course.rating > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ color: '#FFD700' }}>★</span>
+                <span style={{ color: '#FFD700' }}><Star size={16} /></span>
                 <span style={{ fontWeight: 700 }}>{course.rating}</span>
               </div>
             )}
@@ -77,7 +78,7 @@ export default function CourseDetails() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       {course.what_you_learn.split('\n').filter(Boolean).map((item: string, i: number) => (
                         <div key={i} style={{ display: 'flex', gap: 8, fontSize: 13, color: 'var(--mu)' }}>
-                          <span style={{ color: 'var(--neon)', flexShrink: 0 }}>✓</span>{item}
+                          <span style={{ color: 'var(--neon)', flexShrink: 0 }}><Check size={16} /></span>{item}
                         </div>
                       ))}
                     </div>
@@ -105,7 +106,7 @@ export default function CourseDetails() {
                       {section.lessons.map((l: any, li: number) => (
                         <div key={li} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: '1px solid rgba(255,255,255,.04)', fontSize: 13 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span>{TYPE_ICON[l.lesson_type] ?? '📄'}</span>
+                            <span>{TYPE_ICON[l.lesson_type] ?? <FileText size={16} />}</span>
                             <span>{l.title}</span>
                             {l.is_preview && <span style={{ fontSize: 9, color: 'var(--neon)', fontFamily: 'JetBrains Mono', background: 'rgba(191,255,0,.1)', padding: '2px 6px', borderRadius: 4 }}>FREE</span>}
                           </div>
@@ -139,8 +140,8 @@ export default function CourseDetails() {
                 {course.price === 0 ? 'FREE' : `$${course.price}`}
               </div>
               {enrolled ? (
-                <button className="btn bp" style={{ width: '100%', marginBottom: 10, justifyContent: 'center' }} onClick={() => nav('/dashboard/lessons')}>
-                  ▶ Continue Learning
+                <button className="btn bp" style={{ width: '100%', marginBottom: 10, justifyContent: 'center' }} onClick={() => nav('/dashboard/lessons', { state: { courseId: course.id } })}>
+                  <Play size={16} /> Continue Learning
                 </button>
               ) : (
                 <button className="btn bp" style={{ width: '100%', marginBottom: 10, justifyContent: 'center' }} disabled={enrolling} onClick={enroll}>
@@ -148,7 +149,7 @@ export default function CourseDetails() {
                 </button>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[['📚', `${totalLessons} lessons`], ['🏆', 'Certificate on completion'], ['♾️', 'Lifetime access']].map(([ic, txt]) => (
+                {[[<BookOpen size={16} />, `${totalLessons} lessons`], [<Trophy size={16} />, 'Certificate on completion'], ['️', 'Lifetime access']].map(([ic, txt]) => (
                   <div key={txt} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span>{ic}</span><span style={{ fontSize: 13, color: 'var(--mu)' }}>{txt}</span>
                   </div>

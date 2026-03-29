@@ -11,232 +11,403 @@ db = SessionLocal()
 
 def clear():
     from sqlalchemy import text
-    tables = ['monthly_revenue','audit_logs','reports','messages','reviews','payments','payouts','notifications','enrollments','quizzes','lessons','live_sessions','courses','users']
+    tables = [
+        'meeting_invites', 'meetings',
+        'notification_replies', 'notification_reactions', 'notification_reads',
+        'monthly_revenue', 'audit_logs', 'reports', 'messages', 'reviews',
+        'payments', 'payouts', 'notifications',
+        'enrollments', 'quiz_attempts', 'quiz_questions', 'module_quizzes',
+        'quizzes', 'lessons', 'modules',
+        'live_sessions', 'courses', 'users',
+    ]
     for t in tables:
-        db.execute(text(f'TRUNCATE TABLE {t} CASCADE'))
+        try:
+            db.execute(text(f'TRUNCATE TABLE {t} RESTART IDENTITY CASCADE'))
+        except Exception:
+            db.rollback()
     db.commit()
 
 def seed():
     clear()
 
-    # Admin
+    # ── Users ──────────────────────────────────────────────────────────────
     admin = User(
-        name="Jean Pierre Niyongabo",
-        email="ngabo470@gmail.com",
-        hashed_password=hash_password("Admin@123"),
-        role=RoleEnum.admin,
-        status=StatusEnum.active,
-        avatar_initials="JP",
-        is_verified=True,
-        last_active=datetime.utcnow(),
+        name="Chioma Okafor", email="c.okafor@fluentfusion.com",
+        hashed_password=hash_password("admin123"),
+        role=RoleEnum.admin, status=StatusEnum.active,
+        avatar_initials="CO", is_verified=True, last_active=datetime.utcnow(),
     )
     db.add(admin)
 
-    # Instructor
     instructor = User(
-        name="Jean Pierre Niyongabo",
-        email="j.niyongabo@alustudent.com",
-        hashed_password=hash_password("Instructor@123"),
-        role=RoleEnum.instructor,
-        status=StatusEnum.active,
-        avatar_initials="JN",
-        bio="Language educator and ALU student — teaching French, English, and Kinyarwanda.",
-        is_verified=True,
-        last_active=datetime.utcnow(),
+        name="Aminata Ndiaye", email="a.ndiaye@ff.com",
+        hashed_password=hash_password("instructor123"),
+        role=RoleEnum.instructor, status=StatusEnum.active,
+        avatar_initials="AN",
+        bio="Certified language educator with 8 years of experience teaching French, Spanish and English as a second language.",
+        is_verified=True, last_active=datetime.utcnow(),
     )
     db.add(instructor)
     db.commit()
 
-    ins = db.query(User).filter(User.email == "j.niyongabo@alustudent.com").first()
+    ins = db.query(User).filter(User.email == "a.ndiaye@ff.com").first()
 
-    # Courses
-    courses_data = [
-        (ins.id, "French B2 — Advanced Grammar", "French", "Advanced", "🇫🇷", CourseStatusEnum.published, 49.99),
-        (ins.id, "Spanish A2 — Conversation", "Spanish", "Elementary", "🇪🇸", CourseStatusEnum.published, 39.99),
-        (ins.id, "IELTS Writing Mastery", "English", "Intermediate", "🇬🇧", CourseStatusEnum.published, 59.99),
-        (ins.id, "German A1 — Absolute Beginner", "German", "Beginner", "🇩🇪", CourseStatusEnum.pending, 34.99),
-        (ins.id, "Mandarin HSK 1", "Mandarin", "Beginner", "🇨🇳", CourseStatusEnum.published, 44.99),
-        (ins.id, "Japanese N5 — Complete Starter", "Japanese", "Beginner", "🇯🇵", CourseStatusEnum.pending, 49.99),
-        (ins.id, "German A2 — Daily Life", "German", "Elementary", "🇩🇪", CourseStatusEnum.published, 39.99),
-        (ins.id, "German B1 — Intermediate", "German", "Intermediate", "🇩🇪", CourseStatusEnum.published, 49.99),
+    # ── Courses ────────────────────────────────────────────────────────────
+    COURSES = [
+        dict(
+            title="French B2 — Advanced Grammar",
+            subtitle="Master the subjunctive, conditional and complex sentence structures",
+            description="Take your French to the next level. This course covers advanced grammar topics including the subjunctive mood, conditional tenses, relative clauses, and sophisticated vocabulary. Perfect for learners who already have a solid B1 foundation and want to reach fluency.",
+            language="French", level="Advanced", flag_emoji="🇫🇷",
+            status=CourseStatusEnum.published, price=49.99,
+            what_you_learn="Use the subjunctive mood correctly\nMaster all conditional tenses\nWrite complex, nuanced sentences\nUnderstand native-speed French audio\nPass the DALF C1 preparation exercises",
+            requirements="B1 level French or equivalent\nBasic understanding of verb conjugation",
+            target_audience="Intermediate French learners aiming for fluency",
+        ),
+        dict(
+            title="Spanish A2 — Everyday Conversation",
+            subtitle="Build confidence speaking Spanish in real-life situations",
+            description="This practical course focuses on conversational Spanish for everyday situations — shopping, travel, work, and social settings. You will build vocabulary, improve pronunciation, and gain the confidence to hold real conversations.",
+            language="Spanish", level="Elementary", flag_emoji="🇪🇸",
+            status=CourseStatusEnum.published, price=39.99,
+            what_you_learn="Hold basic conversations in Spanish\nDescribe your daily routine\nAsk for and give directions\nOrder food and shop confidently\nUnderstand common Spanish expressions",
+            requirements="A1 Spanish or complete beginner with some exposure",
+            target_audience="Beginners who want to start speaking Spanish fast",
+        ),
+        dict(
+            title="IELTS Writing Mastery",
+            subtitle="Score 7.0+ on IELTS Academic Writing Tasks 1 & 2",
+            description="A comprehensive IELTS Academic Writing preparation course. Learn the exact strategies, structures, and vocabulary needed to score Band 7 or above. Includes full mock tasks with model answers and detailed feedback frameworks.",
+            language="English", level="Intermediate", flag_emoji="🇬🇧",
+            status=CourseStatusEnum.published, price=59.99,
+            what_you_learn="Write a Band 7+ Task 1 report in 20 minutes\nStructure a compelling Task 2 essay\nUse academic vocabulary naturally\nAvoid the most common IELTS mistakes\nManage your time under exam conditions",
+            requirements="B2 English level minimum\nFamiliarity with the IELTS exam format",
+            target_audience="Students and professionals preparing for IELTS Academic",
+        ),
+        dict(
+            title="Mandarin HSK 1 — Complete Starter",
+            subtitle="Learn 150 essential words and pass the HSK 1 exam",
+            description="Start your Mandarin journey with this structured HSK 1 preparation course. You will learn all 150 vocabulary words, basic sentence patterns, pinyin pronunciation, and the most common characters. By the end you will be ready to sit the HSK 1 exam.",
+            language="Mandarin", level="Beginner", flag_emoji="🇨🇳",
+            status=CourseStatusEnum.published, price=44.99,
+            what_you_learn="Pronounce Mandarin using pinyin\nLearn all 150 HSK 1 vocabulary words\nForm basic sentences in Mandarin\nRead and write 50 common characters\nPass the official HSK 1 exam",
+            requirements="No prior Mandarin knowledge needed",
+            target_audience="Complete beginners curious about Mandarin Chinese",
+        ),
+        dict(
+            title="German A1 — Absolute Beginner",
+            subtitle="Your first steps into the German language",
+            description="Start speaking German from day one. This course introduces you to German pronunciation, basic grammar, essential vocabulary, and everyday phrases. Ideal for complete beginners.",
+            language="German", level="Beginner", flag_emoji="🇩🇪",
+            status=CourseStatusEnum.pending, price=34.99,
+            what_you_learn="Introduce yourself in German\nCount, tell the time and use dates\nAsk and answer simple questions\nUnderstand basic written German",
+            requirements="No prior German knowledge needed",
+            target_audience="Complete beginners starting German from scratch",
+        ),
+        dict(
+            title="German A2 — Daily Life",
+            subtitle="Communicate confidently in everyday German situations",
+            description="Build on your A1 foundation and start communicating in real German situations — at work, in shops, with neighbours. Covers past tense, modal verbs, and practical vocabulary.",
+            language="German", level="Elementary", flag_emoji="🇩🇪",
+            status=CourseStatusEnum.published, price=39.99,
+            what_you_learn="Talk about past events in German\nUse modal verbs correctly\nNavigate everyday situations in German\nExpand your vocabulary to 500+ words",
+            requirements="A1 German or equivalent",
+            target_audience="A1 German learners ready to progress",
+        ),
+        dict(
+            title="German B1 — Intermediate",
+            subtitle="Reach conversational fluency in German",
+            description="The B1 course takes you to conversational fluency. You will master the subjunctive, passive voice, complex sentence structures, and develop the vocabulary needed for professional and social contexts.",
+            language="German", level="Intermediate", flag_emoji="🇩🇪",
+            status=CourseStatusEnum.published, price=49.99,
+            what_you_learn="Use the Konjunktiv II naturally\nUnderstand German news and podcasts\nWrite formal emails in German\nDiscuss opinions and abstract topics",
+            requirements="A2 German or equivalent",
+            target_audience="A2 learners aiming for B1 certification",
+        ),
+        dict(
+            title="Japanese N5 — Complete Starter",
+            subtitle="Master hiragana, katakana and basic Japanese grammar",
+            description="A complete beginner course covering the JLPT N5 syllabus. Learn hiragana and katakana scripts, essential grammar patterns, and the 800 most common vocabulary words.",
+            language="Japanese", level="Beginner", flag_emoji="🇯🇵",
+            status=CourseStatusEnum.pending, price=49.99,
+            what_you_learn="Read and write hiragana and katakana\nLearn 800 essential vocabulary words\nForm basic Japanese sentences\nUnderstand simple Japanese conversations\nPrepare for the JLPT N5 exam",
+            requirements="No prior Japanese knowledge needed",
+            target_audience="Complete beginners interested in Japanese",
+        ),
     ]
-    courses = []
-    for ins_id, title, lang, level, flag, status, price in courses_data:
-        c = Course(instructor_id=ins_id, title=title, language=lang, level=level, flag_emoji=flag, status=status, price=price, created_at=datetime.utcnow() - timedelta(days=random.randint(30,365)))
+
+    for cd in COURSES:
+        c = Course(
+            instructor_id=ins.id,
+            created_at=datetime.utcnow() - timedelta(days=random.randint(30, 365)),
+            **cd,
+        )
         db.add(c)
-        courses.append(c)
     db.commit()
 
-    french_b2 = db.query(Course).filter(Course.title.like("French B2%")).first()
-    spanish_a2 = db.query(Course).filter(Course.title.like("Spanish A2%")).first()
-    ielts = db.query(Course).filter(Course.title.like("IELTS%")).first()
-    mandarin = db.query(Course).filter(Course.title.like("Mandarin%")).first()
+    def gc(fragment):
+        return db.query(Course).filter(Course.title.like(f"%{fragment}%")).first()
 
-    # Lessons for French B2
-    lessons_fr = [
-        ("Introduction to Subjunctive", "video", 18, "Explore the subjunctive mood in French."),
-        ("Irregular Verb Forms", "text", 12, "Master irregular verbs in subjunctive."),
-        ("Practice Quiz — Part 1", "quiz", 20, "Test your knowledge."),
-        ("Conversational Drills", "live", 45, "Live practice session."),
-        ("Reading Comprehension", "text", 15, "Advanced reading exercises."),
-        ("Mid-Course Assessment", "quiz", 30, "Comprehensive mid-course test."),
-        ("Advanced Sentence Structures", "video", 22, "Complex sentence construction."),
-        ("Final Live Session", "live", 60, "Final review and Q&A."),
-    ]
-    for i, (title, ltype, dur, desc) in enumerate(lessons_fr):
-        db.add(Lesson(course_id=french_b2.id, title=title, lesson_type=ltype, duration_min=dur, description=desc, order=i+1))
+    fr    = gc("French B2")
+    es    = gc("Spanish A2")
+    ielts = gc("IELTS")
+    zh    = gc("Mandarin")
 
-    # Lessons for Spanish A2
-    lessons_es = [
-        ("Ser vs Estar", "video", 20, "Master the two forms of 'to be'."),
-        ("Present Tense Conjugation", "video", 18, "Regular and irregular verbs."),
-        ("Vocabulary: Daily Routines", "text", 15, "Essential daily vocabulary."),
-        ("Conversation Practice", "live", 45, "Live conversation session."),
-        ("Past Tense Introduction", "video", 22, "Preterite and imperfect."),
-        ("Quiz: Verb Conjugation", "quiz", 25, "Test your conjugation skills."),
-    ]
-    for i, (title, ltype, dur, desc) in enumerate(lessons_es):
-        db.add(Lesson(course_id=spanish_a2.id, title=title, lesson_type=ltype, duration_min=dur, description=desc, order=i+1))
+    # ── Modules + Lessons ──────────────────────────────────────────────────
+    def add_module(course, title, order, lessons):
+        m = Module(course_id=course.id, title=title, order=order)
+        db.add(m)
+        db.flush()
+        for i, (ltitle, ltype, dur, desc) in enumerate(lessons):
+            db.add(Lesson(
+                course_id=course.id, module_id=m.id,
+                title=ltitle, lesson_type=ltype,
+                duration_min=dur, description=desc,
+                order=i + 1, is_preview=(i == 0),
+            ))
+
+    # French B2
+    add_module(fr, "The Subjunctive Mood", 1, [
+        ("What is the Subjunctive?", "video", 14, "An introduction to the subjunctive mood — when and why French uses it."),
+        ("Forming the Present Subjunctive", "video", 18, "Step-by-step guide to conjugating regular and irregular verbs in the subjunctive."),
+        ("Subjunctive Triggers", "text", 12, "The key conjunctions and expressions that always require the subjunctive."),
+        ("Practice: Subjunctive Drills", "quiz", 20, "Consolidate your knowledge with targeted conjugation exercises."),
+    ])
+    add_module(fr, "Conditional Tenses", 2, [
+        ("Present Conditional", "video", 16, "How to form and use the present conditional for hypothetical situations."),
+        ("Past Conditional", "video", 20, "Expressing what would have happened — the past conditional explained."),
+        ("Si Clauses", "text", 15, "Combining conditional tenses with si clauses for complex hypotheticals."),
+        ("Conditional Quiz", "quiz", 25, "Test your mastery of both conditional tenses."),
+    ])
+    add_module(fr, "Advanced Sentence Structures", 3, [
+        ("Relative Clauses with Dont & Où", "video", 18, "Using dont and où to build sophisticated relative clauses."),
+        ("Nominalization", "text", 14, "Turning verbs and adjectives into nouns for formal writing."),
+        ("Reading: Le Monde Article", "text", 20, "Analyse a real Le Monde article and identify advanced structures."),
+        ("Final Assessment", "quiz", 30, "Comprehensive test covering all three modules."),
+    ])
+
+    # Spanish A2
+    add_module(es, "Core Verbs & Tenses", 1, [
+        ("Ser vs Estar — The Full Picture", "video", 20, "Master the distinction between ser and estar with real-world examples."),
+        ("Present Tense: Regular Verbs", "video", 15, "Conjugating -ar, -er and -ir verbs in the present tense."),
+        ("Present Tense: Irregular Verbs", "video", 18, "The 20 most common irregular verbs you must know."),
+        ("Verb Quiz", "quiz", 20, "Practice conjugating the verbs from this module."),
+    ])
+    add_module(es, "Everyday Conversations", 2, [
+        ("Greetings & Introductions", "video", 12, "How to introduce yourself and greet people naturally in Spanish."),
+        ("Shopping & Ordering Food", "video", 16, "Essential phrases for markets, restaurants and cafés."),
+        ("Asking for Directions", "text", 14, "Vocabulary and phrases for navigating a Spanish-speaking city."),
+        ("Conversation Practice Quiz", "quiz", 20, "Test your conversational vocabulary."),
+    ])
+    add_module(es, "Past Tense", 3, [
+        ("Preterite Tense Introduction", "video", 22, "Talking about completed past actions with the preterite."),
+        ("Imperfect Tense", "video", 20, "Describing ongoing past states and habitual actions."),
+        ("Preterite vs Imperfect", "text", 18, "The key to choosing the right past tense every time."),
+        ("Past Tense Assessment", "quiz", 25, "Final test on both past tenses."),
+    ])
+
+    # IELTS
+    add_module(ielts, "Task 1 — Data Reports", 1, [
+        ("Understanding Task 1 Requirements", "video", 15, "What the examiner is looking for and how the band descriptors work."),
+        ("Describing Charts & Graphs", "video", 20, "Language for trends, comparisons and data description."),
+        ("Model Answer Walkthrough", "text", 18, "Annotated Band 8 model answer with examiner commentary."),
+        ("Task 1 Practice", "quiz", 30, "Write and self-assess a full Task 1 response."),
+    ])
+    add_module(ielts, "Task 2 — Academic Essays", 2, [
+        ("Essay Types & Structures", "video", 18, "Opinion, discussion, problem-solution and two-part question essays."),
+        ("Introduction & Conclusion Formulas", "video", 16, "Proven templates for opening and closing your essay."),
+        ("Body Paragraph Development", "text", 20, "How to build a coherent, well-supported argument."),
+        ("Vocabulary for Academic Writing", "text", 22, "High-scoring lexical resource — collocations, hedging and discourse markers."),
+        ("Full Mock Essay", "quiz", 40, "Write a complete Task 2 essay under timed conditions."),
+    ])
+
+    # Mandarin HSK 1
+    add_module(zh, "Pronunciation & Pinyin", 1, [
+        ("The Four Tones", "video", 16, "Master Mandarin tones with audio examples and minimal pair practice."),
+        ("Pinyin System", "video", 18, "Complete guide to the pinyin romanisation system."),
+        ("Pronunciation Drills", "audio", 20, "Listen and repeat exercises for all pinyin combinations."),
+    ])
+    add_module(zh, "HSK 1 Vocabulary", 2, [
+        ("People & Greetings (Words 1–30)", "video", 20, "The first 30 HSK 1 words — greetings, family and basic nouns."),
+        ("Numbers, Time & Dates (Words 31–70)", "video", 22, "Counting, telling the time and expressing dates in Mandarin."),
+        ("Daily Life Vocabulary (Words 71–150)", "text", 25, "The remaining HSK 1 words covering food, transport and daily activities."),
+        ("Vocabulary Quiz", "quiz", 30, "Test all 150 HSK 1 vocabulary words."),
+    ])
+    add_module(zh, "Basic Grammar & Characters", 3, [
+        ("Basic Sentence Structure", "video", 18, "Subject-Verb-Object order and question formation in Mandarin."),
+        ("50 Essential Characters", "text", 30, "Learn to read and write the 50 most common HSK 1 characters."),
+        ("HSK 1 Mock Exam", "quiz", 40, "Full practice exam in the official HSK 1 format."),
+    ])
+
     db.commit()
 
-    # Quizzes
-    quizzes = [
-        Quiz(course_id=french_b2.id, title="Subjunctive Quiz #1", question_count=12, avg_score=84.0, attempts=341),
-        Quiz(course_id=spanish_a2.id, title="Verb Conjugation Test", question_count=15, avg_score=77.0, attempts=218),
-        Quiz(course_id=ielts.id, title="IELTS Task 2 Assessment", question_count=8, avg_score=71.0, attempts=156),
-        Quiz(course_id=mandarin.id, title="HSK 1 Vocabulary Quiz", question_count=20, avg_score=79.0, attempts=289),
-    ]
-    for q in quizzes: db.add(q)
+    # ── Quizzes (dashboard stats) ──────────────────────────────────────────
+    for title, cobj, qcount, avg, attempts in [
+        ("Subjunctive Quiz #1",     fr,    12, 84.0, 341),
+        ("Verb Conjugation Test",   es,    15, 77.0, 218),
+        ("IELTS Task 2 Assessment", ielts,  8, 71.0, 156),
+        ("HSK 1 Vocabulary Quiz",   zh,    20, 79.0, 289),
+    ]:
+        db.add(Quiz(course_id=cobj.id, title=title, question_count=qcount, avg_score=avg, attempts=attempts))
     db.commit()
 
-    # Live Sessions
+    # ── Live Sessions ──────────────────────────────────────────────────────
     now = datetime.utcnow()
-    sessions = [
-        LiveSession(course_id=french_b2.id, title="French B2 — Subjunctive Deep Dive", scheduled_at=now - timedelta(hours=1), attendees=48, status=SessionStatusEnum.live),
-        LiveSession(course_id=spanish_a2.id, title="Spanish A2 — Verb Conjugation Workshop", scheduled_at=now + timedelta(hours=5), attendees=0, status=SessionStatusEnum.scheduled),
-        LiveSession(course_id=ielts.id, title="IELTS Writing Task 2 Masterclass", scheduled_at=now + timedelta(days=3), attendees=0, status=SessionStatusEnum.scheduled),
-        LiveSession(course_id=french_b2.id, title="Passé Composé Deep Dive", scheduled_at=now - timedelta(days=2), attendees=53, status=SessionStatusEnum.completed, duration_min=62, recording_url="https://example.com/rec/1"),
-        LiveSession(course_id=spanish_a2.id, title="Ser vs Estar Workshop", scheduled_at=now - timedelta(days=4), attendees=38, status=SessionStatusEnum.completed, duration_min=45, recording_url="https://example.com/rec/2"),
-        LiveSession(course_id=ielts.id, title="Task 1 Writing Techniques", scheduled_at=now - timedelta(days=7), attendees=61, status=SessionStatusEnum.completed, duration_min=58),
-        LiveSession(course_id=mandarin.id, title="Mandarin Tones Workshop", scheduled_at=now - timedelta(hours=2), attendees=62, status=SessionStatusEnum.live),
-    ]
-    for s in sessions: db.add(s)
+    for cobj, title, delta, attendees, status, dur, rec in [
+        (fr,    "French B2 — Subjunctive Deep Dive",      timedelta(hours=-1), 48, SessionStatusEnum.live,      60, None),
+        (es,    "Spanish A2 — Verb Conjugation Workshop", timedelta(hours=5),   0, SessionStatusEnum.scheduled,  60, None),
+        (ielts, "IELTS Writing Task 2 Masterclass",       timedelta(days=3),    0, SessionStatusEnum.scheduled,  90, None),
+        (fr,    "Passé Composé Deep Dive",                timedelta(days=-2),  53, SessionStatusEnum.completed,  62, "https://example.com/rec/1"),
+        (es,    "Ser vs Estar Workshop",                  timedelta(days=-4),  38, SessionStatusEnum.completed,  45, "https://example.com/rec/2"),
+        (ielts, "Task 1 Writing Techniques",              timedelta(days=-7),  61, SessionStatusEnum.completed,  58, None),
+        (zh,    "Mandarin Tones Workshop",                timedelta(hours=-2), 62, SessionStatusEnum.live,       60, None),
+    ]:
+        db.add(LiveSession(
+            course_id=cobj.id, title=title,
+            scheduled_at=now + delta, attendees=attendees,
+            status=status, duration_min=dur, recording_url=rec,
+        ))
     db.commit()
 
-    # Student
+    # ── Student ────────────────────────────────────────────────────────────
     student = User(
-        name="Jean Pierre Niyongabo",
-        email="ngabo7834@gmail.com",
-        hashed_password=hash_password("Student@123"),
-        role=RoleEnum.student,
-        status=StatusEnum.active,
-        avatar_initials="JN",
-        pulse_state=PulseStateEnum.thriving,
-        xp=12400,
-        is_verified=True,
-        last_active=datetime.utcnow(),
+        name="Kofi Larbi", email="k.larbi@gmail.com",
+        hashed_password=hash_password("student123"),
+        role=RoleEnum.student, status=StatusEnum.active,
+        avatar_initials="KL",
+        pulse_state=PulseStateEnum.thriving, xp=12400,
+        is_verified=True, last_active=datetime.utcnow(),
         created_at=datetime.utcnow() - timedelta(days=90),
     )
     db.add(student)
     db.commit()
 
-    stu = db.query(User).filter(User.email == "ngabo7834@gmail.com").first()
+    stu = db.query(User).filter(User.email == "k.larbi@gmail.com").first()
 
-    # Enrollments
-    published_courses = [french_b2.id, spanish_a2.id, ielts.id, mandarin.id]
-    for cid in random.sample(published_courses, 3):
-        db.add(Enrollment(student_id=stu.id, course_id=cid, completion_pct=random.uniform(20, 90), enrolled_at=datetime.utcnow() - timedelta(days=random.randint(10, 80))))
+    for cid in random.sample([fr.id, es.id, ielts.id, zh.id], 3):
+        db.add(Enrollment(
+            student_id=stu.id, course_id=cid,
+            completion_pct=random.uniform(20, 85),
+            enrolled_at=datetime.utcnow() - timedelta(days=random.randint(10, 80)),
+        ))
     db.commit()
 
-    # Payments
-    enrolls = db.query(Enrollment).filter(Enrollment.student_id == stu.id).all()
-    for e in enrolls:
-        course = db.query(Course).filter(Course.id == e.course_id).first()
-        if course:
-            db.add(Payment(user_id=stu.id, course_id=course.id, amount=course.price, method=random.choice(["Card", "Mobile", "PayPal"]), status="completed", created_at=e.enrolled_at))
+    for e in db.query(Enrollment).filter(Enrollment.student_id == stu.id).all():
+        c = db.query(Course).filter(Course.id == e.course_id).first()
+        if c:
+            db.add(Payment(
+                user_id=stu.id, course_id=c.id, amount=c.price,
+                method=random.choice(["Card", "Mobile", "PayPal"]),
+                status="completed", created_at=e.enrolled_at,
+            ))
     db.commit()
 
-    # Monthly Revenue (platform-wide)
-    months_data = [(2025,3,32000),(2025,4,38000),(2025,5,41000),(2025,6,44000),(2025,7,39000),(2025,8,42000),(2025,9,48000),(2025,10,51000),(2025,11,46000),(2025,12,53000),(2026,1,58000),(2026,2,61000),(2026,3,92400)]
-    for yr, mo, gross in months_data:
-        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7,2), instructor_id=None))
-
-    # Monthly Revenue (instructor)
-    ins_months = [(2025,3,2800),(2025,4,3200),(2025,5,3600),(2025,6,3900),(2025,7,3400),(2025,8,3700),(2025,9,4200),(2025,10,4500),(2025,11,4100),(2025,12,4700),(2026,1,5100),(2026,2,5400),(2026,3,6114)]
-    for yr, mo, gross in ins_months:
-        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7,2), instructor_id=ins.id))
+    # ── Revenue ────────────────────────────────────────────────────────────
+    for yr, mo, gross in [
+        (2025,3,32000),(2025,4,38000),(2025,5,41000),(2025,6,44000),
+        (2025,7,39000),(2025,8,42000),(2025,9,48000),(2025,10,51000),
+        (2025,11,46000),(2025,12,53000),(2026,1,58000),(2026,2,61000),(2026,3,92400),
+    ]:
+        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7, 2)))
+    for yr, mo, gross in [
+        (2025,3,2800),(2025,4,3200),(2025,5,3600),(2025,6,3900),
+        (2025,7,3400),(2025,8,3700),(2025,9,4200),(2025,10,4500),
+        (2025,11,4100),(2025,12,4700),(2026,1,5100),(2026,2,5400),(2026,3,6114),
+    ]:
+        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7, 2), instructor_id=ins.id))
     db.commit()
 
-    # Payouts
-    payouts = [
-        Payout(instructor_id=ins.id, amount=2996, status=PayoutStatusEnum.pending, reference="#PAY-0042", requested_at=datetime.utcnow()),
-        Payout(instructor_id=ins.id, amount=3240, status=PayoutStatusEnum.paid, reference="#PAY-0038", requested_at=datetime.utcnow()-timedelta(days=29), paid_at=datetime.utcnow()-timedelta(days=24)),
-        Payout(instructor_id=ins.id, amount=2780, status=PayoutStatusEnum.paid, reference="#PAY-0031", requested_at=datetime.utcnow()-timedelta(days=61), paid_at=datetime.utcnow()-timedelta(days=56)),
-    ]
-    for p in payouts: db.add(p)
+    # ── Payouts ────────────────────────────────────────────────────────────
+    for amt, status, ref, days_ago, paid_ago in [
+        (2996, PayoutStatusEnum.pending, "#PAY-0042", 0,  None),
+        (3240, PayoutStatusEnum.paid,    "#PAY-0038", 29, 24),
+        (2780, PayoutStatusEnum.paid,    "#PAY-0031", 61, 56),
+    ]:
+        db.add(Payout(
+            instructor_id=ins.id, amount=amt, status=status, reference=ref,
+            requested_at=datetime.utcnow() - timedelta(days=days_ago),
+            paid_at=datetime.utcnow() - timedelta(days=paid_ago) if paid_ago else None,
+        ))
     db.commit()
 
-    # Reviews
-    reviews = [
-        Review(student_id=stu.id, course_id=french_b2.id, rating=5, comment="Absolutely the best French course I've found online. The live sessions are gold.", reply="Thank you! Your dedication makes teaching so rewarding.", created_at=datetime.utcnow()-timedelta(days=2)),
-        Review(student_id=stu.id, course_id=spanish_a2.id, rating=4, comment="Great course structure. Would love more speaking exercises.", created_at=datetime.utcnow()-timedelta(days=7)),
-    ]
-    for r in reviews: db.add(r)
+    # ── Reviews ────────────────────────────────────────────────────────────
+    db.add(Review(student_id=stu.id, course_id=fr.id, rating=5,
+        comment="Absolutely the best French course I've found online. The live sessions are gold.",
+        reply="Thank you! Your dedication makes teaching so rewarding.",
+        created_at=datetime.utcnow() - timedelta(days=2)))
+    db.add(Review(student_id=stu.id, course_id=es.id, rating=4,
+        comment="Great course structure. Would love more speaking exercises.",
+        created_at=datetime.utcnow() - timedelta(days=7)))
     db.commit()
 
-    # Messages
-    messages = [
-        Message(sender_id=stu.id, receiver_id=ins.id, content="Bonjour! I watched the subjunctive lesson — very clear. When is the next live session?", created_at=datetime.utcnow()-timedelta(hours=3)),
-        Message(sender_id=ins.id, receiver_id=stu.id, content="The next session is today at 2PM — see it in your dashboard. See you there! 🎉", created_at=datetime.utcnow()-timedelta(hours=2, minutes=50)),
-        Message(sender_id=stu.id, receiver_id=ins.id, content="Perfect! Also, is there a cheat sheet for the irregular verbs in lesson 3?", is_read=False, created_at=datetime.utcnow()-timedelta(hours=2, minutes=30)),
-    ]
-    for m in messages: db.add(m)
+    # ── Messages ───────────────────────────────────────────────────────────
+    for sid, rid, content, hrs, read in [
+        (stu.id, ins.id, "Bonjour! I watched the subjunctive lesson — very clear. When is the next live session?", 3,    True),
+        (ins.id, stu.id, "The next session is today at 2PM — see it in your dashboard. See you there! 🎉",          2.83, True),
+        (stu.id, ins.id, "Perfect! Also, is there a cheat sheet for the irregular verbs in lesson 3?",              2.5,  False),
+    ]:
+        db.add(Message(sender_id=sid, receiver_id=rid, content=content,
+                       is_read=read, created_at=datetime.utcnow() - timedelta(hours=hrs)))
     db.commit()
 
-    # Notifications
-    notifications = [
-        Notification(title="Platform maintenance — March 10", message="Scheduled maintenance on March 10 from 02:00-04:00 UTC. Expect brief downtime.", target="all", sent_at=datetime.utcnow()-timedelta(days=1), recipients=28441, read_rate=84.0),
-        Notification(title="New instructor verification process", message="We've updated our instructor verification process. Please review the new requirements.", target="instructors", sent_at=datetime.utcnow()-timedelta(days=2), recipients=312, read_rate=71.0),
-        Notification(title="IELTS course collection launched", message="Explore our new IELTS preparation courses from top instructors.", target="students", sent_at=datetime.utcnow()-timedelta(days=6), recipients=24820, read_rate=61.0),
-    ]
-    for n in notifications: db.add(n)
+    # ── Notifications ──────────────────────────────────────────────────────
+    for title, msg, target, days_ago, recipients, read_rate, ntype in [
+        ("Platform maintenance — March 10",
+         "Scheduled maintenance on March 10 from 02:00–04:00 UTC. Expect brief downtime.",
+         "all", 1, 28441, 84.0, "notification"),
+        ("New instructor verification process",
+         "We've updated our instructor verification process. Please review the new requirements.",
+         "instructors", 2, 312, 71.0, "notification"),
+        ("IELTS course collection launched",
+         "Explore our new IELTS preparation courses from top instructors.",
+         "students", 6, 24820, 61.0, "announcement"),
+    ]:
+        db.add(Notification(title=title, message=msg, target=target,
+                            sent_at=datetime.utcnow() - timedelta(days=days_ago),
+                            recipients=recipients, read_rate=read_rate, notif_type=ntype))
     db.commit()
 
-    # Audit Logs
-    adm = db.query(User).filter(User.email == "ngabo470@gmail.com").first()
-    logs = [
-        AuditLog(admin_id=adm.id, action_type="COURSE", description='Admin approved course "IELTS Writing Mastery"', created_at=datetime.utcnow()-timedelta(hours=1)),
-        AuditLog(admin_id=None, action_type="SYSTEM", description="System auto-flagged: CDN latency breach · +340ms above threshold", created_at=datetime.utcnow()-timedelta(hours=2)),
-        AuditLog(admin_id=None, action_type="SYSTEM", description="PULSE Engine re-evaluated learners — classification updated", created_at=datetime.utcnow()-timedelta(hours=3)),
-        AuditLog(admin_id=None, action_type="SYSTEM", description="System health check passed · API ONLINE · DB HEALTHY", created_at=datetime.utcnow()-timedelta(hours=4)),
-        AuditLog(admin_id=adm.id, action_type="USER", description="Admin verified instructor j.niyongabo@alustudent.com", created_at=datetime.utcnow()-timedelta(days=1)),
-    ]
-    for l in logs: db.add(l)
+    # ── Audit Logs ─────────────────────────────────────────────────────────
+    adm = db.query(User).filter(User.email == "c.okafor@fluentfusion.com").first()
+    for atype, desc, hrs in [
+        ("COURSE", 'Admin approved course "IELTS Writing Mastery"', 1),
+        ("SYSTEM", "System auto-flagged: CDN latency breach · +340ms above threshold", 2),
+        ("SYSTEM", "PULSE Engine re-evaluated learners — classification updated", 3),
+        ("SYSTEM", "System health check passed · API ONLINE · DB HEALTHY", 4),
+        ("USER",   "Admin verified instructor a.ndiaye@ff.com", 25),
+    ]:
+        db.add(AuditLog(
+            admin_id=adm.id if atype != "SYSTEM" else None,
+            action_type=atype, description=desc,
+            created_at=datetime.utcnow() - timedelta(hours=hrs),
+        ))
     db.commit()
 
-    # Reports
-    reports = [
-        Report(report_type="HARASSMENT", content="Community post by User_4421: [Offensive content targeting ethnic background...]", status="open", created_at=datetime.utcnow()-timedelta(days=2)),
-        Report(report_type="SPAM", content="Quiz answer reported as incorrect on French B2 Lesson 12 — 8 students flagged", status="open", created_at=datetime.utcnow()-timedelta(hours=6)),
-        Report(report_type="CONTENT", content="IELTS Writing Lesson 7 — vocabulary list appears to contain outdated exam terms", status="open", created_at=datetime.utcnow()-timedelta(hours=12)),
-        Report(report_type="SPAM", content="User repeatedly posting promotional links in course comments", status="resolved", created_at=datetime.utcnow()-timedelta(days=3)),
-        Report(report_type="HARASSMENT", content="Instructor received threatening messages from student account", status="resolved", created_at=datetime.utcnow()-timedelta(days=5)),
-    ]
-    for r in reports: db.add(r)
+    # ── Reports ────────────────────────────────────────────────────────────
+    for rtype, content, status, days_ago in [
+        ("HARASSMENT", "Community post by User_4421: [Offensive content targeting ethnic background...]", "open", 2),
+        ("SPAM",       "Quiz answer reported as incorrect on French B2 Lesson 12 — 8 students flagged",  "open", 0.25),
+        ("CONTENT",    "IELTS Writing Lesson 7 — vocabulary list appears to contain outdated exam terms","open", 0.5),
+        ("SPAM",       "User repeatedly posting promotional links in course comments",                    "resolved", 3),
+        ("HARASSMENT", "Instructor received threatening messages from student account",                   "resolved", 5),
+    ]:
+        db.add(Report(reporter_id=stu.id, report_type=rtype, content=content,
+                      status=status, created_at=datetime.utcnow() - timedelta(days=days_ago)))
     db.commit()
 
     print("✅ Seed complete!")
-    print(f"  Admin: 1")
+    print(f"  Admins:      {db.query(User).filter(User.role==RoleEnum.admin).count()}")
     print(f"  Instructors: {db.query(User).filter(User.role==RoleEnum.instructor).count()}")
-    print(f"  Students: {db.query(User).filter(User.role==RoleEnum.student).count()}")
-    print(f"  Courses: {db.query(Course).count()}")
+    print(f"  Students:    {db.query(User).filter(User.role==RoleEnum.student).count()}")
+    print(f"  Courses:     {db.query(Course).count()} ({db.query(Course).filter(Course.status=='published').count()} published)")
+    print(f"  Modules:     {db.query(Module).count()}")
+    print(f"  Lessons:     {db.query(Lesson).count()}")
     print(f"  Enrollments: {db.query(Enrollment).count()}")
-    print(f"  Payments: {db.query(Payment).count()}")
     print()
     print("Login credentials:")
-    print("  Admin:      ngabo470@gmail.com / Admin@123")
-    print("  Instructor: j.niyongabo@alustudent.com / Instructor@123")
-    print("  Student:    ngabo7834@gmail.com / Student@123")
+    print("  Admin:      c.okafor@fluentfusion.com  / admin123")
+    print("  Instructor: a.ndiaye@ff.com             / instructor123")
+    print("  Student:    k.larbi@gmail.com           / student123")
 
 if __name__ == "__main__":
     seed()
