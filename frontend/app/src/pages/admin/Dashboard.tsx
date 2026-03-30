@@ -3,6 +3,7 @@ import api from '../../api/client'
 import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
 import LiveSessionBanner from '../../components/LiveSessionBanner'
+import { AlertTriangle, BarChart2, BookOpen, Flame, Frown, Meh, Moon, Rocket, Users } from 'lucide-react'
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
@@ -50,11 +51,11 @@ export default function AdminDashboard() {
 
       {/* KPI row */}
       <div className="sr sr5" style={{ marginBottom: 16 }}>
-        <StatCard label="Total Users"      value={dash.total_users?.toLocaleString()}                        deltaUp />
-        <StatCard label="Students"         value={dash.total_students?.toLocaleString()}                    deltaUp variant="in" />
-        <StatCard label="Platform Revenue" value={`$${(dash.total_revenue / 1000).toFixed(1)}k`}            deltaUp variant="ok" />
-        <StatCard label="Active Courses"   value={dash.active_courses}                                      deltaUp variant="in" />
-        <StatCard label="Pending Actions"  value={(dash.pending_payouts ?? 0) + (dash.open_reports ?? 0) + (dash.pending_courses ?? 0)} sub={`${dash.pending_courses ?? 0} courses · ${dash.pending_payouts ?? 0} payouts · ${dash.open_reports ?? 0} reports`} variant={(dash.pending_payouts ?? 0) + (dash.open_reports ?? 0) + (dash.pending_courses ?? 0) > 0 ? 'wa' : undefined} />
+        <StatCard label="Total Users"      value={dash.total_users?.toLocaleString()}                        deltaUp icon={<Users size={16} />} />
+        <StatCard label="Students"         value={dash.total_students?.toLocaleString()}                    deltaUp variant="in" icon={<BookOpen size={16} />} />
+        <StatCard label="Platform Revenue" value={`$${(dash.total_revenue / 1000).toFixed(1)}k`}            deltaUp variant="ok" icon={<BarChart2 size={16} />} />
+        <StatCard label="Active Courses"   value={dash.active_courses}                                      deltaUp variant="in" icon={<BookOpen size={16} />} />
+        <StatCard label="Pending Actions"  value={(dash.pending_payouts ?? 0) + (dash.open_reports ?? 0) + (dash.pending_courses ?? 0)} sub={`${dash.pending_courses ?? 0} courses · ${dash.pending_payouts ?? 0} payouts · ${dash.open_reports ?? 0} reports`} icon={<AlertTriangle size={16} />} variant={(dash.pending_payouts ?? 0) + (dash.open_reports ?? 0) + (dash.pending_courses ?? 0) > 0 ? 'wa' : undefined} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           {grossBars.length > 0
-            ? <BarChart bars={grossBars} dual={netBars} />
+            ? <BarChart bars={grossBars} dual={netBars} legend={['Gross', 'Net']} unit="$" height={130} />
             : <div style={{ textAlign: 'center', padding: 24, color: 'var(--mu)', fontSize: 12, fontFamily: 'JetBrains Mono' }}>No revenue data yet</div>
           }
         </div>
@@ -92,11 +93,11 @@ export default function AdminDashboard() {
             : (
               <div className="gr">
                 {([
-                  ['🚀 Thriving',    pd.thriving,    'var(--ok)'],
-                  ['😐 Coasting',    pd.coasting,    'var(--in)'],
-                  ['😓 Struggling',  pd.struggling,  'var(--wa)'],
-                  ['🔥 Burning Out', pd.burning_out, '#FF8C00'],
-                  ['💤 Disengaged',  pd.disengaged,  'var(--er)'],
+                  ['Thriving',    pd.thriving,    'var(--ok)'],
+                  ['Coasting',    pd.coasting,    'var(--in)'],
+                  ['Struggling',  pd.struggling,  'var(--wa)'],
+                  ['Burning Out', pd.burning_out, '#FF8C00'],
+                  ['Disengaged',  pd.disengaged,  'var(--er)'],
                 ] as [string, number, string][]).map(([label, val, color]) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 10, color: 'var(--mu)', width: 84, flexShrink: 0 }}>{label}</span>

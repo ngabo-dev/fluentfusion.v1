@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
 import { useAuth } from '../../components/AuthContext'
+import { Trash2, X } from 'lucide-react'
 
 export default function Admins() {
   const { user: me } = useAuth()
   const [admins, setAdmins] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const load = () => api.get('/api/admin/admins').then(r => setAdmins(Array.isArray(r.data) ? r.data : [])).catch(() => {})
+  const load = () => { setLoading(true); api.get('/api/admin/admins').then(r => setAdmins(Array.isArray(r.data) ? r.data : [])).catch(() => {}).finally(() => setLoading(false)) }
   useEffect(() => { load() }, [])
 
   async function deleteAdmin(id: number) {
@@ -39,6 +41,8 @@ export default function Admins() {
 
   const superAdmins = admins.filter((a: any) => a.role === 'super_admin')
   const regularAdmins = admins.filter((a: any) => a.role === 'admin')
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -92,7 +96,7 @@ export default function Admins() {
                   <td>
                     {/* Super admin is never deletable; only super_admin can delete others */}
                     {!isSuperAdmin && me?.role === 'super_admin' && (
-                      <button className="btn bd sm" onClick={() => deleteAdmin(a.id)}>🗑️ Remove</button>
+                      <button className="btn bd sm" onClick={() => deleteAdmin(a.id)}><Trash2 size={16} />️ Remove</button>
                     )}
                   </td>
                 </tr>
@@ -111,7 +115,7 @@ export default function Admins() {
           <div style={{ background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 14, width: 420, padding: 28, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 16, textTransform: 'uppercase' }}>New Admin</div>
-              <button className="btn bg sm" onClick={() => { setModal(false); setError('') }}>✕</button>
+              <button className="btn bg sm" onClick={() => { setModal(false); setError('') }}><X size={16} /></button>
             </div>
             {error && <div className="alr ac">{error}</div>}
             <div className="fg">

@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/client'
+import { BookOpen, Video, HelpCircle, Banknote, MessageSquare, Bell } from 'lucide-react'
 
 function getIcon(title: string) {
   const t = title?.toLowerCase() ?? ''
-  if (t.includes('course') || t.includes('approved') || t.includes('rejected')) return '📚'
-  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return '🎙️'
-  if (t.includes('quiz')) return '📝'
-  if (t.includes('payment') || t.includes('payout')) return '💰'
-  if (t.includes('message')) return '💬'
-  return '🔔'
+  if (t.includes('course') || t.includes('approved') || t.includes('rejected')) return <BookOpen size={16} />
+  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return <Video size={16} />
+  if (t.includes('quiz')) return <HelpCircle size={16} />
+  if (t.includes('payment') || t.includes('payout')) return <Banknote size={16} />
+  if (t.includes('message')) return <MessageSquare size={16} />
+  return <Bell size={16} />
 }
 
 function timeAgo(dateStr: string) {
@@ -24,13 +25,19 @@ function timeAgo(dateStr: string) {
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/api/instructor/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
+    api.get('/api/instructor/notifications')
+      .then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
     api.post('/api/instructor/notifications/mark-read').catch(() => {})
   }, [])
 
   const unread = notifs.filter(n => !n.is_read).length
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -57,7 +64,8 @@ export default function Notifications() {
               width: 38, height: 38, borderRadius: 10, flexShrink: 0,
               background: !n.is_read ? 'rgba(191,255,0,.1)' : 'rgba(255,255,255,.05)',
               border: `1px solid ${!n.is_read ? 'rgba(191,255,0,.2)' : 'rgba(255,255,255,.08)'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: !n.is_read ? 'var(--neon)' : 'var(--mu)',
             }}>
               {getIcon(n.title)}
             </div>
@@ -71,16 +79,12 @@ export default function Notifications() {
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--neon)', flexShrink: 0, display: 'inline-block' }} />
                 )}
               </div>
-
               <div style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
                 {n.message}
                 {n.link && (
-                  <> — <Link to={n.link} style={{ color: 'var(--neon)', textDecoration: 'underline', fontWeight: 600 }}>
-                    View →
-                  </Link></>
+                  <> — <Link to={n.link} style={{ color: 'var(--neon)', textDecoration: 'underline', fontWeight: 600 }}>View →</Link></>
                 )}
               </div>
-
               <div style={{ fontSize: 10, color: 'var(--mu2)', fontFamily: 'JetBrains Mono', marginTop: 5 }}>
                 {timeAgo(n.sent_at)}
               </div>

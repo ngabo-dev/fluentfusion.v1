@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
 import api from '../api/client'
+import { AlertTriangle, Camera, MessageSquare, Mic, Monitor, Square, Users, Video, VolumeX, X } from 'lucide-react'
 
 const WS_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api')
   .replace(/\/api$/, '')
@@ -284,20 +285,20 @@ export default function MeetingRoom() {
         <div style={{ textAlign: 'center', maxWidth: 440, padding: 40 }}>
           {error ? (
             <>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+              <div style={{ fontSize: 48, marginBottom: 16 }}><AlertTriangle size={16} />️</div>
               <div style={{ color: '#FF4444', fontSize: 15, marginBottom: 24 }}>{error}</div>
               <button onClick={() => nav(-1)} style={{ padding: '12px 28px', borderRadius: 10, background: '#1f1f1f', border: '1px solid #2a2a2a', color: '#fff', cursor: 'pointer', fontSize: 14 }}>← Go Back</button>
             </>
           ) : meeting ? (
             <>
-              <div style={{ width: 64, height: 64, background: 'rgba(191,255,0,0.1)', border: '1px solid rgba(191,255,0,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 20px' }}>📹</div>
+              <div style={{ width: 64, height: 64, background: 'rgba(191,255,0,0.1)', border: '1px solid rgba(191,255,0,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 20px' }}><Video size={16} /></div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>{meeting.title}</div>
               <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>Hosted by {meeting.host_name}</div>
               <div style={{ fontSize: 12, color: '#555', marginBottom: 32, fontFamily: "'JetBrains Mono', monospace" }}>
                 {new Date(meeting.scheduled_at).toLocaleString()}
               </div>
               <div style={{ background: '#151515', border: '1px solid #2a2a2a', borderRadius: 12, padding: 16, marginBottom: 24, fontSize: 13, color: '#888' }}>
-                📷 Camera and microphone will be requested when you join.
+                <Camera size={16} /> Camera and microphone will be requested when you join.
               </div>
               <button onClick={joinRoom}
                 style={{ width: '100%', padding: '14px', borderRadius: 10, background: '#BFFF00', color: '#0a0a0a', fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>
@@ -368,10 +369,10 @@ export default function MeetingRoom() {
               {(['chat', 'people'] as const).map(p => (
                 <button key={p} onClick={() => setPanel(p)}
                   style={{ flex: 1, padding: '12px', background: 'none', border: 'none', color: panel === p ? '#BFFF00' : '#555', fontWeight: panel === p ? 700 : 400, fontSize: 13, cursor: 'pointer', borderBottom: panel === p ? '2px solid #BFFF00' : '2px solid transparent' }}>
-                  {p === 'chat' ? '💬 Chat' : '👥 People'}
+                  {p === 'chat' ? 'Chat' : 'People'}
                 </button>
               ))}
-              <button onClick={() => setPanel(null)} style={{ padding: '12px 14px', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16 }}>✕</button>
+              <button onClick={() => setPanel(null)} style={{ padding: '12px 14px', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16 }}><X size={16} /></button>
             </div>
 
             {panel === 'chat' && (
@@ -412,16 +413,16 @@ export default function MeetingRoom() {
 
       {/* Controls bar */}
       <div style={{ height: 72, background: '#111', borderTop: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexShrink: 0 }}>
-        <CtrlBtn icon={audioOn ? '🎙️' : '🔇'} label={audioOn ? 'Mute' : 'Unmute'} active={!audioOn} onClick={toggleAudio} />
-        <CtrlBtn icon={videoOn ? '📹' : '📷'} label={videoOn ? 'Stop Video' : 'Start Video'} active={!videoOn} onClick={toggleVideo} />
-        <CtrlBtn icon="🖥️" label={screenSharing ? 'Stop Share' : 'Share Screen'} active={screenSharing} onClick={toggleScreenShare} />
-        <CtrlBtn icon="💬" label="Chat" active={panel === 'chat'} onClick={() => setPanel(p => p === 'chat' ? null : 'chat')} />
-        <CtrlBtn icon="👥" label="People" active={panel === 'people'} onClick={() => setPanel(p => p === 'people' ? null : 'people')} />
+        <CtrlBtn icon={audioOn ? <Mic size={16} /> : <VolumeX size={16} />} label={audioOn ? 'Mute' : 'Unmute'} active={!audioOn} onClick={toggleAudio} />
+        <CtrlBtn icon={videoOn ? <Video size={16} /> : <Camera size={16} />} label={videoOn ? 'Stop Video' : 'Start Video'} active={!videoOn} onClick={toggleVideo} />
+        <CtrlBtn icon="️" label={screenSharing ? 'Stop Share' : 'Share Screen'} active={screenSharing} onClick={toggleScreenShare} />
+        <CtrlBtn icon=<MessageSquare size={16} /> label="Chat" active={panel === 'chat'} onClick={() => setPanel(p => p === 'chat' ? null : 'chat')} />
+        <CtrlBtn icon=<Users size={16} /> label="People" active={panel === 'people'} onClick={() => setPanel(p => p === 'people' ? null : 'people')} />
         <div style={{ width: 1, height: 36, background: '#2a2a2a', margin: '0 4px' }} />
         {isHost ? (
           <button onClick={endMeeting} disabled={ending}
             style={{ padding: '10px 20px', borderRadius: 10, background: '#FF4444', border: 'none', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            ⏹ End for All
+            <Square size={16} /> End for All
           </button>
         ) : (
           <button onClick={leaveMeeting}
@@ -456,7 +457,7 @@ function VideoTile({ label, initials, videoRef, audioOn, videoOn, isLocal, strea
       )}
       <div style={{ position: 'absolute', bottom: 8, left: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ background: 'rgba(0,0,0,0.6)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{label}</span>
-        {!audioOn && <span style={{ background: 'rgba(255,68,68,0.8)', borderRadius: 6, padding: '2px 6px', fontSize: 11 }}>🔇</span>}
+        {!audioOn && <span style={{ background: 'rgba(255,68,68,0.8)', borderRadius: 6, padding: '2px 6px', fontSize: 11 }}><VolumeX size={16} /></span>}
       </div>
     </div>
   )
@@ -482,7 +483,7 @@ function RemoteVideoTile({ peer }: { peer: Peer }) {
       )}
       <div style={{ position: 'absolute', bottom: 8, left: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ background: 'rgba(0,0,0,0.6)', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{peer.name}</span>
-        {!peer.audio && <span style={{ background: 'rgba(255,68,68,0.8)', borderRadius: 6, padding: '2px 6px', fontSize: 11 }}>🔇</span>}
+        {!peer.audio && <span style={{ background: 'rgba(255,68,68,0.8)', borderRadius: 6, padding: '2px 6px', fontSize: 11 }}><VolumeX size={16} /></span>}
       </div>
     </div>
   )
@@ -506,8 +507,8 @@ function PersonRow({ name, initials, audio, video, isHost }: { name: string; ini
         {isHost && <div style={{ fontSize: 10, color: '#BFFF00', fontFamily: "'JetBrains Mono', monospace" }}>HOST</div>}
       </div>
       <div style={{ display: 'flex', gap: 4 }}>
-        <span style={{ fontSize: 13, opacity: audio ? 1 : 0.3 }}>🎙️</span>
-        <span style={{ fontSize: 13, opacity: video ? 1 : 0.3 }}>📹</span>
+        <span style={{ fontSize: 13, opacity: audio ? 1 : 0.3 }}><Mic size={16} /></span>
+        <span style={{ fontSize: 13, opacity: video ? 1 : 0.3 }}><Video size={16} /></span>
       </div>
     </div>
   )

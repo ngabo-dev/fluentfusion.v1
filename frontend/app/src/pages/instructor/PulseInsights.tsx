@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
+import { Brain, Flame, Frown, Meh, Moon, Rocket } from 'lucide-react'
 
 export default function PulseInsights() {
   const [data, setData] = useState<any>(null)
@@ -11,13 +12,13 @@ export default function PulseInsights() {
   const total = data.total || 1
   const atRisk = (pd.burning_out ?? 0) + (pd.disengaged ?? 0)
 
-  const states = [
-    ['🚀 Thriving', pd.thriving ?? 0, 'var(--ok)', 'ok'],
-    ['😐 Coasting', pd.coasting ?? 0, 'var(--in)', 'in'],
-    ['😓 Struggling', pd.struggling ?? 0, 'var(--wa)', 'wa'],
-    ['🔥 Burning Out', pd.burning_out ?? 0, '#FF8C00', ''],
-    ['💤 Disengaged', pd.disengaged ?? 0, 'var(--er)', 'er'],
-  ] as const
+  const states: [React.ReactNode, number, string, string][] = [
+    [<><Rocket size={14} /> Thriving</>,    pd.thriving    ?? 0, 'var(--ok)', 'ok'],
+    [<><Meh size={14} /> Coasting</>,       pd.coasting    ?? 0, 'var(--in)', 'in'],
+    [<><Frown size={14} /> Struggling</>,   pd.struggling  ?? 0, 'var(--wa)', 'wa'],
+    [<><Flame size={14} /> Burning Out</>,  pd.burning_out ?? 0, '#FF8C00',   ''],
+    [<><Moon size={14} /> Disengaged</>,    pd.disengaged  ?? 0, 'var(--er)', 'er'],
+  ]
 
   // Heatmap
   const colors = ['#00FF7F','#00CFFF','#FFB800','#FF8C00','#FF4444']
@@ -72,7 +73,7 @@ export default function PulseInsights() {
         </div>
       </div>
       <div className="card">
-        <div className="ch"><span className="ch-t">🧠 PULSE Heatmap</span><span className="ch-a">Details →</span></div>
+        <div className="ch"><span className="ch-t"><Brain size={16} /> PULSE Heatmap</span><span className="ch-a">Details →</span></div>
         <p style={{ fontSize: 10, color: 'var(--mu)', marginBottom: 10 }}>Each cell = 1 student · Hover for state · Color = PULSE state</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 10 }}>
           {cells.map((s, i) => (

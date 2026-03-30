@@ -7,7 +7,12 @@ const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
 export default function Revenue() {
   const [data, setData] = useState<any>(null)
-  useEffect(() => { api.get('/api/admin/revenue').then(r => setData(r.data)) }, [])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    api.get('/api/admin/revenue').then(r => setData(r.data)).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <div className="pgload" />
   if (!data) return <div className="loading" />
 
   const monthly = data.monthly ?? []
@@ -29,8 +34,7 @@ export default function Revenue() {
       <div className="g21">
         <div className="card">
           <div className="ch"><span className="ch-t">Monthly Revenue Breakdown</span></div>
-          <div className="cl"><div className="li"><div className="ld" style={{ background: 'var(--neon)' }} />Gross</div><div className="li"><div className="ld" style={{ background: 'var(--in)' }} />Net</div></div>
-          <BarChart bars={grossBars} dual={netBars} />
+          <BarChart bars={grossBars} dual={netBars} legend={['Gross', 'Net']} unit="$" height={130} />
         </div>
         <div className="card">
           <div className="ch"><span className="ch-t">By Language</span></div>

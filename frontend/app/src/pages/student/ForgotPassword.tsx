@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authApi } from '../../api/client'
+import { AlertTriangle, Check, KeyRound } from 'lucide-react'
 
 export default function ForgotPassword() {
   const nav = useNavigate()
@@ -35,7 +36,7 @@ export default function ForgotPassword() {
         <div style={{ width: 420, background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 'var(--rl)', padding: '40px 40px 36px' }}>
           <button onClick={() => nav('/login')} style={{ background: 'none', border: 'none', color: 'var(--mu)', fontSize: 13, cursor: 'pointer', marginBottom: 24, padding: 0 }}>← Back to Login</button>
 
-          <div style={{ width: 56, height: 56, background: 'rgba(191,255,0,.1)', border: '1px solid rgba(191,255,0,.2)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 20 }}>🔑</div>
+          <div style={{ width: 56, height: 56, background: 'rgba(191,255,0,.1)', border: '1px solid rgba(191,255,0,.2)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 20 }}><KeyRound size={16} /></div>
 
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>
             Forgot<br /><span style={{ color: 'var(--neon)' }}>Password</span>
@@ -44,8 +45,8 @@ export default function ForgotPassword() {
             No worries! Enter your email and we'll send you reset instructions.
           </p>
 
-          {err && <div style={{ background: 'rgba(255,68,68,.08)', border: '1px solid rgba(255,68,68,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--er)', fontSize: 13, marginBottom: 16 }}>⚠ {err}</div>}
-          {msg && <div style={{ background: 'rgba(0,255,127,.08)', border: '1px solid rgba(0,255,127,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--ok)', fontSize: 13, marginBottom: 16 }}>✓ {msg}</div>}
+          {err && <div style={{ background: 'rgba(255,68,68,.08)', border: '1px solid rgba(255,68,68,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--er)', fontSize: 13, marginBottom: 16 }}><AlertTriangle size={16} /> {err}</div>}
+          {msg && <div style={{ background: 'rgba(0,255,127,.08)', border: '1px solid rgba(0,255,127,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--ok)', fontSize: 13, marginBottom: 16 }}><Check size={16} /> {msg}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="fg">

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { FileText, FlaskConical, Mic, Video } from 'lucide-react'
 
-const LESSON_ICONS: any = { video: '📹', text: '📄', quiz: '🧪', live: '🎙️' }
+const LESSON_ICONS: any = { video: <Video size={16} />, text: <FileText size={16} />, quiz: <FlaskConical size={16} />, live: <Mic size={16} /> }
 
 export default function Lessons() {
   const [courses, setCourses] = useState<any[]>([])
@@ -57,7 +58,7 @@ export default function Lessons() {
               <div key={l.id} className={`li2${selectedLesson?.id === l.id ? ' active' : ''}`} onClick={() => selectLesson(l)}>
                 <span className="lnum">{String(i + 1).padStart(2, '0')}</span>
                 <span className="ln">{l.title}</span>
-                <span className="lt">{LESSON_ICONS[l.lesson_type] || '📄'}</span>
+                <span className="lt">{LESSON_ICONS[l.lesson_type] || <FileText size={16} />}</span>
               </div>
             ))}
           </div>

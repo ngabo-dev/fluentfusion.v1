@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/client'
+import { Bell, BookOpen, DollarSign, MessageSquare, Mic, User } from 'lucide-react'
 
 function getIcon(title: string) {
   const t = title?.toLowerCase() ?? ''
-  if (t.includes('course') || t.includes('submitted') || t.includes('approved') || t.includes('rejected')) return '📚'
-  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return '🎙️'
-  if (t.includes('payment') || t.includes('payout')) return '💰'
-  if (t.includes('user') || t.includes('registered')) return '👤'
-  if (t.includes('message')) return '💬'
-  return '🔔'
+  if (t.includes('course') || t.includes('submitted') || t.includes('approved') || t.includes('rejected')) return <BookOpen size={16} />
+  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return <Mic size={16} />
+  if (t.includes('payment') || t.includes('payout')) return <DollarSign size={16} />
+  if (t.includes('user') || t.includes('registered')) return <User size={16} />
+  if (t.includes('message')) return <MessageSquare size={16} />
+  return <Bell size={16} />
 }
 
 function timeAgo(dateStr: string) {
@@ -24,13 +25,16 @@ function timeAgo(dateStr: string) {
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/api/admin/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
+    setLoading(true); api.get('/api/admin/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : [])).catch(() => {}).finally(() => setLoading(false))
     api.post('/api/admin/notifications/mark-read').catch(() => {})
   }, [])
 
   const unread = notifs.filter(n => !n.is_read).length
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">

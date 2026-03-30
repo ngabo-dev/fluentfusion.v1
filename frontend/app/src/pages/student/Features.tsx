@@ -1,13 +1,14 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BarChart2, Bot, Brain, Check, Globe, Smartphone, Trophy, Video } from 'lucide-react'
 
 const features = [
-  { icon: '🤖', title: 'AI Personalization', tag: 'SMART LEARNING', desc: 'Our AI engine analyzes your learning patterns, strengths, and weaknesses to build a fully personalized curriculum that adapts in real time.', bullets: ['Adaptive difficulty scaling', 'Personalized vocabulary lists', 'Smart review scheduling (SRS)', 'Learning style detection'] },
-  { icon: '🎥', title: 'Live Sessions', tag: 'REAL-TIME PRACTICE', desc: 'Join live classes hosted by certified native-speaker instructors. Practice speaking, get instant feedback, and build real conversational confidence.', bullets: ['Daily live classes', 'Small group sessions (max 12)', '1-on-1 tutoring available', 'Session recordings included'] },
-  { icon: '🏆', title: 'Gamification', tag: 'STAY MOTIVATED', desc: 'Learning a language is a marathon. Our gamification system keeps you engaged with daily challenges, streaks, XP points, and competitive leaderboards.', bullets: ['Daily streak tracking', 'XP & level progression', 'Achievement badges', 'Global leaderboards'] },
-  { icon: '🌍', title: 'Global Community', tag: 'LEARN TOGETHER', desc: 'Connect with millions of learners worldwide. Practice writing, get corrections, share tips, and make friends who speak the language you\'re learning.', bullets: ['Discussion forums by language', 'Peer correction system', 'Language exchange matching', 'Cultural insights & tips'] },
-  { icon: '📊', title: 'Progress Analytics', tag: 'TRACK EVERYTHING', desc: 'Detailed analytics give you a clear picture of your progress. Know exactly where you stand, what to focus on, and how fast you\'re improving.', bullets: ['Fluency score tracking', 'Skill breakdown charts', 'Weekly progress reports', 'PULSE wellness insights'] },
-  { icon: '📱', title: 'Learn Anywhere', tag: 'MOBILE FIRST', desc: 'FluentFusion works seamlessly across all your devices. Download lessons for offline use and keep your streak alive even without internet.', bullets: ['iOS & Android apps', 'Offline lesson downloads', 'Cross-device sync', 'Dark mode support'] },
+  { icon: <Bot size={16} />, title: 'AI Personalization', tag: 'SMART LEARNING', desc: 'Our AI engine analyzes your learning patterns, strengths, and weaknesses to build a fully personalized curriculum that adapts in real time.', bullets: ['Adaptive difficulty scaling', 'Personalized vocabulary lists', 'Smart review scheduling (SRS)', 'Learning style detection'] },
+  { icon: <Video size={16} />, title: 'Live Sessions', tag: 'REAL-TIME PRACTICE', desc: 'Join live classes hosted by certified native-speaker instructors. Practice speaking, get instant feedback, and build real conversational confidence.', bullets: ['Daily live classes', 'Small group sessions (max 12)', '1-on-1 tutoring available', 'Session recordings included'] },
+  { icon: <Trophy size={16} />, title: 'Gamification', tag: 'STAY MOTIVATED', desc: 'Learning a language is a marathon. Our gamification system keeps you engaged with daily challenges, streaks, XP points, and competitive leaderboards.', bullets: ['Daily streak tracking', 'XP & level progression', 'Achievement badges', 'Global leaderboards'] },
+  { icon: <Globe size={16} />, title: 'Global Community', tag: 'LEARN TOGETHER', desc: 'Connect with millions of learners worldwide. Practice writing, get corrections, share tips, and make friends who speak the language you\'re learning.', bullets: ['Discussion forums by language', 'Peer correction system', 'Language exchange matching', 'Cultural insights & tips'] },
+  { icon: '<BarChart2 size={16} />', title: 'Progress Analytics', tag: 'TRACK EVERYTHING', desc: 'Detailed analytics give you a clear picture of your progress. Know exactly where you stand, what to focus on, and how fast you\'re improving.', bullets: ['Fluency score tracking', 'Skill breakdown charts', 'Weekly progress reports', 'PULSE wellness insights'] },
+  { icon: <Smartphone size={16} />, title: 'Learn Anywhere', tag: 'MOBILE FIRST', desc: 'FluentFusion works seamlessly across all your devices. Download lessons for offline use and keep your streak alive even without internet.', bullets: ['iOS & Android apps', 'Offline lesson downloads', 'Cross-device sync', 'Dark mode support'] },
 ]
 
 export default function Features() {
@@ -19,7 +20,7 @@ export default function Features() {
       {/* NAV */}
       <nav style={{ height: 66, background: 'rgba(10,10,10,0.95)', borderBottom: '1px solid #2a2a2a', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
         <a onClick={() => nav('/')} style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', cursor: 'pointer' }}>
-          <div style={{ width: 38, height: 38, background: '#BFFF00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧠</div>
+          <div style={{ width: 38, height: 38, background: '#BFFF00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}><Brain size={16} /></div>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#fff' }}>
             FLUENT<span style={{ color: '#BFFF00' }}>FUSION</span>
           </div>
@@ -66,7 +67,7 @@ export default function Features() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {f.bullets.map(b => (
                   <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#ccc' }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(0,255,127,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#00FF7F', flexShrink: 0 }}>✓</div>
+                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(0,255,127,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#00FF7F', flexShrink: 0 }}><Check size={16} /></div>
                     {b}
                   </div>
                 ))}

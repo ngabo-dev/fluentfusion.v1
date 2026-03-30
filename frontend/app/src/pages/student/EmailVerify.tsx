@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { authApi } from '../../api/client'
+import { AlertTriangle, Check, Mail } from 'lucide-react'
 
 export default function EmailVerify() {
   const nav = useNavigate()
@@ -90,7 +91,7 @@ export default function EmailVerify() {
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
         <div style={{ width: 460, background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 'var(--rl)', padding: '44px 44px 40px', textAlign: 'center' }}>
-          <div style={{ width: 72, height: 72, background: 'rgba(191,255,0,.1)', border: '1px solid rgba(191,255,0,.2)', borderRadius: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}>📧</div>
+          <div style={{ width: 72, height: 72, background: 'rgba(191,255,0,.1)', border: '1px solid rgba(191,255,0,.2)', borderRadius: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 24px' }}><Mail size={16} /></div>
 
           <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8 }}>
             Check Your<br /><span style={{ color: 'var(--neon)' }}>Email</span>
@@ -98,8 +99,8 @@ export default function EmailVerify() {
           <p style={{ fontSize: 14, color: 'var(--mu)', marginBottom: 8, lineHeight: 1.6 }}>We sent a verification code to</p>
           <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg)', marginBottom: 28 }}>{email || 'your email'}</p>
 
-          {err && <div style={{ background: 'rgba(255,68,68,.08)', border: '1px solid rgba(255,68,68,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--er)', fontSize: 13, marginBottom: 16 }}>⚠ {err}</div>}
-          {success && <div style={{ background: 'rgba(0,255,127,.08)', border: '1px solid rgba(0,255,127,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--ok)', fontSize: 13, marginBottom: 16 }}>✓ {success}</div>}
+          {err && <div style={{ background: 'rgba(255,68,68,.08)', border: '1px solid rgba(255,68,68,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--er)', fontSize: 13, marginBottom: 16 }}><AlertTriangle size={16} /> {err}</div>}
+          {success && <div style={{ background: 'rgba(0,255,127,.08)', border: '1px solid rgba(0,255,127,.2)', borderRadius: 'var(--r)', padding: '10px 14px', color: 'var(--ok)', fontSize: 13, marginBottom: 16 }}><Check size={16} /> {success}</div>}
 
           {/* OTP boxes */}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 28 }}>

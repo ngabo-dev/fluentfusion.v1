@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
 import Avatar from '../../components/Avatar'
+import { Star } from 'lucide-react'
 
 export default function Reviews() {
   const [data, setData] = useState<any>(null)
@@ -22,7 +23,7 @@ export default function Reviews() {
     <div className="pg">
       <div className="ph"><div><h1>Reviews</h1><p>Student feedback across all your courses</p></div></div>
       <div className="sr">
-        <StatCard label="Overall Rating" value={data.avg_rating || '—'} sub="★★★★★" />
+        <StatCard label="Overall Rating" value={data.avg_rating || '—'} sub="<Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} />" />
         <StatCard label="Total Reviews" value={data.total} sub="Across all courses" />
         <StatCard label="5-Star Reviews" value={dist[5] || 0} sub={`${Math.round((dist[5]||0)/Math.max(data.total,1)*100)}% of total`} variant="ok" />
         <StatCard label="Last 30 Days" value={data.reviews?.filter((r: any) => new Date(r.created_at) > new Date(Date.now() - 30*86400000)).length || 0} sub="New reviews" variant="in" />
@@ -36,7 +37,7 @@ export default function Reviews() {
             const colors = ['var(--neon)','var(--ok)','var(--wa)','#FF8C00','var(--er)']
             return (
               <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <span style={{ fontSize: 10, color: 'var(--wa)', width: 22 }}>★{star}</span>
+                <span style={{ fontSize: 10, color: 'var(--wa)', width: 22 }}><Star size={16} />{star}</span>
                 <div style={{ flex: 1, height: 5, background: 'var(--bdr)', borderRadius: 99 }}><div style={{ width: `${pct}%`, height: '100%', background: colors[5-star], borderRadius: 99 }} /></div>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--mu)', width: 24, textAlign: 'right' }}>{count}</span>
               </div>
@@ -50,7 +51,7 @@ export default function Reviews() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9 }}>
               <Avatar initials={r.avatar_initials || r.student.slice(0,2).toUpperCase()} />
               <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 600 }}>{r.student}</div><div style={{ fontSize: 10, color: 'var(--mu)' }}>{r.course} · {r.created_at?.slice(0,10)}</div></div>
-              <span style={{ color: 'var(--wa)' }}>{'★'.repeat(r.rating)}{'☆'.repeat(5-r.rating)}</span>
+              <span style={{ color: 'var(--wa)' }}>{<Star size={16} />.repeat(r.rating)}{<Star size={16} />.repeat(5-r.rating)}</span>
             </div>
             <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--mu)', marginBottom: 9 }}>"{r.comment}"</p>
             {r.reply ? (

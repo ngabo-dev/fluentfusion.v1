@@ -34,6 +34,9 @@ export default function Signup() {
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [agreeTerms, setAgreeTerms] = useState(false)
+  const [agreePrivacy, setAgreePrivacy] = useState(false)
+  const [agreePulse, setAgreePulse] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
   const roleRef = useRef(role)
   useEffect(() => { roleRef.current = role }, [role])
@@ -57,7 +60,7 @@ export default function Signup() {
     if (googleBtnRef.current) {
       googleBtnRef.current.innerHTML = ''
       ;(window as any).google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: 'filled_black', size: 'large', width: 400, text: 'continue_with',
+        theme: 'filled_black', size: 'large', width: 280, text: 'continue_with',
       })
     }
   }
@@ -74,8 +77,9 @@ export default function Signup() {
       const res = await api.post('/api/auth/google', { credential: response.credential, role: roleRef.current })
       const { access_token, role: userRole, name: userName, id, is_first_login } = res.data
       loginWithToken(access_token, { role: userRole, name: userName, id })
-      if (is_first_login && userRole === 'student') nav('/onboard/native-language')
+      if (userRole === 'admin' || userRole === 'super_admin') nav('/admin')
       else if (userRole === 'instructor') nav('/instructor')
+      else if (is_first_login) nav('/onboard/native-language')
       else nav('/dashboard')
     } catch (e: any) {
       setErr(e.response?.data?.detail || 'Google sign-in failed')
@@ -91,8 +95,12 @@ export default function Signup() {
     const pwErr = validatePassword(pw)
     if (pwErr) return setErr(pwErr)
     setLoading(true)
+    if (!agreeTerms || !agreePrivacy) return setErr('You must accept the Terms and Privacy Policy to continue.')
     try {
       const res = await register(name, email, pw, role)
+      // Store pending consents — will be recorded after email verification + login
+      const pendingConsents = ['terms_and_conditions', 'privacy_policy', ...(agreePulse ? ['pulse_automated_processing'] : [])]
+      localStorage.setItem('ff_pending_consents', JSON.stringify(pendingConsents))
       setSuccess(`Account created! Welcome, ${res?.user?.name || name}. Check your email for a verification code.`)
       localStorage.setItem('verification_email', email)
       nav('/verify-email')
@@ -225,6 +233,31 @@ export default function Signup() {
                 </div>
               </div>
 
+              {/* Consent Checkboxes */}
+              <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#ccc', lineHeight: 1.5 }}>
+                  <input type="checkbox" checked={agreeTerms} onChange={e => setAgreeTerms(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: '#BFFF00', flexShrink: 0 }} />
+                  <span>I have read and agree to the{' '}
+                    <a href="/terms" target="_blank" rel="noreferrer" style={{ color: '#BFFF00', textDecoration: 'none' }}>Terms and Conditions</a>{' '}*
+                  </span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#ccc', lineHeight: 1.5 }}>
+                  <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: '#BFFF00', flexShrink: 0 }} />
+                  <span>I have read and agree to the{' '}
+                    <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#BFFF00', textDecoration: 'none' }}>Privacy Policy</a>{' '}*
+                  </span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#ccc', lineHeight: 1.5 }}>
+                  <input type="checkbox" checked={agreePulse} onChange={e => setAgreePulse(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: '#BFFF00', flexShrink: 0 }} />
+                  <span>I consent to{' '}
+                    <a href="/pulse-disclosure" target="_blank" rel="noreferrer" style={{ color: '#BFFF00', textDecoration: 'none' }}>PULSE automated processing</a>{' '}of my learning behaviour (optional)
+                  </span>
+                </label>
+              </div>
+
               {success && (
                 <div style={{ background: 'rgba(0,255,127,0.08)', border: '1px solid rgba(0,255,127,0.25)', borderRadius: 8, padding: '8px 12px', color: '#00FF7F', fontSize: 13, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Check size={16} /> {success}
@@ -236,7 +269,7 @@ export default function Signup() {
                 </div>
               )}
 
-              <button type="submit" disabled={loading}
+              <button type="submit" disabled={loading || !agreeTerms || !agreePrivacy}
                 style={{ width: '100%', padding: '15px 36px', borderRadius: 10, fontFamily: "'DM Sans', sans-serif", fontSize: 16, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', border: 'none', background: '#BFFF00', color: '#0a0a0a', marginTop: 8, opacity: loading ? 0.7 : 1, transition: 'all .18s' }}>
                 {loading ? 'Creating account...' : 'Create Free Account →'}
               </button>
@@ -252,25 +285,25 @@ export default function Signup() {
             {/* Social buttons */}
             {GOOGLE_CLIENT_ID ? (
               <>
-                <div ref={googleBtnRef} style={{ width: '100%', marginBottom: 6, opacity: googleLoading ? 0.6 : 1 }} />
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, opacity: googleLoading ? 0.6 : 1 }}>
+                  <div ref={googleBtnRef} />
+                </div>
                 <div style={{ fontSize: 11, color: '#555', textAlign: 'center', marginBottom: 10, fontFamily: "'JetBrains Mono', monospace" }}>
                   Will sign up as <span style={{ color: role === 'instructor' ? '#BFFF00' : '#00FF7F' }}>{role}</span> — change above if needed
                 </div>
               </>
             ) : (
-              <div style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff', marginBottom: 10 }}>
+              <button type="button" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', maxWidth: 280, margin: '0 auto 10px', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', color: '#fff' }}>
                 <GoogleIcon /> Continue with Google
-              </div>
+              </button>
             )}
-            <div style={{ width: '100%', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 500, cursor: 'not-allowed', color: '#555', marginBottom: 10 }}
+            <button type="button" disabled style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', maxWidth: 280, margin: '0 auto 10px', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 500, cursor: 'not-allowed', color: '#555' }}
               title="Apple Sign-In coming soon">
               <AppleIcon /> Continue with Apple
-            </div>
+            </button>
 
-            <p style={{ fontSize: 12, color: '#888', textAlign: 'center', marginTop: 20 }}>
-              By signing up you agree to our{' '}
-              <a href="#" style={{ color: '#BFFF00', textDecoration: 'none' }}>Terms</a> and{' '}
-              <a href="#" style={{ color: '#BFFF00', textDecoration: 'none' }}>Privacy Policy</a>
+            <p style={{ fontSize: 11, color: '#555', textAlign: 'center', marginTop: 20 }}>
+              * Required. Consents are recorded and manageable in your Data &amp; Privacy dashboard.
             </p>
           </div>
         </div>

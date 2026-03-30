@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Check, X } from 'lucide-react'
 
 const deck = [
   { front: 'Muraho',    back: 'Hello',        example: '"Muraho" is used as a general greeting' },
@@ -85,9 +86,9 @@ export default function Flashcards() {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <button onClick={markSkip} title="Skip" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,68,68,0.12)', color: '#FF4444', border: 'none', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button onClick={markSkip} title="Skip" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,68,68,0.12)', color: '#FF4444', border: 'none', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} /></button>
           <button onClick={() => setFlipped(f => !f)} title="Flip" style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(191,255,0,0.08)', color: 'var(--neon)', border: '1px solid rgba(191,255,0,0.2)', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↻</button>
-          <button onClick={markKnow} title="I know this" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,255,127,0.12)', color: '#00FF7F', border: 'none', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
+          <button onClick={markKnow} title="I know this" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(0,255,127,0.12)', color: '#00FF7F', border: 'none', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={16} /></button>
         </div>
 
         <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
@@ -119,7 +120,7 @@ export default function Flashcards() {
           >
             <span>{d.front}</span>
             <span style={{ fontSize: 12, color: known.has(i) ? '#00FF7F' : i === idx ? 'var(--neon)' : 'var(--mu)' }}>
-              {known.has(i) ? '✓' : i === idx ? '→' : '·'}
+              {known.has(i) ? <Check size={16} /> : i === idx ? '→' : '·'}
             </span>
           </div>
         ))}

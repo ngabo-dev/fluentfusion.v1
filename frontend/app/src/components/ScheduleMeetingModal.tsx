@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import api from '../api/client'
+import { AlertTriangle, BookOpen, Calendar, Check, ClipboardList, Globe, GraduationCap, User, X } from 'lucide-react'
 
 interface Props {
   onClose: () => void
@@ -77,11 +78,11 @@ export default function ScheduleMeetingModal({ onClose, onCreated, courses = [] 
   }
 
   const audienceOptions = [
-    { value: 'individual', label: '👤 Specific People' },
-    { value: 'course', label: '📚 Course Students' },
-    { value: 'all_students', label: '🎓 All Students' },
-    { value: 'all_instructors', label: '📋 All Instructors' },
-    { value: 'everyone', label: '🌍 Everyone' },
+    { value: 'individual', label: 'Specific People' },
+    { value: 'course', label: 'Course Students' },
+    { value: 'all_students', label: 'All Students' },
+    { value: 'all_instructors', label: 'All Instructors' },
+    { value: 'everyone', label: 'Everyone' },
   ]
 
   return (
@@ -89,12 +90,12 @@ export default function ScheduleMeetingModal({ onClose, onCreated, courses = [] 
       <div style={modal}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 800, textTransform: 'uppercase' }}>
-            📅 Schedule <span style={{ color: '#BFFF00' }}>Session</span>
+            <Calendar size={16} /> Schedule <span style={{ color: '#BFFF00' }}>Session</span>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}><X size={16} /></button>
         </div>
 
-        {err && <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '8px 12px', color: '#FF4444', fontSize: 13, marginBottom: 16 }}>⚠ {err}</div>}
+        {err && <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '8px 12px', color: '#FF4444', fontSize: 13, marginBottom: 16 }}><AlertTriangle size={16} /> {err}</div>}
 
         <form onSubmit={submit}>
           <div style={{ marginBottom: 16 }}>
@@ -161,7 +162,7 @@ export default function ScheduleMeetingModal({ onClose, onCreated, courses = [] 
                           <div style={{ fontSize: 13, fontWeight: 500 }}>{c.name}</div>
                           <div style={{ fontSize: 11, color: '#666' }}>{c.role} · {c.email}</div>
                         </div>
-                        {isSelected && <span style={{ color: '#BFFF00', fontSize: 16 }}>✓</span>}
+                        {isSelected && <span style={{ color: '#BFFF00', fontSize: 16 }}><Check size={16} /></span>}
                       </div>
                     )
                   })}
@@ -172,7 +173,7 @@ export default function ScheduleMeetingModal({ onClose, onCreated, courses = [] 
                   {selected.map(s => (
                     <span key={s.id} style={{ background: 'rgba(191,255,0,0.1)', border: '1px solid rgba(191,255,0,0.3)', borderRadius: 99, padding: '3px 10px', fontSize: 12, color: '#BFFF00', display: 'flex', alignItems: 'center', gap: 6 }}>
                       {s.name}
-                      <span onClick={() => toggleContact(s)} style={{ cursor: 'pointer', opacity: 0.7 }}>✕</span>
+                      <span onClick={() => toggleContact(s)} style={{ cursor: 'pointer', opacity: 0.7 }}><X size={16} /></span>
                     </span>
                   ))}
                 </div>
@@ -182,7 +183,7 @@ export default function ScheduleMeetingModal({ onClose, onCreated, courses = [] 
 
           <button type="submit" disabled={loading}
             style={{ width: '100%', padding: '13px', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', border: 'none', background: '#BFFF00', color: '#0a0a0a', opacity: loading ? 0.7 : 1, marginTop: 8 }}>
-            {loading ? 'Scheduling...' : '📅 Schedule Session'}
+            {loading ? 'Scheduling...' : 'Schedule Session'}
           </button>
         </form>
       </div>

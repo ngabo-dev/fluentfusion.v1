@@ -1,17 +1,26 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { BookOpen, CheckCircle2, Flame, Trophy } from 'lucide-react'
 
 export default function Quizzes() {
   const [quizzes, setQuizzes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<any>(null)
   const [score, setScore] = useState<number | null>(null)
-  useEffect(() => { api.get('/api/student/quizzes').then(r => setQuizzes(r.data)) }, [])
+  useEffect(() => {
+    api.get('/api/student/quizzes')
+      .then(r => setQuizzes(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   function startQuiz(q: any) { setActive(q); setScore(null) }
   function submitQuiz() {
     const s = Math.floor(Math.random() * 30) + 65
     setScore(s)
   }
+
+  if (!active && loading) return <div className="pgload" />
 
   if (active) return (
     <div className="pg">
@@ -22,10 +31,10 @@ export default function Quizzes() {
       {score !== null ? (
         <div style={{ maxWidth: 480, margin: '40px auto', textAlign: 'center' }}>
           <div className="card">
-            <div style={{ fontSize: 64, marginBottom: 16 }}>{score >= 80 ? '🏆' : score >= 60 ? '✅' : '📚'}</div>
+            <div style={{ fontSize: 64, marginBottom: 16 }}>{score >= 80 ? <Trophy size={16} /> : score >= 60 ? '<CheckCircle2 size={16} />' : <BookOpen size={16} />}</div>
             <div style={{ fontFamily: 'Syne', fontSize: 32, fontWeight: 800, color: score >= 80 ? 'var(--ok)' : score >= 60 ? 'var(--neon)' : 'var(--wa)', marginBottom: 8 }}>{score}%</div>
             <div style={{ fontSize: 14, color: 'var(--mu)', marginBottom: 24 }}>
-              {score >= 80 ? 'Excellent work! 🔥' : score >= 60 ? 'Good job! Keep going.' : 'Keep practicing — you\'ll get there!'}
+              {score >= 80 ? 'Excellent work! <Flame size={16} />' : score >= 60 ? 'Good job! Keep going.' : 'Keep practicing — you\'ll get there!'}
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               <button className="btn bp" onClick={() => setScore(null)}>Retry Quiz</button>

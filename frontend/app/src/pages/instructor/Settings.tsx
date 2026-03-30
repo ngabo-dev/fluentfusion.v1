@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
 import PasswordStrength, { validatePassword } from '../../components/PasswordStrength'
+import { AlertTriangle, Bell, Check, CreditCard, Globe, Lock, Mail, User } from 'lucide-react'
 
 export default function Settings() {
   const [profile, setProfile] = useState<any>(null)
   const [form, setForm] = useState({ name: '', bio: '' })
-  const [activeSection, setActiveSection] = useState('👤 Profile')
+  const [activeSection, setActiveSection] = useState('Profile')
   const [profilePw, setProfilePw] = useState('')
   const [profileMsg, setProfileMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [emailForm, setEmailForm] = useState({ new_email: '', password: '' })
@@ -65,11 +66,11 @@ export default function Settings() {
 
   const msgBox = (m: { ok: boolean; text: string }) => (
     <div style={{ background: m.ok ? 'rgba(0,255,127,0.08)' : 'rgba(255,68,68,0.08)', border: `1px solid ${m.ok ? 'rgba(0,255,127,0.25)' : 'rgba(255,68,68,0.2)'}`, borderRadius: 8, padding: '8px 12px', color: m.ok ? '#00FF7F' : '#FF4444', fontSize: 13, marginBottom: 14 }}>
-      {m.ok ? '✓' : '⚠'} {m.text}
+      {m.ok ? <Check size={16} /> : <AlertTriangle size={16} />} {m.text}
     </div>
   )
 
-  const sections = ['👤 Profile', '📧 Email', '🔒 Security', '🔔 Notification Preferences', '💳 Payment Details', '🌐 Public Profile']
+  const sections = ['Profile', 'Email', 'Security', 'Notification Preferences', 'Payment Details', 'Public Profile']
 
   return (
     <div className="pg">
@@ -81,7 +82,7 @@ export default function Settings() {
           ))}
         </div>
         <div className="card">
-          {activeSection === '👤 Profile' && (
+          {activeSection === 'Profile' && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid var(--bdr)' }}>
                 <Avatar initials={profile.avatar_initials || profile.name.slice(0,2).toUpperCase()} size="l" />
@@ -104,7 +105,7 @@ export default function Settings() {
               <button className="btn bp" onClick={saveProfile}>Save Changes</button>
             </>
           )}
-          {activeSection === '📧 Email' && (
+          {activeSection === 'Email' && (
             <>
               <div style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 16 }}>Current email: <b style={{ color: 'var(--fg)' }}>{profile.email}</b></div>
               {emailMsg && msgBox(emailMsg)}
@@ -114,17 +115,17 @@ export default function Settings() {
               <div style={{ marginTop: 12, fontSize: 11, color: 'var(--mu)', lineHeight: 1.6 }}>A confirmation link will be sent to your new email. Your email only changes after you click it.</div>
             </>
           )}
-          {activeSection === '🔒 Security' && (
+          {activeSection === 'Security' && (
             <>
-              {pwErr && <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '8px 12px', color: '#FF4444', fontSize: 13, marginBottom: 14 }}>⚠ {pwErr}</div>}
-              {pwOk && <div style={{ background: 'rgba(0,255,127,0.08)', border: '1px solid rgba(0,255,127,0.25)', borderRadius: 8, padding: '8px 12px', color: '#00FF7F', fontSize: 13, marginBottom: 14 }}>✓ {pwOk}</div>}
+              {pwErr && <div style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.2)', borderRadius: 8, padding: '8px 12px', color: '#FF4444', fontSize: 13, marginBottom: 14 }}><AlertTriangle size={16} /> {pwErr}</div>}
+              {pwOk && <div style={{ background: 'rgba(0,255,127,0.08)', border: '1px solid rgba(0,255,127,0.25)', borderRadius: 8, padding: '8px 12px', color: '#00FF7F', fontSize: 13, marginBottom: 14 }}><Check size={16} /> {pwOk}</div>}
               <div className="fg"><label className="lbl">Current Password</label><input className="inp" type="password" placeholder="••••••••" value={pwForm.current} onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))} /></div>
               <div className="fg"><label className="lbl">New Password</label><input className="inp" type="password" placeholder="Min. 8 characters" value={pwForm.next} onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))} /><PasswordStrength password={pwForm.next} /></div>
               <div className="fg"><label className="lbl">Confirm New Password</label><input className="inp" type="password" placeholder="Repeat new password" value={pwForm.confirm} onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))} /></div>
               <button className="btn bp" onClick={changePassword}>Update Password</button>
             </>
           )}
-          {!(['👤 Profile', '📧 Email', '🔒 Security'].includes(activeSection)) && (
+          {!(['Profile', 'Email', 'Security'].includes(activeSection)) && (
             <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0' }}>Settings for {activeSection.replace(/^[^\s]+\s/, '')} — coming soon.</div>
           )}
         </div>

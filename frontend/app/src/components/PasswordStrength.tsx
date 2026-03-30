@@ -1,4 +1,5 @@
 import React from 'react'
+import { Check } from 'lucide-react'
 
 const checks = [
   { label: '8+ characters', test: (p: string) => p.length >= 8 },
@@ -32,7 +33,7 @@ export default function PasswordStrength({ password }: { password: string }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
         {checks.map(c => (
           <span key={c.label} style={{ fontSize: 11, color: c.test(password) ? '#00FF7F' : '#555', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {c.test(password) ? '✓' : '○'} {c.label}
+            {c.test(password) ? <Check size={16} /> : '○'} {c.label}
           </span>
         ))}
       </div>

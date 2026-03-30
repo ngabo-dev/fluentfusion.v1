@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { Eye, Pencil, Search, Trash2 } from 'lucide-react'
 
 export default function Quizzes() {
   const [quizzes, setQuizzes] = useState<any[]>([])
-  useEffect(() => { api.get('/api/instructor/quizzes').then(r => setQuizzes(r.data)) }, [])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    api.get('/api/instructor/quizzes')
+      .then(r => setQuizzes(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -12,7 +21,7 @@ export default function Quizzes() {
         <div className="pa"><button className="btn bp">+ Create Quiz</button></div>
       </div>
       <div className="ab">
-        <div className="sw"><span className="si2">🔍</span><input className="inp" placeholder="Search quizzes..." /></div>
+        <div className="sw"><span className="si2"><Search size={16} /></span><input className="inp" placeholder="Search quizzes..." /></div>
         <select className="sel" style={{ width: 'auto' }}><option>All Courses</option></select>
       </div>
       <div className="g3">
@@ -27,9 +36,9 @@ export default function Quizzes() {
             </div>
             <div className="pt" style={{ marginBottom: 10 }}><div className="pf" style={{ width: `${q.avg_score}%` }} /></div>
             <div style={{ display: 'flex', gap: 5 }}>
-              <button className="btn bo sm">✏️ Edit</button>
-              <button className="btn bg sm">👁️</button>
-              <button className="btn bd sm">🗑️</button>
+              <button className="btn bo sm"><Pencil size={16} />️ Edit</button>
+              <button className="btn bg sm"><Eye size={16} /></button>
+              <button className="btn bd sm"><Trash2 size={16} /></button>
             </div>
           </div>
         ))}

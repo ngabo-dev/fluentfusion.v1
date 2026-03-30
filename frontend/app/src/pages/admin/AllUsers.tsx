@@ -4,6 +4,7 @@ import api from '../../api/client'
 import Avatar from '../../components/Avatar'
 import Badge from '../../components/Badge'
 import { useAuth } from '../../components/AuthContext'
+import { Ban, CheckCircle2, Pencil, Search, Trash2, X } from 'lucide-react'
 
 function EditModal({ user, onClose, onSaved }: { user: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ name: user.name, email: user.email, role: user.role })
@@ -24,7 +25,7 @@ function EditModal({ user, onClose, onSaved }: { user: any; onClose: () => void;
       <div style={{ background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 14, padding: 24, width: 400, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 16 }}>Edit User</div>
-          <button className="btn bg sm" onClick={onClose}>✕</button>
+          <button className="btn bg sm" onClick={onClose}><X size={16} /></button>
         </div>
         {error && <div className="alr ac">{error}</div>}
         <div className="fg"><label className="lbl">Name</label><input className="inp" value={form.name} onChange={e => ff('name', e.target.value)} /></div>
@@ -49,6 +50,7 @@ function EditModal({ user, onClose, onSaved }: { user: any; onClose: () => void;
 export default function AllUsers() {
   const { user: me } = useAuth()
   const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
@@ -59,11 +61,11 @@ export default function AllUsers() {
     if (role) params.role = role
     if (status) params.status = status
     if (search) params.search = search
-    api.get('/api/admin/users', { params }).then(r => {
+    setLoading(true); api.get('/api/admin/users', { params }).then(r => {
       const data: any[] = r.data
       data.sort((a, b) => (b.id === me?.id ? 1 : 0) - (a.id === me?.id ? 1 : 0))
       setUsers(data)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }
 
   useEffect(() => { load() }, [role, status, search])
@@ -80,13 +82,15 @@ export default function AllUsers() {
   const roleBadge: any = { instructor: 'i', student: 'm', admin: 'e', super_admin: 'e' }
   const statusDot: any = { active: 'sd-a', banned: 'sd-b', pending: 'sd-p' }
 
+  if (loading) return <div className="pgload" />
+
   return (
     <div className="pg">
       <div className="ph">
         <div><h1>All Users</h1><p>{users.length} accounts shown</p></div>
       </div>
       <div className="ab">
-        <div className="sw"><span className="si2">🔍</span><input className="inp" placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="sw"><span className="si2"><Search size={16} /></span><input className="inp" placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} /></div>
         <select className="sel" style={{ width: 'auto' }} value={role} onChange={e => setRole(e.target.value)}>
           <option value="">All Roles</option><option value="student">Student</option><option value="instructor">Instructor</option><option value="admin">Admin</option>
         </select>
@@ -118,14 +122,14 @@ export default function AllUsers() {
               <td style={{ color: 'var(--mu)', fontFamily: 'JetBrains Mono', fontSize: 9 }}>{u.created_at?.slice(0,10)}</td>
               <td style={{ color: 'var(--mu)', fontFamily: 'JetBrains Mono', fontSize: 9 }}>{u.last_active?.slice(0,10)}</td>
               <td><div style={{ display: 'flex', gap: 4 }}>
-                <button className="btn bg sm" onClick={() => setEditing(u)}>✏️ Edit</button>
+                <button className="btn bg sm" onClick={() => setEditing(u)}><Pencil size={16} />️ Edit</button>
                 {u.id !== me?.id && (
                   u.status === 'banned'
-                    ? <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => updateStatus(u.id, 'active')}>✅ Unban</button>
-                    : <button className="btn bd sm" onClick={() => updateStatus(u.id, 'banned')}>🚫 Ban</button>
+                    ? <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => updateStatus(u.id, 'active')}><CheckCircle2 size={16} /> Unban</button>
+                    : <button className="btn bd sm" onClick={() => updateStatus(u.id, 'banned')}><Ban size={16} /> Ban</button>
                 )}
                 {u.id !== me?.id && u.role !== 'super_admin' && (
-                  <button className="btn bd sm" onClick={() => deleteUser(u)}>🗑</button>
+                  <button className="btn bd sm" onClick={() => deleteUser(u)}><Trash2 size={16} /></button>
                 )}
               </div></td>
             </tr>

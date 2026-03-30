@@ -21,16 +21,15 @@ export default function Revenue() {
         <div className="pa"><button className="btn bo sm">Export CSV</button></div>
       </div>
       <div className="sr">
-        <StatCard label="MTD Gross" value={`$${data.total_gross?.toLocaleString()}`} delta="↑ 8.4%" deltaUp />
+        <StatCard label="MTD Gross" value={`$${data.total_gross?.toLocaleString()}`} delta="8.4%" deltaUp />
         <StatCard label="MTD Net (70%)" value={`$${data.total_net?.toLocaleString()}`} sub="After platform fee" variant="ok" />
-        <StatCard label="YTD Net" value={`$${(data.total_net * 0.6).toFixed(0)}`} delta="↑ 14%" deltaUp variant="in" />
+        <StatCard label="YTD Net" value={`$${(data.total_net * 0.6).toFixed(0)}`} delta="14%" deltaUp variant="in" />
         <StatCard label="All-Time Net" value={`$${(data.total_net * 1.8).toFixed(0)}`} sub="Since joining" />
       </div>
       <div className="g21">
         <div className="card">
           <div className="ch"><span className="ch-t">Monthly Revenue</span></div>
-          <div className="cl"><div className="li"><div className="ld" style={{ background: 'var(--neon)' }} />Gross</div><div className="li"><div className="ld" style={{ background: 'var(--in)' }} />Net</div></div>
-          <BarChart bars={grossBars} dual={netBars} />
+          <BarChart bars={grossBars} dual={netBars} legend={['Gross', 'Net']} height={130} />
         </div>
         <div className="card">
           <div className="ch"><span className="ch-t">Earnings Summary</span></div>

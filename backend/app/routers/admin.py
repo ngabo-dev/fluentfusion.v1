@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, CourseSection, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, Lesson, Quiz, Notification, NotificationRead
+from app.models import get_db, User, Course, Module, Enrollment, Payment, Payout, LiveSession, MonthlyRevenue, RoleEnum, StatusEnum, CourseStatusEnum, Lesson, Quiz, Notification, NotificationRead, ModuleQuiz, QuizQuestion
 from app.auth import require_role, hash_password
 from app.pulse_predictor import predictor as pulse_predictor
 from app.notify import notify
@@ -118,15 +118,31 @@ def get_course(course_id: int, db: Session = Depends(get_db), _=Depends(guard)):
     c = db.query(Course).filter(Course.id == course_id).first()
     if not c: return {"error": "not found"}
     ins = db.query(User).filter(User.id == c.instructor_id).first()
-    sections = db.query(CourseSection).filter(CourseSection.course_id == c.id).order_by(CourseSection.order).all()
-    section_data = []
-    for s in sections:
-        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
-        section_data.append({"id": s.id, "title": s.title, "order": s.order,
+    modules = db.query(Module).filter(Module.course_id == c.id).order_by(Module.order).all()
+    module_data = []
+    for m in modules:
+        lessons = db.query(Lesson).filter(Lesson.module_id == m.id).order_by(Lesson.order).all()
+        quizzes = db.query(ModuleQuiz).filter(ModuleQuiz.module_id == m.id).order_by(ModuleQuiz.order).all()
+        quiz_data = []
+        for q in quizzes:
+            questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == q.id).order_by(QuizQuestion.order).all()
+            quiz_data.append({
+                "id": q.id, "title": q.title, "position": q.position, "passing_score": q.passing_score,
+                "time_limit_min": q.time_limit_min, "is_required": q.is_required, "order": q.order,
+                "questions": [{
+                    "id": qu.id, "question_text": qu.question_text, "question_type": qu.question_type,
+                    "options": qu.options, "correct_answer": qu.correct_answer, "explanation": qu.explanation,
+                    "points": qu.points, "order": qu.order
+                } for qu in questions]
+            })
+        module_data.append({
+            "id": m.id, "title": m.title, "description": m.description, "order": m.order,
             "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type,
                          "duration_min": l.duration_min, "description": l.description,
-                         "video_url": l.video_url, "is_preview": l.is_preview} for l in lessons]})
-    loose = db.query(Lesson).filter(Lesson.course_id == c.id, Lesson.section_id == None).order_by(Lesson.order).all()
+                         "video_url": l.video_url, "is_preview": l.is_preview} for l in lessons],
+            "quizzes": quiz_data
+        })
+    loose = db.query(Lesson).filter(Lesson.course_id == c.id, Lesson.module_id == None).order_by(Lesson.order).all()
     quizzes = db.query(Quiz).filter(Quiz.course_id == c.id).all()
     students = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
     total_lessons = db.query(Lesson).filter(Lesson.course_id == c.id).count()
@@ -140,7 +156,7 @@ def get_course(course_id: int, db: Session = Depends(get_db), _=Depends(guard)):
         "instructor": ins.name if ins else "", "instructor_email": ins.email if ins else "",
         "created_at": c.created_at, "submitted_at": c.submitted_at, "approved_at": c.approved_at,
         "students": students, "total_lessons": total_lessons,
-        "sections": section_data,
+        "modules": module_data,
         "loose_lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type,
                            "duration_min": l.duration_min, "description": l.description} for l in loose],
         "quizzes": [{"id": q.id, "title": q.title, "question_count": q.question_count, "avg_score": q.avg_score} for q in quizzes],
@@ -172,7 +188,10 @@ def update_course_status(course_id: int, body: dict, db: Session = Depends(get_d
     feedback = body.get("feedback", "").strip()
     admin_notes = body.get("admin_notes", "").strip()
 
-    course.status = new_status
+    try:
+        course.status = CourseStatusEnum(new_status)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {new_status}")
     if admin_notes: course.admin_notes = admin_notes
 
     instructor = db.query(User).filter(User.id == course.instructor_id).first()
@@ -337,29 +356,43 @@ def pulse_run(db: Session = Depends(get_db), _=Depends(guard)):
     db.commit()
     return {"updated": len(user_ids), "distribution": distribution}
 
+def _notifs_for_user(db: Session, user_id: int, role: str):
+    """Return notifications targeted at this specific user, their role, or 'all'."""
+    return (
+        db.query(Notification)
+        .filter(
+            Notification.notif_type == "notification",
+            Notification.target.in_([str(user_id), role, "admins", "all"])
+        )
+        .order_by(Notification.sent_at.desc())
+        .limit(100)
+        .all()
+    )
+
 # Notifications = system-generated event alerts (notif_type='notification')
 @router.get("/notifications")
 def list_notifications(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    notifs = db.query(Notification).filter(Notification.notif_type == "notification").order_by(Notification.sent_at.desc()).limit(100).all()
+    notifs = _notifs_for_user(db, current_user.id, str(current_user.role.value if hasattr(current_user.role, 'value') else current_user.role))
     read_ids = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
     return [{"id": n.id, "title": n.title, "message": n.message, "link": n.link, "sent_at": n.sent_at, "is_read": n.id in read_ids} for n in notifs]
 
 @router.get("/notifications/unread-count")
 def notifications_unread_count(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    total = db.query(Notification).filter(Notification.notif_type == "notification").count()
+    notifs = _notifs_for_user(db, current_user.id, str(current_user.role.value if hasattr(current_user.role, 'value') else current_user.role))
+    notif_ids = [n.id for n in notifs]
     read = db.query(NotificationRead).filter(
         NotificationRead.user_id == current_user.id,
-        NotificationRead.notification_id.in_(db.query(Notification.id).filter(Notification.notif_type == "notification"))
+        NotificationRead.notification_id.in_(notif_ids)
     ).count()
-    return {"count": max(0, total - read)}
+    return {"count": max(0, len(notif_ids) - read)}
 
 @router.post("/notifications/mark-read")
 def mark_notifications_read(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    notif_ids = [n.id for n in db.query(Notification.id).filter(Notification.notif_type == "notification").all()]
+    notifs = _notifs_for_user(db, current_user.id, str(current_user.role.value if hasattr(current_user.role, 'value') else current_user.role))
     existing = {r.notification_id for r in db.query(NotificationRead).filter(NotificationRead.user_id == current_user.id).all()}
-    for nid in notif_ids:
-        if nid not in existing:
-            db.add(NotificationRead(user_id=current_user.id, notification_id=nid))
+    for n in notifs:
+        if n.id not in existing:
+            db.add(NotificationRead(user_id=current_user.id, notification_id=n.id))
     db.commit()
     return {"ok": True}
 

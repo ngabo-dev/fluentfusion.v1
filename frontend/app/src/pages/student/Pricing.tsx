@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Brain, Check, Star } from 'lucide-react'
 
 const plans = [
   {
@@ -56,7 +57,7 @@ export default function Pricing() {
       {/* NAV */}
       <nav style={{ height: 66, background: 'rgba(10,10,10,0.95)', borderBottom: '1px solid #2a2a2a', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
         <a onClick={() => nav('/')} style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', cursor: 'pointer' }}>
-          <div style={{ width: 38, height: 38, background: '#BFFF00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧠</div>
+          <div style={{ width: 38, height: 38, background: '#BFFF00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}><Brain size={16} /></div>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#fff' }}>
             FLUENT<span style={{ color: '#BFFF00' }}>FUSION</span>
           </div>
@@ -99,7 +100,7 @@ export default function Pricing() {
             <div key={plan.tier} style={{ background: '#151515', border: `1px solid ${plan.popular ? '#BFFF00' : '#2a2a2a'}`, borderRadius: 20, padding: 32, position: 'relative', transition: 'all .2s', boxShadow: plan.popular ? '0 0 24px rgba(191,255,0,0.30), 0 0 48px rgba(191,255,0,0.14)' : 'none' }}>
               {plan.popular && (
                 <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#BFFF00', color: '#000', fontSize: 11, fontWeight: 700, padding: '4px 14px', borderRadius: 99, letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                  ⭐ Most Popular
+                  <Star size={16} /> Most Popular
                 </div>
               )}
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: plan.popular ? '#BFFF00' : '#888', marginBottom: 8 }}>{plan.tier}</div>
@@ -120,7 +121,7 @@ export default function Pricing() {
               {plan.features.map(f => (
                 <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', fontSize: 14, color: f.inc ? '#fff' : '#888', borderBottom: '1px solid rgba(42,42,42,0.4)' }}>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0, background: f.inc ? 'rgba(0,255,127,0.12)' : 'rgba(255,255,255,0.04)', color: f.inc ? '#00FF7F' : '#555' }}>
-                    {f.inc ? '✓' : '−'}
+                    {f.inc ? <Check size={16} /> : '−'}
                   </div>
                   {f.label}
                 </div>

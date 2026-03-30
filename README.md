@@ -12,7 +12,7 @@
 ---
 
 ## 📺 Demo Video
-▶️ [Watch the Demo Video](#)
+▶️ [Watch the Demo Video](https://drive.google.com/file/d/1Jmw5G3UtJNtFh7zO59kEKoAO31h9_hs4/view?usp=sharing)
 
 ## 🌐 Live App
 🚀 [Open the Live App](https://fluentfusionv1.vercel.app/)
@@ -225,14 +225,6 @@ cd frontend/app && npm run dev
 | API (production) | https://fluentfusion-v1.onrender.com |
 | Swagger Docs (production) | https://fluentfusion-v1.onrender.com/docs |
 
-### Demo Credentials
-
-| Role | Email | Password |
-|---|---|---|
-| Admin | c.okafor@fluentfusion.com | admin123 |
-| Instructor | a.ndiaye@ff.com | instructor123 |
-| Student | k.larbi@gmail.com | student123 |
-
 ---
 
 ## 🌐 API Overview
@@ -396,14 +388,6 @@ Onboarding data saved to DB on final step. Subsequent logins go directly to `/da
 ```
 /login → /admin  (pre-seeded accounts only)
 ```
-
----
-
-## 👤 Author
-
-**Jean Pierre Niyongabo**
-📧 j.niyongabo@alustudent.com
-🎓 African Leadership University — Capstone Project 2026
 
 ---
 

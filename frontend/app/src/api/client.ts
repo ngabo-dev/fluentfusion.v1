@@ -49,27 +49,13 @@ function resetInactivityTimer(): void {
   }, INACTIVITY_TIMEOUT_MS);
 }
 
-function setupInactivityListeners(): void {
+export function setupInactivityListeners(): void {
   // Reset timer on user activity
   const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
   events.forEach(event => {
     document.addEventListener(event, resetInactivityTimer, { passive: true });
   });
   resetInactivityTimer();
-}
-
-// Check auth and redirect if needed
-function checkAuthAndRedirect(): void {
-  const token = localStorage.getItem('ff_access_token');
-  const user = localStorage.getItem('ff_user');
-  
-  if (!token || !user || isTokenExpired()) {
-    authApi.logout();
-    // Only redirect if not already on login page
-    if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/login?reason=expired';
-    }
-  }
 }
 
 // Helper function for API calls
@@ -87,9 +73,9 @@ async function apiCall<T>(
     ...options,
   };
 
-  // Add auth token if available
-  const token = localStorage.getItem('ff_access_token');
-  
+  // Add auth token if available — check both storages
+  const token = localStorage.getItem('ff_access_token') || sessionStorage.getItem('ff_access_token');
+
   // Check if token is expired before making any request
   if (token && isTokenExpired()) {
     console.log('Token expired, logging out...');
@@ -171,7 +157,8 @@ export const authApi = {
     const form = new URLSearchParams();
     form.append('username', data.email);
     form.append('password', data.password);
-    const url = `${API_BASE_URL}/auth/login`;
+    const remember = data.remember !== false;
+    const url = `${API_BASE_URL}/auth/login?remember=${remember}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -197,10 +184,10 @@ export const authApi = {
 
   // Logout user
   logout: () => {
-    localStorage.removeItem('ff_access_token');
-    localStorage.removeItem('ff_refresh_token');
-    localStorage.removeItem('ff_user');
-    localStorage.removeItem('ff_token_expiry');
+    ['ff_access_token', 'ff_refresh_token', 'ff_user', 'ff_token_expiry'].forEach(k => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
     if (inactivityTimer) {
       clearTimeout(inactivityTimer);
       inactivityTimer = null;

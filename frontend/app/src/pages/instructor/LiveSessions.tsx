@@ -2,17 +2,21 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import ScheduleMeetingModal from '../../components/ScheduleMeetingModal'
+import { Circle, Crown, Play } from 'lucide-react'
 
 export default function LiveSessions() {
   const nav = useNavigate()
   const [meetings, setMeetings] = useState<any[]>([])
   const [courses, setCourses] = useState<any[]>([])
   const [showModal, setShowModal] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
 
   useEffect(() => {
-    api.get('/api/meetings').then(r => setMeetings(r.data)).catch(() => {})
-    api.get('/api/instructor/courses').then(r => setCourses(r.data)).catch(() => {})
+    Promise.all([
+      api.get('/api/meetings').then(r => setMeetings(r.data)).catch(() => {}),
+      api.get('/api/instructor/courses').then(r => setCourses(r.data)).catch(() => {}),
+    ]).finally(() => setLoading(false))
   }, [])
 
   async function cancel(roomId: string) {
@@ -26,10 +30,12 @@ export default function LiveSessions() {
   const past = meetings.filter(m => m.status === 'ended' || m.status === 'cancelled')
   const list = tab === 'upcoming' ? upcoming : past
 
+  if (loading) return <div className="pgload" />
+
   return (
     <div className="pg">
       <div className="ph">
-        <div><h1>Sessions & Meetings</h1><p>Schedule and manage your live sessions</p></div>
+        <div><h1>Sessions &amp; Meetings</h1><p>Schedule and manage your live sessions</p></div>
         <div className="pa"><button className="btn bp" onClick={() => setShowModal(true)}>+ Schedule Session</button></div>
       </div>
 
@@ -70,7 +76,7 @@ export default function LiveSessions() {
                   {isCancelled && <span className="bdg bk">Cancelled</span>}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--mu)' }}>
-                  {dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {m.duration_min} min · {m.invite_count} invited · {m.is_host ? '👑 You host' : `Host: ${m.host_name}`}
+                  {dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · {m.duration_min} min · {m.invite_count} invited · {m.is_host ? 'You host' : `Host: ${m.host_name}`}
                 </div>
                 {m.description && <div style={{ fontSize: 11, color: '#555', marginTop: 3 }}>{m.description}</div>}
               </div>
@@ -78,7 +84,7 @@ export default function LiveSessions() {
                 {!isCancelled && (
                   <>
                     <button className="btn bp sm" onClick={() => nav(`/meeting/${m.room_id}`)}>
-                      {isLive ? '🔴 Join' : '▶ Open'}
+                      {isLive ? 'Join' : 'Open'}
                     </button>
                     {m.is_host && tab === 'upcoming' && (
                       <button className="btn bg sm" onClick={() => cancel(m.room_id)}>Cancel</button>

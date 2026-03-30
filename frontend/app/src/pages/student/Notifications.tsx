@@ -1,21 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../api/client'
-
-const TYPE_ICON: Record<string, string> = {
-  course: '📚', session: '🎙️', quiz: '📝', payment: '💳',
-  achievement: '🏆', message: '💬', system: '⚙️',
-}
+import { BookOpen, Video, HelpCircle, CreditCard, Trophy, MessageSquare, Settings, Bell } from 'lucide-react'
 
 function getIcon(title: string) {
   const t = title?.toLowerCase() ?? ''
-  if (t.includes('course') || t.includes('approved') || t.includes('rejected')) return TYPE_ICON.course
-  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return TYPE_ICON.session
-  if (t.includes('quiz') || t.includes('test') || t.includes('due')) return TYPE_ICON.quiz
-  if (t.includes('payment') || t.includes('enroll')) return TYPE_ICON.payment
-  if (t.includes('achievement') || t.includes('xp') || t.includes('level')) return TYPE_ICON.achievement
-  if (t.includes('message') || t.includes('messaged')) return TYPE_ICON.message
-  return TYPE_ICON.system
+  if (t.includes('course') || t.includes('approved') || t.includes('rejected')) return <BookOpen size={16} />
+  if (t.includes('session') || t.includes('live') || t.includes('meeting')) return <Video size={16} />
+  if (t.includes('quiz') || t.includes('test')) return <HelpCircle size={16} />
+  if (t.includes('payment') || t.includes('enroll')) return <CreditCard size={16} />
+  if (t.includes('achievement') || t.includes('xp') || t.includes('level')) return <Trophy size={16} />
+  if (t.includes('message')) return <MessageSquare size={16} />
+  return <Bell size={16} />
 }
 
 function timeAgo(dateStr: string) {
@@ -30,13 +26,19 @@ function timeAgo(dateStr: string) {
 
 export default function Notifications() {
   const [notifs, setNotifs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    api.get('/api/student/notifications').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
+    api.get('/api/student/notifications')
+      .then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
     api.post('/api/student/notifications/mark-read').catch(() => {})
   }, [])
 
   const unread = notifs.filter(n => !n.is_read).length
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -60,17 +62,16 @@ export default function Notifications() {
             background: !n.is_read ? 'rgba(191,255,0,.03)' : 'transparent',
             transition: 'background .15s',
           }}>
-            {/* Icon */}
             <div style={{
               width: 38, height: 38, borderRadius: 10, flexShrink: 0,
               background: !n.is_read ? 'rgba(191,255,0,.1)' : 'rgba(255,255,255,.05)',
               border: `1px solid ${!n.is_read ? 'rgba(191,255,0,.2)' : 'rgba(255,255,255,.08)'}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: !n.is_read ? 'var(--neon)' : 'var(--mu)',
             }}>
               {getIcon(n.title)}
             </div>
 
-            {/* Content */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontSize: 13, fontWeight: !n.is_read ? 700 : 500, color: !n.is_read ? '#fff' : '#bbb' }}>
@@ -80,17 +81,12 @@ export default function Notifications() {
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--neon)', flexShrink: 0, display: 'inline-block' }} />
                 )}
               </div>
-
-              {/* Message with clickable link word */}
               <div style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
                 {n.message}
                 {n.link && (
-                  <> — <Link to={n.link} style={{ color: 'var(--neon)', textDecoration: 'underline', fontWeight: 600 }}>
-                    View →
-                  </Link></>
+                  <> — <Link to={n.link} style={{ color: 'var(--neon)', textDecoration: 'underline', fontWeight: 600 }}>View →</Link></>
                 )}
               </div>
-
               <div style={{ fontSize: 10, color: 'var(--mu2)', fontFamily: 'JetBrains Mono', marginTop: 5 }}>
                 {timeAgo(n.sent_at)}
               </div>

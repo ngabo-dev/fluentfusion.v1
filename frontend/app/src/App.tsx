@@ -2,6 +2,18 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './components/AuthContext'
 import { SidebarProvider, useSidebar } from './components/SidebarContext'
+import CookieBanner from './components/CookieBanner'
+
+// Legal pages
+import Terms from './pages/legal/Terms'
+import Privacy from './pages/legal/Privacy'
+import { Cookies, PulseDisclosure, Children } from './pages/legal/LegalPages'
+
+// Student Data Rights
+import DataRights from './pages/student/DataRights'
+
+// Admin Ethics
+import { EthicsOverview, EthicsDataRequests, EthicsProcessingRegister, EthicsChangeLog, EthicsPulseFairness, EthicsConsentVersions } from './pages/admin/Ethics'
 
 // Shared auth pages
 import Login from './pages/student/Login'
@@ -11,14 +23,17 @@ import ResetPassword from './pages/student/ResetPassword'
 import EmailVerify from './pages/student/EmailVerify'
 import ConfirmEmailChange from './pages/student/ConfirmEmailChange'
 import MeetingRoom from './pages/MeetingRoom'
+import PulseDemo from './pages/PulseDemo'
 import Pricing from './pages/student/Pricing'
 import Features from './pages/student/Features'
 import Community from './pages/student/Community'
 import Welcome from './pages/student/Welcome'
 import { OnboardNativeLang, OnboardLearnLang, OnboardGoal, OnboardLevel } from './pages/student/Onboarding'
 
+import { ThemeProvider } from './components/ThemeContext'
+import AppNavbar from './components/AppNavbar'
+
 // Student pages
-import StudentNavbar from './components/StudentNavbar'
 import StudentSidebar from './components/StudentSidebar'
 import StudentDashboard from './pages/student/Dashboard'
 import MyCourses from './pages/student/MyCourses'
@@ -42,7 +57,6 @@ import SpeakingPractice from './pages/student/SpeakingPractice'
 import StudentAnnouncements from './pages/student/Announcements'
 
 // Admin pages
-import AdminNavbar from './components/AdminNavbar'
 import AdminSidebar from './components/AdminSidebar'
 import AdminDashboard from './pages/admin/Dashboard'
 import Analytics from './pages/admin/Analytics'
@@ -65,7 +79,6 @@ import AuditLog from './pages/admin/AuditLog'
 import PlatformSettings from './pages/admin/PlatformSettings'
 
 // Instructor pages
-import InstructorNavbar from './components/InstructorNavbar'
 import InstructorSidebar from './components/InstructorSidebar'
 import InstructorDashboard from './pages/instructor/Dashboard'
 import InstructorAnalytics from './pages/instructor/Analytics'
@@ -116,8 +129,8 @@ function StudentLayoutInner() {
   const { collapsed } = useSidebar()
   return (
     <div className="app-shell">
-      <StudentNavbar />
       <StudentSidebar />
+      <AppNavbar />
       <main className="main" data-collapsed={collapsed ? 'true' : 'false'}>
         <Routes>
           <Route path="/" element={<StudentDashboard />} />
@@ -140,6 +153,7 @@ function StudentLayoutInner() {
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/speaking" element={<SpeakingPractice />} />
           <Route path="/announcements" element={<StudentAnnouncements />} />
+          <Route path="/data-rights" element={<DataRights />} />
         </Routes>
       </main>
     </div>
@@ -153,9 +167,11 @@ function AdminLayout() {
   const role = user?.role
   if (role !== 'admin' && role !== 'super_admin') return <Navigate to="/" replace />
   return (
-    <SidebarProvider>
-      <AdminLayoutInner />
-    </SidebarProvider>
+    <ThemeProvider>
+      <SidebarProvider>
+        <AdminLayoutInner />
+      </SidebarProvider>
+    </ThemeProvider>
   )
 }
 
@@ -163,8 +179,8 @@ function AdminLayoutInner() {
   const { collapsed } = useSidebar()
   return (
     <div className="app-shell">
-      <AdminNavbar />
       <AdminSidebar />
+      <AppNavbar showThemeToggle />
       <main className="main" data-collapsed={collapsed ? 'true' : 'false'}>
         <Routes>
           <Route index element={<AdminDashboard />} />
@@ -186,6 +202,12 @@ function AdminLayoutInner() {
           <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="audit-log" element={<AuditLog />} />
           <Route path="settings" element={<PlatformSettings />} />
+          <Route path="ethics" element={<EthicsOverview />} />
+          <Route path="ethics/data-requests" element={<EthicsDataRequests />} />
+          <Route path="ethics/processing-register" element={<EthicsProcessingRegister />} />
+          <Route path="ethics/change-log" element={<EthicsChangeLog />} />
+          <Route path="ethics/pulse-fairness" element={<EthicsPulseFairness />} />
+          <Route path="ethics/consent-versions" element={<EthicsConsentVersions />} />
         </Routes>
       </main>
     </div>
@@ -208,8 +230,8 @@ function InstructorLayoutInner() {
   const { collapsed } = useSidebar()
   return (
     <div className="app-shell">
-      <InstructorNavbar />
       <InstructorSidebar />
+      <AppNavbar />
       <main className="main" data-collapsed={collapsed ? 'true' : 'false'}>
         <Routes>
           <Route path="/" element={<InstructorDashboard />} />
@@ -250,6 +272,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <CookieBanner />
         <Routes>
           {/* Public */}
           <Route path="/" element={<GuestHome />} />
@@ -262,6 +285,13 @@ export default function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/features" element={<Features />} />
           <Route path="/community" element={<Community />} />
+
+          {/* Legal pages */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/pulse-disclosure" element={<PulseDisclosure />} />
+          <Route path="/children" element={<Children />} />
 
           {/* Onboarding — students only */}
           <Route path="/onboard/native-language" element={<OnboardGuard><OnboardNativeLang /></OnboardGuard>} />
@@ -277,6 +307,9 @@ export default function App() {
 
           {/* Instructor dashboard */}
           <Route path="/instructor/*" element={<InstructorLayout />} />
+
+          {/* PULSE Demo — temp */}
+          <Route path="/pulse-demo" element={<PulseDemo />} />
 
           {/* Fallback */}
           <Route path="/meeting/:roomId" element={<MeetingRoom />} />

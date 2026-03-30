@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { CheckCircle2, Flame, Target } from 'lucide-react'
 
 export default function DailyChallenge() {
   const [timeLeft, setTimeLeft] = useState(4 * 3600 + 32 * 60)
@@ -15,9 +16,9 @@ export default function DailyChallenge() {
   const fmt = (n: number) => String(n).padStart(2, '0')
 
   const tasks = [
-    { icon: '✅', label: 'Vocabulary Review', desc: 'Learn 10 new words', xp: '+100 XP', done: true },
-    { icon: '✅', label: 'Speaking Practice', desc: 'Record 3 pronunciation exercises', xp: '+100 XP', done: true },
-    { icon: '🎯', label: 'Complete a Lesson', desc: 'Finish any lesson in your enrolled courses', xp: '+100 XP', done: false },
+    { icon: '<CheckCircle2 size={16} />', label: 'Vocabulary Review', desc: 'Learn 10 new words', xp: '+100 XP', done: true },
+    { icon: '<CheckCircle2 size={16} />', label: 'Speaking Practice', desc: 'Record 3 pronunciation exercises', xp: '+100 XP', done: true },
+    { icon: <Target size={16} />, label: 'Complete a Lesson', desc: 'Finish any lesson in your enrolled courses', xp: '+100 XP', done: false },
   ]
   const doneCount = tasks.filter(t => t.done).length
   const pct = Math.round((doneCount / tasks.length) * 100)
@@ -70,7 +71,7 @@ export default function DailyChallenge() {
 
         <div style={{ textAlign: 'center' }}>
           <button className="btn bp" style={{ padding: '14px 32px', fontSize: 15 }}>Start Next Task →</button>
-          <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 12 }}>Complete before midnight to keep your 7-day streak 🔥</div>
+          <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 12 }}>Complete before midnight to keep your 7-day streak <Flame size={16} /></div>
         </div>
       </div>
     </div>

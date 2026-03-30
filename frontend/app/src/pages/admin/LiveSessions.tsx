@@ -2,15 +2,17 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import ScheduleMeetingModal from '../../components/ScheduleMeetingModal'
+import { Circle, Play } from 'lucide-react'
 
 export default function LiveSessions() {
   const nav = useNavigate()
   const [meetings, setMeetings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
 
   useEffect(() => {
-    api.get('/api/meetings').then(r => setMeetings(r.data)).catch(() => {})
+    setLoading(true); api.get('/api/meetings').then(r => setMeetings(r.data)).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   async function cancel(roomId: string) {
@@ -23,6 +25,8 @@ export default function LiveSessions() {
   const upcoming = meetings.filter(m => m.status === 'scheduled' || m.status === 'live')
   const past = meetings.filter(m => m.status === 'ended' || m.status === 'cancelled')
   const list = tab === 'upcoming' ? upcoming : past
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -41,7 +45,7 @@ export default function LiveSessions() {
       <div className="sr sr3" style={{ marginBottom: 20 }}>
         <div className="card" style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: 'Syne', fontSize: 28, fontWeight: 800, color: '#FF4444' }}>{live.length}</div>
-          <div style={{ fontSize: 11, color: 'var(--mu)' }}>🔴 Live Right Now</div>
+          <div style={{ fontSize: 11, color: 'var(--mu)' }}><Circle size={14} /> Live Right Now</div>
         </div>
         <div className="card" style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: 'Syne', fontSize: 28, fontWeight: 800, color: 'var(--neon)' }}>{upcoming.length}</div>
@@ -91,7 +95,7 @@ export default function LiveSessions() {
                 {!isCancelled && (
                   <>
                     <button className="btn bp sm" onClick={() => nav(`/meeting/${m.room_id}`)}>
-                      {isLive ? '🔴 Join' : '▶ Open'}
+                      {isLive ? 'Join' : 'Open'}
                     </button>
                     {m.is_host && tab === 'upcoming' && (
                       <button className="btn bg sm" onClick={() => cancel(m.room_id)}>Cancel</button>

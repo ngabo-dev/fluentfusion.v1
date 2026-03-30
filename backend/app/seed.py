@@ -39,18 +39,6 @@ def seed():
     )
     db.add(admin)
 
-    instructor = User(
-        name="Aminata Ndiaye", email="a.ndiaye@ff.com",
-        hashed_password=hash_password("instructor123"),
-        role=RoleEnum.instructor, status=StatusEnum.active,
-        avatar_initials="AN",
-        bio="Certified language educator with 8 years of experience teaching French, Spanish and English as a second language.",
-        is_verified=True, last_active=datetime.utcnow(),
-    )
-    db.add(instructor)
-    db.commit()
-
-    ins = db.query(User).filter(User.email == "a.ndiaye@ff.com").first()
 
     # ── Courses ────────────────────────────────────────────────────────────
     COURSES = [
@@ -138,7 +126,7 @@ def seed():
 
     for cd in COURSES:
         c = Course(
-            instructor_id=ins.id,
+            instructor_id=admin.id,
             created_at=datetime.utcnow() - timedelta(days=random.randint(30, 365)),
             **cd,
         )
@@ -314,7 +302,7 @@ def seed():
         (2025,7,3400),(2025,8,3700),(2025,9,4200),(2025,10,4500),
         (2025,11,4100),(2025,12,4700),(2026,1,5100),(2026,2,5400),(2026,3,6114),
     ]:
-        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7, 2), instructor_id=ins.id))
+        db.add(MonthlyRevenue(year=yr, month=mo, gross=gross, net=round(gross*0.7, 2), instructor_id=adm.id))
     db.commit()
 
     # ── Payouts ────────────────────────────────────────────────────────────
@@ -324,7 +312,7 @@ def seed():
         (2780, PayoutStatusEnum.paid,    "#PAY-0031", 61, 56),
     ]:
         db.add(Payout(
-            instructor_id=ins.id, amount=amt, status=status, reference=ref,
+            instructor_id=adm.id, amount=amt, status=status, reference=ref,
             requested_at=datetime.utcnow() - timedelta(days=days_ago),
             paid_at=datetime.utcnow() - timedelta(days=paid_ago) if paid_ago else None,
         ))
@@ -342,9 +330,9 @@ def seed():
 
     # ── Messages ───────────────────────────────────────────────────────────
     for sid, rid, content, hrs, read in [
-        (stu.id, ins.id, "Bonjour! I watched the subjunctive lesson — very clear. When is the next live session?", 3,    True),
-        (ins.id, stu.id, "The next session is today at 2PM — see it in your dashboard. See you there! 🎉",          2.83, True),
-        (stu.id, ins.id, "Perfect! Also, is there a cheat sheet for the irregular verbs in lesson 3?",              2.5,  False),
+        (stu.id, adm.id, "Bonjour! I watched the subjunctive lesson — very clear. When is the next live session?", 3,    True),
+        (adm.id, stu.id, "The next session is today at 2PM — see it in your dashboard. See you there! 🎉",          2.83, True),
+        (stu.id, adm.id, "Perfect! Also, is there a cheat sheet for the irregular verbs in lesson 3?",              2.5,  False),
     ]:
         db.add(Message(sender_id=sid, receiver_id=rid, content=content,
                        is_read=read, created_at=datetime.utcnow() - timedelta(hours=hrs)))
@@ -374,7 +362,7 @@ def seed():
         ("SYSTEM", "System auto-flagged: CDN latency breach · +340ms above threshold", 2),
         ("SYSTEM", "PULSE Engine re-evaluated learners — classification updated", 3),
         ("SYSTEM", "System health check passed · API ONLINE · DB HEALTHY", 4),
-        ("USER",   "Admin verified instructor a.ndiaye@ff.com", 25),
+        ("USER",   "Admin verified new instructor account", 25),
     ]:
         db.add(AuditLog(
             admin_id=adm.id if atype != "SYSTEM" else None,

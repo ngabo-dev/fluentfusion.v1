@@ -1,4 +1,5 @@
 import React from 'react'
+import { Crown, Flame, Gem, Globe, GraduationCap, Lightbulb, Target, Trophy, Zap } from 'lucide-react'
 
 const skills = [
   { name: 'Vocabulary', pct: 78, color: 'linear-gradient(90deg,#99cc00,#BFFF00)' },
@@ -19,14 +20,14 @@ const bars = [35, 70, 50, 90, 65, 40, 80]
 const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
 const badges = [
-  { icon: '🎯', name: 'First Lesson',   desc: 'Completed your first lesson', earned: true },
-  { icon: '🔥', name: '7-Day Streak',   desc: '7 days in a row',             earned: true },
-  { icon: '⚡', name: 'Speed Learner',  desc: '5 lessons in one day',        earned: true },
-  { icon: '🏆', name: 'Perfect Score',  desc: '100% on any quiz',            earned: true },
-  { icon: '💎', name: 'Diamond',        desc: '30-day streak',               earned: false },
-  { icon: '🌍', name: 'Polyglot',       desc: 'Learn 3 languages',           earned: false },
-  { icon: '👑', name: 'Top Learner',    desc: 'Rank #1 on leaderboard',      earned: false },
-  { icon: '🎓', name: 'Graduate',       desc: 'Complete any full course',    earned: false },
+  { icon: <Target size={16} />, name: 'First Lesson',   desc: 'Completed your first lesson', earned: true },
+  { icon: <Flame size={16} />, name: '7-Day Streak',   desc: '7 days in a row',             earned: true },
+  { icon: <Zap size={16} />, name: 'Speed Learner',  desc: '5 lessons in one day',        earned: true },
+  { icon: <Trophy size={16} />, name: 'Perfect Score',  desc: '100% on any quiz',            earned: true },
+  { icon: <Gem size={16} />, name: 'Diamond',        desc: '30-day streak',               earned: false },
+  { icon: <Globe size={16} />, name: 'Polyglot',       desc: 'Learn 3 languages',           earned: false },
+  { icon: <Crown size={16} />, name: 'Top Learner',    desc: 'Rank #1 on leaderboard',      earned: false },
+  { icon: <GraduationCap size={16} />, name: 'Graduate',       desc: 'Complete any full course',    earned: false },
 ]
 
 export default function Progress() {
@@ -44,7 +45,7 @@ export default function Progress() {
         {[
           { label: 'Courses Completed', value: '3', sub: 'of 5 enrolled' },
           { label: 'Total XP',          value: '4,820', sub: 'Level 6 · Gold' },
-          { label: 'Best Streak',       value: '14🔥', sub: 'Current: 7 days' },
+          { label: 'Best Streak',       value: '14<Flame size={16} />', sub: 'Current: 7 days' },
           { label: 'Avg Quiz Score',    value: '87%',  sub: null },
         ].map(s => (
           <div key={s.label} style={{ background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, padding: '18px 20px' }}>
@@ -109,7 +110,7 @@ export default function Progress() {
           ))}
         </div>
         <div style={{ marginTop: 20, padding: '14px 18px', background: 'rgba(191,255,0,0.05)', border: '1px solid rgba(191,255,0,0.12)', borderRadius: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--neon)', marginBottom: 4 }}>💡 AI Suggestion</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--neon)', marginBottom: 4 }}><Lightbulb size={16} /> AI Suggestion</div>
           <div style={{ fontSize: 13, color: 'var(--mu)' }}>Your Speaking score is the weakest area. Try 3 speaking practice sessions this week to boost it above 70%.</div>
         </div>
       </div>

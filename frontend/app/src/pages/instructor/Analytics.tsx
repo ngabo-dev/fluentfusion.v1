@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
+import { BarChart2, Star, TrendingDown, TrendingUp, Users } from 'lucide-react'
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
@@ -21,13 +22,13 @@ export default function Analytics() {
         <div className="pa"><button className="btn bo sm">Export CSV</button></div>
       </div>
       <div className="sr">
-        <StatCard label="Total Students" value={data.total_students?.toLocaleString()} delta="↑ 12%" deltaUp />
-        <StatCard label="Total Revenue" value={`$${(data.total_revenue/1000).toFixed(1)}k`} delta="↑ 8.4%" deltaUp />
-        <StatCard label="Avg Rating" value={data.avg_rating || '—'} delta="↑ 0.2" deltaUp variant="ok" />
-        <StatCard label="Avg Completion" value={`${data.avg_completion?.toFixed(0)}%`} delta="↓ 2%" variant="wa" />
+        <StatCard label="Total Students" value={data.total_students?.toLocaleString()} delta="12%" deltaUp icon={<Users size={16} />} />
+        <StatCard label="Total Revenue" value={`$${(data.total_revenue/1000).toFixed(1)}k`} delta="8.4%" deltaUp icon={<BarChart2 size={16} />} />
+        <StatCard label="Avg Rating" value={data.avg_rating || '—'} delta="0.2" deltaUp icon={<Star size={16} />} variant="ok" />
+        <StatCard label="Avg Completion" value={`${data.avg_completion?.toFixed(0)}%`} delta="2%" deltaUp={false} icon={<TrendingDown size={16} />} variant="wa" />
       </div>
       <div className="g2">
-        <div className="card"><div className="ch"><span className="ch-t">Revenue Trend</span><span className="ch-a">12 months</span></div><div className="cl"><div className="li"><div className="ld" style={{ background: 'var(--neon)' }} />Gross</div><div className="li"><div className="ld" style={{ background: 'var(--in)' }} />Net</div></div><BarChart bars={grossBars} dual={netBars} /></div>
+        <div className="card"><div className="ch"><span className="ch-t">Revenue Trend</span><span className="ch-a">12 months</span></div><BarChart bars={grossBars} dual={netBars} legend={['Gross', 'Net']} height={130} /></div>
         <div className="card"><div className="ch"><span className="ch-t">Student Growth</span><span className="ch-a">12 months</span></div><BarChart bars={grossBars.map((b: any, i: number) => ({ ...b, value: Math.round(b.value / 20) }))} /></div>
       </div>
       <div className="card">
@@ -39,7 +40,7 @@ export default function Analytics() {
             <td>{c.students}</td>
             <td><div className="mp"><div className="mt"><div className="mf" style={{ width: `${c.completion}%` }} /></div>{c.completion}%</div></td>
             <td style={{ color: 'var(--ok)' }}>${c.revenue?.toLocaleString()}</td>
-            <td style={{ color: 'var(--wa)' }}>{c.rating ? `★ ${c.rating}` : '—'}</td>
+            <td style={{ color: 'var(--wa)' }}>{c.rating ? <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Star size={12} />{c.rating}</span> : '—'}</td>
           </tr>
         ))}</tbody></table>
       </div>

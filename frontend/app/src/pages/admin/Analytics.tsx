@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
+import { BarChart2, BookOpen, TrendingDown, TrendingUp, UserX, Users } from 'lucide-react'
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
@@ -21,16 +22,16 @@ export default function Analytics() {
         <div className="pa"><button className="btn bo sm">Export</button></div>
       </div>
       <div className="sr sr5">
-        <StatCard label="Total Users" value={data.total_users?.toLocaleString()} delta="↑ 1,204" deltaUp />
-        <StatCard label="Revenue YTD" value={`$${(data.total_revenue/1000).toFixed(0)}k`} delta="↑ 18%" deltaUp variant="ok" />
-        <StatCard label="Active Courses" value={data.active_courses} delta="↑ 12" deltaUp variant="in" />
-        <StatCard label="Avg Completion" value={`${data.avg_completion}%`} delta="↑ 2%" deltaUp variant="wa" />
-        <StatCard label="Churn Rate" value="7.8%" delta="↑ 0.5%" variant="er" />
+        <StatCard label="Total Users" value={data.total_users?.toLocaleString()} delta="1,204" deltaUp icon={<Users size={16} />} />
+        <StatCard label="Revenue YTD" value={`$${(data.total_revenue/1000).toFixed(0)}k`} delta="18%" deltaUp variant="ok" icon={<BarChart2 size={16} />} />
+        <StatCard label="Active Courses" value={data.active_courses} delta="12" deltaUp variant="in" icon={<BookOpen size={16} />} />
+        <StatCard label="Avg Completion" value={`${data.avg_completion}%`} delta="2%" deltaUp variant="wa" icon={<TrendingUp size={16} />} />
+        <StatCard label="Churn Rate" value="7.8%" delta="0.5%" deltaUp={false} variant="er" icon={<UserX size={16} />} />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-        <div className="card"><div className="ch"><span className="ch-t">Revenue Trend (12 months)</span></div><BarChart bars={grossBars} dual={netBars} /></div>
-        <div className="card"><div className="ch"><span className="ch-t">Gross (12m)</span></div><BarChart bars={grossBars} /></div>
-        <div className="card"><div className="ch"><span className="ch-t">Net (12m)</span></div><BarChart bars={netBars} /></div>
+        <div className="card"><div className="ch"><span className="ch-t">Revenue Trend (12 months)</span></div><BarChart bars={grossBars} dual={netBars} legend={['Gross', 'Net']} unit="$" height={130} /></div>
+        <div className="card"><div className="ch"><span className="ch-t">Gross (12m)</span></div><BarChart bars={grossBars} unit="$" height={130} /></div>
+        <div className="card"><div className="ch"><span className="ch-t">Net (12m)</span></div><BarChart bars={netBars} unit="$" height={130} /></div>
       </div>
       <div className="g2">
         <div className="card">

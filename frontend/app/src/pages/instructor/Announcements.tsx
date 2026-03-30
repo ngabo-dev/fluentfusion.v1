@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { BookOpen, Megaphone } from 'lucide-react'
 
 function targetLabel(t: string | null | undefined, courses: any[]): string {
   if (!t) return 'Platform'
@@ -7,7 +8,7 @@ function targetLabel(t: string | null | undefined, courses: any[]): string {
   if (t.startsWith('course_')) {
     const cid = Number(t.replace('course_', ''))
     const c = courses.find(x => x.id === cid)
-    return c ? `📚 ${c.title}` : 'Course'
+    return c ? `<BookOpen size={16} /> ${c.title}` : 'Course'
   }
   return t
 }
@@ -88,7 +89,7 @@ export default function Announcements() {
         {notifs.length === 0 && <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0', textAlign: 'center' }}>No announcements sent yet</div>}
         {notifs.map(n => (
           <div key={n.id} className="ni">
-            <div className="nc" style={{ background: 'rgba(191,255,0,.08)' }}>📢</div>
+            <div className="nc" style={{ background: 'rgba(191,255,0,.08)' }}><Megaphone size={16} /></div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>{n.title}</span>

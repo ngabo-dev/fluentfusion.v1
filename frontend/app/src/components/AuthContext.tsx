@@ -76,6 +76,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await authApi.login({ email, password, remember })
     setToken(res.access_token)
     setUser(res.user)
+    // Record any pending consents from signup
+    const pending = localStorage.getItem('ff_pending_consents')
+    if (pending) {
+      try {
+        const types: string[] = JSON.parse(pending)
+        const base = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace('/api', '')
+        await Promise.allSettled(types.map(ct =>
+          fetch(`${base}/api/v1/ethics/consent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${res.access_token}` },
+            body: JSON.stringify({ consent_type: ct, version: '1.0', accepted: true }),
+          })
+        ))
+      } catch { /* non-blocking */ } finally {
+        localStorage.removeItem('ff_pending_consents')
+      }
+    }
     return res
   }
 

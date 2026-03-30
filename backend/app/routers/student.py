@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import get_db, User, Course, Enrollment, Payment, LiveSession, Quiz, Lesson, Message, Review, Notification, NotificationRead, RoleEnum
+from app.models import get_db, User, Course, Module, Enrollment, Payment, LiveSession, Quiz, Lesson, Message, Review, Notification, NotificationRead, RoleEnum, ModuleQuiz, QuizQuestion
 from app.auth import require_role
 from app.notify import notify
 
@@ -34,20 +34,31 @@ def dashboard(db: Session = Depends(get_db), current_user: User = Depends(guard)
 
 @router.get("/catalog")
 def course_catalog(search: str = "", language: str = "", level: str = "", db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    q = db.query(Course).filter(Course.status == "published")
+    q = db.query(
+        Course,
+        User.name.label("instructor_name"),
+        User.avatar_initials.label("instructor_initials"),
+        func.count(func.distinct(Lesson.id)).label("lesson_count"),
+        func.count(func.distinct(Enrollment.id)).label("student_count"),
+        func.coalesce(func.avg(Review.rating), 0).label("avg_rating"),
+    ).outerjoin(User, User.id == Course.instructor_id
+    ).outerjoin(Lesson, Lesson.course_id == Course.id
+    ).outerjoin(Enrollment, Enrollment.course_id == Course.id
+    ).outerjoin(Review, Review.course_id == Course.id
+    ).filter(Course.status == "published"
+    ).group_by(Course.id, User.name, User.avatar_initials)
     if search: q = q.filter(Course.title.ilike(f"%{search}%"))
     if language: q = q.filter(Course.language.ilike(f"%{language}%"))
     if level: q = q.filter(Course.level == level)
-    courses = q.order_by(Course.created_at.desc()).all()
-    enrolled_ids = {e.course_id for e in db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()}
-    result = []
-    for c in courses:
-        instructor = db.query(User).filter(User.id == c.instructor_id).first()
-        lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
-        student_count = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
-        avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
-        result.append({"id": c.id, "title": c.title, "description": c.description, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "thumbnail_url": c.thumbnail_url, "price": c.price, "instructor": instructor.name if instructor else "", "instructor_initials": instructor.avatar_initials if instructor else "", "lesson_count": lesson_count, "student_count": student_count, "rating": round(avg_rat, 1), "enrolled": c.id in enrolled_ids})
-    return result
+    rows = q.order_by(Course.created_at.desc()).all()
+    enrolled_ids = {e.course_id for e in db.query(Enrollment.course_id).filter(Enrollment.student_id == current_user.id).all()}
+    return [{
+        "id": c.id, "title": c.title, "description": c.description, "language": c.language,
+        "level": c.level, "flag_emoji": c.flag_emoji, "thumbnail_url": c.thumbnail_url,
+        "price": c.price, "instructor": instructor_name or "", "instructor_initials": instructor_initials or "",
+        "lesson_count": lesson_count, "student_count": student_count,
+        "rating": round(float(avg_rating), 1), "enrolled": c.id in enrolled_ids,
+    } for c, instructor_name, instructor_initials, lesson_count, student_count, avg_rating in rows]
 
 @router.post("/courses/{course_id}/enroll")
 def enroll(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
@@ -66,16 +77,27 @@ def enroll(course_id: int, db: Session = Depends(get_db), current_user: User = D
 
 @router.get("/courses")
 def my_courses(db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    enrollments = db.query(Enrollment).filter(Enrollment.student_id == current_user.id).all()
-    result = []
-    for e in enrollments:
-        c = db.query(Course).filter(Course.id == e.course_id).first()
-        if c:
-            instructor = db.query(User).filter(User.id == c.instructor_id).first()
-            lesson_count = db.query(Lesson).filter(Lesson.course_id == c.id).count()
-            avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
-            result.append({"id": c.id, "title": c.title, "language": c.language, "level": c.level, "flag_emoji": c.flag_emoji, "instructor": instructor.name if instructor else "", "instructor_initials": instructor.avatar_initials if instructor else "", "completion": round(e.completion_pct, 1), "lesson_count": lesson_count, "rating": round(avg_rat, 1), "price": c.price, "enrolled_at": e.enrolled_at})
-    return result
+    rows = db.query(
+        Course,
+        Enrollment.completion_pct,
+        Enrollment.enrolled_at,
+        User.name.label("instructor_name"),
+        User.avatar_initials.label("instructor_initials"),
+        func.count(func.distinct(Lesson.id)).label("lesson_count"),
+        func.coalesce(func.avg(Review.rating), 0).label("avg_rating"),
+    ).join(Enrollment, (Enrollment.course_id == Course.id) & (Enrollment.student_id == current_user.id)
+    ).outerjoin(User, User.id == Course.instructor_id
+    ).outerjoin(Lesson, Lesson.course_id == Course.id
+    ).outerjoin(Review, Review.course_id == Course.id
+    ).group_by(Course.id, Enrollment.completion_pct, Enrollment.enrolled_at, User.name, User.avatar_initials
+    ).all()
+    return [{
+        "id": c.id, "title": c.title, "language": c.language, "level": c.level,
+        "flag_emoji": c.flag_emoji, "price": c.price,
+        "instructor": instructor_name or "", "instructor_initials": instructor_initials or "",
+        "completion": round(float(completion_pct), 1), "lesson_count": lesson_count,
+        "rating": round(float(avg_rating), 1), "enrolled_at": enrolled_at,
+    } for c, completion_pct, enrolled_at, instructor_name, instructor_initials, lesson_count, avg_rating in rows]
 
 @router.get("/catalog/{course_id}")
 def course_detail(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
@@ -88,12 +110,25 @@ def course_detail(course_id: int, db: Session = Depends(get_db), current_user: U
     student_count = db.query(Enrollment).filter(Enrollment.course_id == c.id).count()
     avg_rat = db.query(func.avg(Review.rating)).filter(Review.course_id == c.id).scalar() or 0
     enrolled = db.query(Enrollment).filter(Enrollment.student_id == current_user.id, Enrollment.course_id == c.id).first() is not None
-    from app.models import CourseSection
-    sections = db.query(CourseSection).filter(CourseSection.course_id == c.id).order_by(CourseSection.order).all()
+    modules = db.query(Module).filter(Module.course_id == c.id).order_by(Module.order).all()
     curriculum = []
-    for s in sections:
-        lessons = db.query(Lesson).filter(Lesson.section_id == s.id).order_by(Lesson.order).all()
-        curriculum.append({"title": s.title, "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "is_preview": l.is_preview} for l in lessons]})
+    for m in modules:
+        lessons = db.query(Lesson).filter(Lesson.module_id == m.id).order_by(Lesson.order).all()
+        quizzes = db.query(ModuleQuiz).filter(ModuleQuiz.module_id == m.id).order_by(ModuleQuiz.order).all()
+        quiz_data = []
+        for q in quizzes:
+            questions = db.query(QuizQuestion).filter(QuizQuestion.quiz_id == q.id).order_by(QuizQuestion.order).all()
+            quiz_data.append({
+                "id": q.id, "title": q.title, "position": q.position, "passing_score": q.passing_score,
+                "time_limit_min": q.time_limit_min, "is_required": q.is_required, "order": q.order,
+                "question_count": len(questions)
+            })
+        curriculum.append({
+            "title": m.title, 
+            "description": m.description,
+            "lessons": [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "is_preview": l.is_preview} for l in lessons],
+            "quizzes": quiz_data
+        })
     if not curriculum:
         all_lessons = db.query(Lesson).filter(Lesson.course_id == c.id).order_by(Lesson.order).all()
         if all_lessons:
@@ -113,7 +148,21 @@ def course_detail(course_id: int, db: Session = Depends(get_db), current_user: U
 @router.get("/courses/{course_id}/lessons")
 def course_lessons(course_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
     lessons = db.query(Lesson).filter(Lesson.course_id == course_id).order_by(Lesson.order).all()
-    return [{"id": l.id, "title": l.title, "lesson_type": l.lesson_type, "duration_min": l.duration_min, "order": l.order, "description": l.description} for l in lessons]
+    module_cache: dict = {}
+    result = []
+    for l in lessons:
+        if l.module_id and l.module_id not in module_cache:
+            m = db.query(Module).filter(Module.id == l.module_id).first()
+            module_cache[l.module_id] = m.title if m else None
+        result.append({
+            "id": l.id, "title": l.title, "lesson_type": l.lesson_type,
+            "duration_min": l.duration_min, "order": l.order, "description": l.description,
+            "video_url": l.video_url, "content": l.content, "resource_url": l.resource_url,
+            "is_preview": l.is_preview,
+            "module_id": l.module_id,
+            "module_title": module_cache.get(l.module_id) if l.module_id else None,
+        })
+    return result
 
 @router.post("/courses/{course_id}/lessons/{lesson_id}/complete")
 def complete_lesson(course_id: int, lesson_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):

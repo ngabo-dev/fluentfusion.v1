@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { Flame } from 'lucide-react'
 
 export default function StreakTracker() {
   const [streak, setStreak] = useState<any>(null)
@@ -30,7 +31,7 @@ export default function StreakTracker() {
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         {/* Big streak display */}
         <div style={{ textAlign: 'center', marginBottom: 32, padding: 36, background: 'linear-gradient(135deg,rgba(255,120,0,.06),transparent)', border: '1px solid rgba(255,120,0,.2)', borderRadius: 'var(--rl)' }}>
-          <span style={{ fontSize: 64, display: 'block', marginBottom: 8, filter: 'drop-shadow(0 0 16px rgba(255,120,0,.5))' }}>🔥</span>
+          <span style={{ fontSize: 64, display: 'block', marginBottom: 8, filter: 'drop-shadow(0 0 16px rgba(255,120,0,.5))' }}><Flame size={16} /></span>
           <div style={{ fontFamily: 'Syne', fontSize: 72, fontWeight: 800, lineHeight: 1, color: 'var(--wa)', textShadow: '0 0 24px rgba(255,184,0,.4)' }}>7</div>
           <div style={{ fontSize: 18, fontWeight: 700, margin: '8px 0 4px' }}>Day Streak!</div>
           <div style={{ fontSize: 14, color: 'var(--mu)' }}>Your longest streak: <strong style={{ color: 'var(--fg)' }}>14 days</strong></div>

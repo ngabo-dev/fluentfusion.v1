@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { DollarSign, Lock, Mail, Mic, Settings, Wrench } from 'lucide-react'
 
 export default function PlatformSettings() {
   const [settings, setSettings] = useState<any>(null)
@@ -12,7 +13,7 @@ export default function PlatformSettings() {
     alert('Settings saved!')
   }
 
-  const sections = ['⚙️ General','💰 Finance','🔒 Security','📧 Email / SMTP','🎙️ Integrations','🛠️ Maintenance']
+  const sections = ['General','Finance','Security','Email / SMTP','Integrations','️ Maintenance']
 
   return (
     <div className="pg">
@@ -27,7 +28,7 @@ export default function PlatformSettings() {
           <div style={{ fontFamily: 'Syne', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--bdr)' }}>
             {activeSection.replace(/^[^\s]+\s/, '')} Settings
           </div>
-          {activeSection === '⚙️ General' && (
+          {activeSection === 'General' && (
             <>
               <div className="g2">
                 <div className="fg"><label className="lbl">Platform Name</label><input className="inp" value={settings.platform_name} onChange={e => setSettings((s: any) => ({ ...s, platform_name: e.target.value }))} /></div>
@@ -53,13 +54,13 @@ export default function PlatformSettings() {
               <button className="btn bp" onClick={save}>Save General Settings</button>
             </>
           )}
-          {activeSection === '💰 Finance' && (
+          {activeSection === 'Finance' && (
             <>
               <div className="fg"><label className="lbl">Platform Fee (%)</label><input className="inp" type="number" value={settings.platform_fee_pct} onChange={e => setSettings((s: any) => ({ ...s, platform_fee_pct: Number(e.target.value) }))} style={{ width: 120 }} /></div>
               <button className="btn bp" onClick={save}>Save Finance Settings</button>
             </>
           )}
-          {!['⚙️ General','💰 Finance'].includes(activeSection) && (
+          {!['General','Finance'].includes(activeSection) && (
             <div style={{ color: 'var(--mu)', fontSize: 12, padding: '20px 0' }}>Configuration for {activeSection.replace(/^[^\s]+\s/, '')} — coming soon.</div>
           )}
         </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import api from '../../api/client'
+import { CheckCircle2, XCircle } from 'lucide-react'
 
 export default function ConfirmEmailChange() {
   const [params] = useSearchParams()
@@ -34,7 +35,7 @@ export default function ConfirmEmailChange() {
         {status === 'loading' && <div style={{ color: 'var(--mu)', fontSize: 14 }}>Confirming your new email…</div>}
         {status === 'ok' && (
           <>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}><CheckCircle2 size={16} /></div>
             <div style={{ fontFamily: 'Syne', fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Email Updated!</div>
             <div style={{ fontSize: 13, color: 'var(--mu)', marginBottom: 24 }}>{msg}</div>
             <Link to="/login" className="btn bp" style={{ display: 'inline-block', textDecoration: 'none' }}>Back to Login</Link>
@@ -42,7 +43,7 @@ export default function ConfirmEmailChange() {
         )}
         {status === 'error' && (
           <>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}><XCircle size={16} /></div>
             <div style={{ fontFamily: 'Syne', fontSize: 16, fontWeight: 700, marginBottom: 8, color: 'var(--er)' }}>Link Invalid</div>
             <div style={{ fontSize: 13, color: 'var(--mu)', marginBottom: 24 }}>{msg}</div>
             <Link to="/login" className="btn bo" style={{ display: 'inline-block', textDecoration: 'none' }}>Back to Login</Link>

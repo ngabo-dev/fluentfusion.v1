@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'
 import api from '../api/client'
 import { useAuth } from './AuthContext'
+import { AlertCircle, AlertOctagon, CheckCircle2, Flame, Frown, Hand, Heart, PartyPopper, Plus, Smile, Star, ThumbsUp, X } from 'lucide-react'
 
-const EMOJI_LIST = ['👍','❤️','😂','😮','😢','😡','🔥','🎉','👏','🙏','💯','✅']
+const EMOJI_LIST = [<ThumbsUp size={16} />,'️',<Smile size={16} />,<AlertCircle size={16} />,<Frown size={16} />,<AlertOctagon size={16} />,<Flame size={16} />,<PartyPopper size={16} />,<Star size={16} />,<Hand size={16} />,'<CheckCircle2 size={16} />','<CheckCircle2 size={16} />']
 
 interface Props {
   notifId: number
@@ -75,7 +76,7 @@ export default function NotificationDetailModal({ notifId, onClose }: Props) {
               {data.sent_at ? new Date(data.sent_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 4 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 4 }}><X size={16} /></button>
         </div>
 
         {/* Message body */}
@@ -118,7 +119,7 @@ export default function NotificationDetailModal({ notifId, onClose }: Props) {
             <button
               onClick={() => setShowPicker(p => !p)}
               style={{ padding: '4px 10px', borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid #2a2a2a', cursor: 'pointer', fontSize: 16, color: '#888' }}>
-              {myReaction ? myReaction : '＋'}
+              {myReaction ? myReaction : <Plus size={16} />}
             </button>
             {showPicker && (
               <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 12, padding: 10, display: 'flex', flexWrap: 'wrap', gap: 6, width: 220, zIndex: 20, boxShadow: '0 8px 32px rgba(0,0,0,.6)' }}>

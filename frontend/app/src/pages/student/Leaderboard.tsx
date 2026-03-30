@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import { useAuth } from '../../components/AuthContext'
+import { Medal, Zap } from 'lucide-react'
 
 const PULSE_COLORS: Record<string, string> = { thriving: 'var(--ok)', coasting: 'var(--neon)', struggling: 'var(--wa)', burning_out: 'var(--er)', disengaged: 'var(--mu)' }
-const MEDALS = ['🥇', '🥈', '🥉']
+const MEDALS = [<Medal size={16} />, <Medal size={16} />, <Medal size={16} />]
 
 export default function Leaderboard() {
   const { user } = useAuth()
   const [students, setStudents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   useEffect(() => {
-    api.get('/api/student/leaderboard').then(r => setStudents(Array.isArray(r.data) ? r.data : []))
+    api.get('/api/student/leaderboard')
+      .then(r => setStudents(Array.isArray(r.data) ? r.data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   const myRank = students.find(s => s.is_me)?.rank ?? 0
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -33,7 +40,7 @@ export default function Leaderboard() {
             <div style={{ fontSize: 28, marginBottom: 8 }}>{MEDALS[i]}</div>
             <div className="av avm" style={{ margin: '0 auto 8px' }}>{s.avatar_initials}</div>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{s.name}</div>
-            <div style={{ fontFamily: 'Syne', fontSize: 20, fontWeight: 800, color: i === 0 ? 'var(--neon)' : i === 1 ? 'var(--wa)' : 'var(--in)', marginBottom: 4 }}>⚡ {s.xp.toLocaleString()}</div>
+            <div style={{ fontFamily: 'Syne', fontSize: 20, fontWeight: 800, color: i === 0 ? 'var(--neon)' : i === 1 ? 'var(--wa)' : 'var(--in)', marginBottom: 4 }}><Zap size={16} /> {s.xp.toLocaleString()}</div>
             <div style={{ fontSize: 9, color: 'var(--mu)', fontFamily: 'JetBrains Mono' }}>XP POINTS</div>
           </div>
         ))}
@@ -58,7 +65,7 @@ export default function Leaderboard() {
                     </span>
                   </div>
                 </td>
-                <td style={{ fontFamily: 'Syne', fontWeight: 800, color: 'var(--neon)' }}>⚡ {s.xp.toLocaleString()}</td>
+                <td style={{ fontFamily: 'Syne', fontWeight: 800, color: 'var(--neon)' }}><Zap size={16} /> {s.xp.toLocaleString()}</td>
                 <td style={{ color: 'var(--mu)' }}>{s.courses}</td>
                 <td>
                   <span style={{ fontSize: 10, color: PULSE_COLORS[s.pulse_state], fontFamily: 'JetBrains Mono', textTransform: 'capitalize' }}>

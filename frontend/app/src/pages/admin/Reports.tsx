@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { AlertTriangle } from 'lucide-react'
 
 export default function Reports() {
   const [reports, setReports] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('open')
-  const load = () => api.get('/api/admin/reports', { params: { status: tab } }).then(r => setReports(r.data))
+  const load = () => { setLoading(true); api.get('/api/admin/reports', { params: { status: tab } }).then(r => setReports(r.data)).catch(() => {}).finally(() => setLoading(false)) }
   useEffect(() => { load() }, [tab])
 
   async function update(id: number, status: string) { await api.patch(`/api/admin/reports/${id}`, { status }); load() }
@@ -12,12 +14,14 @@ export default function Reports() {
   const typeColor: any = { HARASSMENT: 'var(--er)', SPAM: 'var(--wa)', CONTENT: 'var(--in)' }
   const typeBg: any = { HARASSMENT: 'rgba(255,68,68,.1)', SPAM: 'rgba(255,184,0,.1)', CONTENT: 'rgba(0,207,255,.1)' }
 
+  if (loading) return <div className="pgload" />
+
   return (
     <div className="pg">
       <div className="ph"><div><h1>Reports</h1><p>Community-flagged content requiring review</p></div></div>
       {tab === 'open' && reports.some(r => r.report_type === 'HARASSMENT') && (
         <div className="alr ac" style={{ marginBottom: 14 }}>
-          <span>🚨</span><div style={{ flex: 1 }}><b>Harassment reports require immediate review</b></div>
+          <span><AlertTriangle size={16} /></span><div style={{ flex: 1 }}><b>Harassment reports require immediate review</b></div>
         </div>
       )}
       <div className="tabs">

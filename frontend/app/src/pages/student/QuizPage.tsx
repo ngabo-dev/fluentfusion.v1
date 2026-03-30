@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { BookOpen, Play, Star, Timer, Trophy } from 'lucide-react'
 
 type Question =
   | { type: 'mc';      text: string; options: string[]; answer: number }
@@ -53,7 +54,7 @@ export default function QuizPage() {
   if (done) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
       <div style={{ background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 16, padding: 48, textAlign: 'center', maxWidth: 480 }}>
-        <div style={{ fontSize: 64, marginBottom: 16 }}>{score >= 4 ? '🏆' : score >= 3 ? '⭐' : '📚'}</div>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>{score >= 4 ? <Trophy size={16} /> : score >= 3 ? <Star size={16} /> : <BookOpen size={16} />}</div>
         <div style={{ fontFamily: 'Syne', fontSize: 32, fontWeight: 800, color: 'var(--neon)', marginBottom: 8 }}>{Math.round((score / questions.length) * 100)}%</div>
         <div style={{ fontSize: 16, marginBottom: 4 }}>You got {score} of {questions.length} correct</div>
         <div style={{ fontSize: 14, color: 'var(--mu)', marginBottom: 28 }}>Unit 3 · Hotel Check-in Quiz</div>
@@ -80,7 +81,7 @@ export default function QuizPage() {
               <div style={{ fontSize: 11, color: 'var(--mu)' }}>Progress</div>
             </div>
             <div style={{ width: 1, height: 40, background: 'var(--bdr)' }} />
-            <div style={{ background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.25)', color: '#FF4444', padding: '6px 14px', borderRadius: 8, fontFamily: 'JetBrains Mono', fontSize: 12, fontWeight: 600 }}>⏱ {fmt(timeLeft)}</div>
+            <div style={{ background: 'rgba(255,68,68,0.12)', border: '1px solid rgba(255,68,68,0.25)', color: '#FF4444', padding: '6px 14px', borderRadius: 8, fontFamily: 'JetBrains Mono', fontSize: 12, fontWeight: 600 }}><Timer size={16} /> {fmt(timeLeft)}</div>
           </div>
         </div>
 
@@ -115,7 +116,7 @@ export default function QuizPage() {
             <>
               {q.type === 'listen' && (
                 <div style={{ background: 'var(--card2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: 20, display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                  <div style={{ width: 48, height: 48, background: 'var(--neon)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#000', cursor: 'pointer', flexShrink: 0 }}>▶</div>
+                  <div style={{ width: 48, height: 48, background: 'var(--neon)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#000', cursor: 'pointer', flexShrink: 0 }}><Play size={16} /></div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Play Audio</div>
                     <div style={{ fontSize: 11, color: 'var(--mu)' }}>0:00 / 0:08</div>
@@ -140,7 +141,7 @@ export default function QuizPage() {
           <button onClick={() => current > 0 && (setCurrent(c => c - 1), setSubmitted(false), setSelected(null), setFillVal(''))} style={{ background: 'none', border: '1px solid var(--bdr)', color: 'var(--mu)', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>← Previous</button>
           {!submitted
             ? <button onClick={submit} disabled={q.type === 'mc' ? selected === null : fillVal.trim() === ''} style={{ background: 'var(--neon)', color: '#000', border: 'none', padding: '12px 28px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 15, opacity: (q.type === 'mc' ? selected === null : fillVal.trim() === '') ? 0.5 : 1 }}>Submit Answer →</button>
-            : <button onClick={next} style={{ background: 'var(--neon)', color: '#000', border: 'none', padding: '12px 28px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>{current + 1 >= questions.length ? 'See Results 🏆' : 'Next Question →'}</button>
+            : <button onClick={next} style={{ background: 'var(--neon)', color: '#000', border: 'none', padding: '12px 28px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>{current + 1 >= questions.length ? 'See Results <Trophy size={16} />' : 'Next Question →'}</button>
           }
         </div>
       </div>

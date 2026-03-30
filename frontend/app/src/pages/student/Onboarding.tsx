@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../../api/client'
+import { Briefcase, Globe, GraduationCap, Leaf, MessageSquare, PartyPopper, Plane, Sprout, TreePine } from 'lucide-react'
 
 const LANG_FLAGS: Record<string, string> = {
   rw:'🇷🇼', en:'🇬🇧', fr:'🇫🇷', es:'🇪🇸', pt:'🇵🇹', zh:'🇨🇳', de:'🇩🇪', ja:'🇯🇵', ar:'🇦🇪', ko:'🇰🇷', it:'🇮🇹', ru:'🇷🇺', hi:'🇮🇳', nl:'🇳🇱', sv:'🇸🇪',
@@ -56,7 +57,7 @@ export function OnboardNativeLang() {
     const token = localStorage.getItem('ff_access_token')
     fetch(`${API_BASE_URL}/languages`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then(r => r.ok ? r.json() : null).then(d => {
-        if (d?.languages?.length) setLangs(d.languages.map((l: any) => ({ code: l.code || l.name?.toLowerCase(), name: l.name, flag: LANG_FLAGS[l.code?.toLowerCase()] || '🌐', country: l.country || 'Global' })))
+        if (d?.languages?.length) setLangs(d.languages.map((l: any) => ({ code: l.code || l.name?.toLowerCase(), name: l.name, flag: LANG_FLAGS[l.code?.toLowerCase()] || <Globe size={16} />, country: l.country || 'Global' })))
       }).catch(() => {})
   }, [])
 
@@ -99,7 +100,7 @@ export function OnboardLearnLang() {
     const token = localStorage.getItem('ff_access_token')
     fetch(`${API_BASE_URL}/languages`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then(r => r.ok ? r.json() : null).then(d => {
-        if (d?.languages?.length) setLangs(d.languages.map((l: any) => ({ code: l.code || l.name?.toLowerCase(), name: l.name, flag: LANG_FLAGS[l.code?.toLowerCase()] || '🌐', country: l.country || 'Global', learners: l.learner_count ? `↑ ${(l.learner_count/1000).toFixed(0)}K learners` : '↑ Popular' })))
+        if (d?.languages?.length) setLangs(d.languages.map((l: any) => ({ code: l.code || l.name?.toLowerCase(), name: l.name, flag: LANG_FLAGS[l.code?.toLowerCase()] || <Globe size={16} />, country: l.country || 'Global', learners: l.learner_count ? `↑ ${(l.learner_count/1000).toFixed(0)}K learners` : '↑ Popular' })))
       }).catch(() => {})
   }, [])
 
@@ -135,10 +136,10 @@ export function OnboardLearnLang() {
 
 // ─── Step 3: Goal ─────────────────────────────────────────────────────────
 const GOALS = [
-  { id:'travel', icon:'✈️', title:'Travel', desc:'Navigate new countries and connect with locals while travelling.' },
-  { id:'academic', icon:'🎓', title:'Academic', desc:'Study abroad or pursue academic opportunities in a new language.' },
-  { id:'business', icon:'💼', title:'Business', desc:'Expand your professional network and career globally.' },
-  { id:'conversation', icon:'💬', title:'Conversation', desc:'Make new friends and communicate with people from different cultures.' },
+  { id:'travel', icon:'️', title:'Travel', desc:'Navigate new countries and connect with locals while travelling.' },
+  { id:'academic', icon:<GraduationCap size={16} />, title:'Academic', desc:'Study abroad or pursue academic opportunities in a new language.' },
+  { id:'business', icon:<Briefcase size={16} />, title:'Business', desc:'Expand your professional network and career globally.' },
+  { id:'conversation', icon:<MessageSquare size={16} />, title:'Conversation', desc:'Make new friends and communicate with people from different cultures.' },
 ]
 
 export function OnboardGoal() {
@@ -178,9 +179,9 @@ export function OnboardGoal() {
 
 // ─── Step 4: Level ────────────────────────────────────────────────────────
 const LEVELS = [
-  { id:'beginner', emoji:'🌱', name:'Beginner', desc:'I know very little or nothing. Start from scratch.', dots:[1,0,0] },
-  { id:'intermediate', emoji:'🌿', name:'Intermediate', desc:'I know the basics and can handle simple conversations.', dots:[1,1,0] },
-  { id:'advanced', emoji:'🌳', name:'Advanced', desc:"I'm fluent and want to polish my skills further.", dots:[1,1,1] },
+  { id:'beginner', emoji:<Sprout size={16} />, name:'Beginner', desc:'I know very little or nothing. Start from scratch.', dots:[1,0,0] },
+  { id:'intermediate', emoji:<Leaf size={16} />, name:'Intermediate', desc:'I know the basics and can handle simple conversations.', dots:[1,1,0] },
+  { id:'advanced', emoji:<TreePine size={16} />, name:'Advanced', desc:"I'm fluent and want to polish my skills further.", dots:[1,1,1] },
 ]
 
 export function OnboardLevel() {
@@ -235,7 +236,7 @@ export function OnboardLevel() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <button className="btn bg" onClick={() => nav('/onboard/goal')}>← Back</button>
-          <button className="btn bp" disabled={!selected} onClick={finish} style={{ padding: '12px 28px', opacity: selected ? 1 : .4 }}>Finish Setup 🎉</button>
+          <button className="btn bp" disabled={!selected} onClick={finish} style={{ padding: '12px 28px', opacity: selected ? 1 : .4 }}>Finish Setup <PartyPopper size={16} /></button>
         </div>
       </div>
     </OnboardShell>

@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
 import Badge from '../../components/Badge'
+import { AlertTriangle, Ban, Check, CheckCircle2, Clock, Search, Trash2 } from 'lucide-react'
 
 export default function Instructors() {
   const [instructors, setInstructors] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
-  const load = () => api.get('/api/admin/instructors').then(r => setInstructors(r.data))
+  const load = () => { setLoading(true); api.get('/api/admin/instructors').then(r => setInstructors(r.data)).catch(() => {}).finally(() => setLoading(false)) }
   useEffect(() => { load() }, [])
 
   const filtered = instructors.filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
@@ -19,6 +21,8 @@ export default function Instructors() {
     await api.delete(`/api/admin/users/${u.id}`); load()
   }
 
+  if (loading) return <div className="pgload" />
+
   return (
     <div className="pg">
       <div className="ph">
@@ -26,11 +30,11 @@ export default function Instructors() {
         </div>
       {instructors.some(i => !i.is_verified) && (
         <div className="alr aw" style={{ marginBottom: 14 }}>
-          <span>⚠️</span><div style={{ flex: 1 }}><b>{instructors.filter(i => !i.is_verified).length} instructors awaiting verification</b></div>
+          <span><AlertTriangle size={16} />️</span><div style={{ flex: 1 }}><b>{instructors.filter(i => !i.is_verified).length} instructors awaiting verification</b></div>
         </div>
       )}
       <div className="ab">
-        <div className="sw"><span className="si2">🔍</span><input className="inp" placeholder="Search instructors..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="sw"><span className="si2"><Search size={16} /></span><input className="inp" placeholder="Search instructors..." value={search} onChange={e => setSearch(e.target.value)} /></div>
       </div>
       <div className="card">
         <table className="tbl">
@@ -44,14 +48,14 @@ export default function Instructors() {
               <td>{ins.courses}</td>
               <td style={{ color: 'var(--neon)' }}>{ins.students?.toLocaleString()}</td>
               <td style={{ color: 'var(--ok)' }}>${ins.revenue_mtd?.toFixed(0)}</td>
-              <td>{ins.is_verified ? <Badge variant="k">✓ Verified</Badge> : <Badge variant="w">⏳ Pending</Badge>}</td>
+              <td>{ins.is_verified ? <Badge variant="k"><Check size={16} /> Verified</Badge> : <Badge variant="w"><Clock size={16} /> Pending</Badge>}</td>
               <td><span><span className={`sdot ${ins.status === 'active' ? 'sd-a' : ins.status === 'pending' ? 'sd-p' : 'sd-b'}`} />{ins.status}</span></td>
               <td><div style={{ display: 'flex', gap: 4 }}>
-                {!ins.is_verified && <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => verify(ins.id)}>✓ Verify</button>}
+                {!ins.is_verified && <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => verify(ins.id)}><Check size={16} /> Verify</button>}
                 {ins.status === 'banned'
-                  ? <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => updateStatus(ins.id, 'active')}>✅ Unban</button>
-                  : <button className="btn bd sm" onClick={() => updateStatus(ins.id, 'banned')}>🚫 Ban</button>}
-                <button className="btn bd sm" onClick={() => deleteUser(ins)}>🗑</button>
+                  ? <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => updateStatus(ins.id, 'active')}><CheckCircle2 size={16} /> Unban</button>
+                  : <button className="btn bd sm" onClick={() => updateStatus(ins.id, 'banned')}><Ban size={16} /> Ban</button>}
+                <button className="btn bd sm" onClick={() => deleteUser(ins)}><Trash2 size={16} /></button>
               </div></td>
             </tr>
           ))}</tbody>

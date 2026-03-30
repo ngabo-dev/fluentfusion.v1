@@ -57,9 +57,9 @@ export default function MyCourses() {
     const busy = acting === c.id
     return (
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+        <button className="btn bo sm" onClick={() => navigate(`/instructor/courses/${c.id}/edit`)} disabled={busy}><Pencil size={16} /> Edit</button>
         {(c.status === 'draft' || c.status === 'rejected') && (
           <>
-            <button className="btn bo sm" onClick={() => navigate(`/instructor/courses/${c.id}/edit`)} disabled={busy}><Pencil size={16} />️ Edit</button>
             <button className="btn bp sm" onClick={() => submitForReview(c.id)} disabled={busy}><Upload size={16} /> Submit</button>
             <button className="btn bd sm" onClick={() => deleteCourse(c.id)} disabled={busy}><Trash2 size={16} /></button>
           </>

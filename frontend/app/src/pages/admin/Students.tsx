@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
 import Badge from '../../components/Badge'
+import { Ban, CheckCircle2, Search, Trash2 } from 'lucide-react'
 
 export default function Students() {
   const [students, setStudents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
-  const load = () => api.get('/api/admin/users', { params: { role: 'student' } }).then(r => setStudents(r.data))
+  const load = () => { setLoading(true); api.get('/api/admin/users', { params: { role: 'student' } }).then(r => setStudents(r.data)).catch(() => {}).finally(() => setLoading(false)) }
   useEffect(() => { load() }, [])
 
   const filtered = students.filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
@@ -20,11 +22,13 @@ export default function Students() {
 
   const pulseBadge: any = { thriving: 'k', coasting: 'i', struggling: 'w', burning_out: 'e', disengaged: 'e' }
 
+  if (loading) return <div className="pgload" />
+
   return (
     <div className="pg">
       <div className="ph"><div><h1>Students</h1><p>{filtered.length} student accounts</p></div></div>
       <div className="ab">
-        <div className="sw"><span className="si2">🔍</span><input className="inp" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+        <div className="sw"><span className="si2"><Search size={16} /></span><input className="inp" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} /></div>
       </div>
       <div className="card">
         <table className="tbl">
@@ -41,9 +45,9 @@ export default function Students() {
               <td style={{ color: 'var(--mu)', fontFamily: 'JetBrains Mono', fontSize: 9 }}>{u.created_at?.slice(0,10)}</td>
               <td><div style={{ display: 'flex', gap: 4 }}>
                 {u.status === 'banned'
-                  ? <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => updateStatus(u.id, 'active')}>✅ Unban</button>
-                  : <button className="btn bd sm" onClick={() => updateStatus(u.id, 'banned')}>🚫 Ban</button>}
-                <button className="btn bd sm" onClick={() => deleteUser(u)}>🗑</button>
+                  ? <button className="btn bo sm" style={{ color: 'var(--ok)', borderColor: 'rgba(0,255,127,.3)', fontSize: 10 }} onClick={() => updateStatus(u.id, 'active')}><CheckCircle2 size={16} /> Unban</button>
+                  : <button className="btn bd sm" onClick={() => updateStatus(u.id, 'banned')}><Ban size={16} /> Ban</button>}
+                <button className="btn bd sm" onClick={() => deleteUser(u)}><Trash2 size={16} /></button>
               </div></td>
             </tr>
           ))}</tbody>

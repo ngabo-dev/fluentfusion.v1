@@ -7,6 +7,7 @@ const TARGET_LABELS: Record<string, string> = {
 
 export default function Announcements() {
   const [notifs, setNotifs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ all: 0, students: 0, instructors: 0 })
   const [form, setForm] = useState({ title: '', message: '', target: 'all', allow_replies: false })
   const [editing, setEditing] = useState<any>(null)
@@ -16,11 +17,15 @@ export default function Announcements() {
     api.get('/api/admin/announcements').then(r => setNotifs(Array.isArray(r.data) ? r.data : []))
 
   useEffect(() => {
-    load()
+    setLoading(true)
     Promise.all([
+      api.get('/api/admin/announcements'),
       api.get('/api/admin/users', { params: { role: 'student' } }),
       api.get('/api/admin/users', { params: { role: 'instructor' } }),
-    ]).then(([s, i]) => setStats({ students: s.data.length, instructors: i.data.length, all: s.data.length + i.data.length }))
+    ]).then(([a, s, i]) => {
+      setNotifs(Array.isArray(a.data) ? a.data : [])
+      setStats({ students: s.data.length, instructors: i.data.length, all: s.data.length + i.data.length })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   async function send() {
@@ -44,6 +49,8 @@ export default function Announcements() {
     await api.delete(`/api/admin/notifications/${id}`)
     load()
   }
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">

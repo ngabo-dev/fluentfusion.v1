@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Check, Pause, Play, Settings, SkipBack, SkipForward, Volume2 } from 'lucide-react'
 
 const transcript = [
   { ts: '02:14', text: '"Good evening, welcome to Kigali Heights Hotel. How may I assist you?"' },
@@ -31,7 +32,7 @@ export default function LessonView() {
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,#0a1a0a,#000)' }} />
           <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
             <div style={{ width: 72, height: 72, background: 'rgba(191,255,0,0.9)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto' }}>
-              {playing ? '⏸' : '▶'}
+              {playing ? <Pause size={16} /> : <Play size={16} />}
             </div>
             <div style={{ marginTop: 12, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Lesson 5 · Check-in Conversation</div>
           </div>
@@ -40,8 +41,8 @@ export default function LessonView() {
 
         {/* Controls */}
         <div style={{ background: '#0d0d0d', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0, borderBottom: '1px solid var(--bdr)' }}>
-          {['⏮','⏸','⏭'].map(ic => (
-            <button key={ic} style={{ background: 'none', border: 'none', color: ic === '⏸' ? 'var(--neon)' : 'var(--fg)', fontSize: 18, cursor: 'pointer', padding: 4 }}>{ic}</button>
+          {[<SkipBack size={16} />,<Pause size={16} />,<SkipForward size={16} />].map(ic => (
+            <button key={ic} style={{ background: 'none', border: 'none', color: ic === <Pause size={16} /> ? 'var(--neon)' : 'var(--fg)', fontSize: 18, cursor: 'pointer', padding: 4 }}>{ic}</button>
           ))}
           <div
             style={{ flex: 1, height: 4, background: 'var(--bdr)', borderRadius: 99, cursor: 'pointer', position: 'relative' }}
@@ -56,8 +57,8 @@ export default function LessonView() {
           <div style={{ height: 4, width: 80, background: 'var(--bdr)', borderRadius: 99 }}>
             <div style={{ height: '100%', width: '70%', background: 'var(--neon)', borderRadius: 99 }} />
           </div>
-          <button style={{ background: 'none', border: 'none', color: 'var(--fg)', fontSize: 16, cursor: 'pointer' }}>🔊</button>
-          <button style={{ background: 'none', border: 'none', color: 'var(--fg)', fontSize: 14, cursor: 'pointer' }}>⚙️</button>
+          <button style={{ background: 'none', border: 'none', color: 'var(--fg)', fontSize: 16, cursor: 'pointer' }}><Volume2 size={16} /></button>
+          <button style={{ background: 'none', border: 'none', color: 'var(--fg)', fontSize: 14, cursor: 'pointer' }}><Settings size={16} /></button>
         </div>
 
         {/* Lesson body */}
@@ -78,7 +79,7 @@ export default function LessonView() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button style={{ background: 'var(--neon)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>Practice Exercise →</button>
             <button style={{ background: 'none', border: '1px solid var(--bdr)', color: 'var(--fg)', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Download Notes</button>
-            <button style={{ background: 'none', border: '1px solid rgba(0,255,127,0.3)', color: '#00FF7F', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, marginLeft: 'auto' }}>✓ Mark as Completed</button>
+            <button style={{ background: 'none', border: '1px solid rgba(0,255,127,0.3)', color: '#00FF7F', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, marginLeft: 'auto' }}><Check size={16} /> Mark as Completed</button>
           </div>
         </div>
       </div>

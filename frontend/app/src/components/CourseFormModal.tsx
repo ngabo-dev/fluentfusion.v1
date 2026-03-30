@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import api from '../api/client'
+import { BookOpen, Check, CreditCard, FileText, Gift, Rocket, Trash2, Trophy, Video, X } from 'lucide-react'
 
 const LANGUAGES = [
   { flag: '🇫🇷', name: 'French' }, { flag: '🇬🇧', name: 'English' },
@@ -40,7 +41,7 @@ function Stepper({ step, setStep }: { step: number; setStep: (i: number) => void
               border: `2px solid ${i < step ? 'var(--neon)' : i === step ? 'var(--neon)' : 'var(--bdr)'}`,
               color: i === step ? '#000' : i < step ? 'var(--neon)' : 'var(--mu)',
             }}>
-              {i < step ? '✓' : i + 1}
+              {i < step ? <Check size={16} /> : i + 1}
             </div>
             <div style={{ fontSize: 10, fontWeight: 600, color: i === step ? 'var(--fg)' : 'var(--mu)', textAlign: 'center', whiteSpace: 'nowrap' }}>{s.label}</div>
           </div>
@@ -217,8 +218,8 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
           <input className="inp" placeholder="Lesson title e.g. Welcome & Greetings" value={lessonDraft.title} onChange={e => setLessonDraft(d => ({ ...d, title: e.target.value }))} />
           <select className="inp" style={{ width: 100 }} value={lessonDraft.type} onChange={e => setLessonDraft(d => ({ ...d, type: e.target.value as any }))}>
-            <option value="video">📹 Video</option>
-            <option value="text">📝 Text</option>
+            <option value="video"><Video size={16} /> Video</option>
+            <option value="text"><FileText size={16} /> Text</option>
           </select>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
@@ -234,12 +235,12 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
           ? <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--mu)', fontSize: 12, fontFamily: 'JetBrains Mono' }}>No lessons yet — add your first one above</div>
           : lessons.map((l, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--card2)', border: '1px solid var(--bdr)', borderRadius: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 16 }}>{l.type === 'video' ? '📹' : '📝'}</span>
+              <span style={{ fontSize: 16 }}>{l.type === 'video' ? <Video size={16} /> : <FileText size={16} />}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{l.title}</div>
                 {l.duration && <div style={{ fontSize: 11, color: 'var(--mu)' }}>{l.duration}</div>}
               </div>
-              <button className="btn bd sm" onClick={() => setLessons(ls => ls.filter((_, j) => j !== i))}>🗑</button>
+              <button className="btn bd sm" onClick={() => setLessons(ls => ls.filter((_, j) => j !== i))}><Trash2 size={16} /></button>
             </div>
           ))
         }
@@ -274,9 +275,9 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: 'var(--card2)', border: '1px solid var(--bdr)', borderRadius: 8, marginBottom: 6 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>Q{i + 1}. {q.question}</div>
-                <div style={{ fontSize: 11, color: 'var(--mu)' }}>✓ {q.options[q.answer]}</div>
+                <div style={{ fontSize: 11, color: 'var(--mu)' }}><Check size={16} /> {q.options[q.answer]}</div>
               </div>
-              <button className="btn bd sm" onClick={() => setQuizzes(qs => qs.filter((_, j) => j !== i))}>🗑</button>
+              <button className="btn bd sm" onClick={() => setQuizzes(qs => qs.filter((_, j) => j !== i))}><Trash2 size={16} /></button>
             </div>
           ))
         }
@@ -287,7 +288,7 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
   const panel3 = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', gap: 12 }}>
-        {[{ label: 'Free', val: true, icon: '🎁', sub: 'No charge, maximum reach' }, { label: 'Paid', val: false, icon: '💳', sub: 'Earn revenue from students' }].map(opt => (
+        {[{ label: 'Free', val: true, icon: <Gift size={16} />, sub: 'No charge, maximum reach' }, { label: 'Paid', val: false, icon: <CreditCard size={16} />, sub: 'Earn revenue from students' }].map(opt => (
           <div key={opt.label} onClick={() => setPricing(p => ({ ...p, is_free: opt.val }))}
             style={{ flex: 1, padding: 16, borderRadius: 10, border: `2px solid ${pricing.is_free === opt.val ? 'var(--neon)' : 'var(--bdr)'}`, background: pricing.is_free === opt.val ? 'rgba(191,255,0,.06)' : 'var(--card2)', cursor: 'pointer', textAlign: 'center' }}>
             <div style={{ fontSize: 28, marginBottom: 6 }}>{opt.icon}</div>
@@ -337,7 +338,7 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
   const panel4 = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ background: 'var(--card2)', borderRadius: 12, padding: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
-        <span style={{ fontSize: 48 }}>{form.flag_emoji || lang?.flag || '📚'}</span>
+        <span style={{ fontSize: 48 }}>{form.flag_emoji || lang?.flag || <BookOpen size={16} />}</span>
         <div>
           <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 18 }}>{form.title || 'Untitled Course'}</div>
           <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 4 }}>{form.level} · {form.language}{form.goal ? ` · ${form.goal}` : ''}</div>
@@ -345,7 +346,7 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-        {[{ label: 'Lessons', val: lessons.length, icon: '📹' }, { label: 'Quizzes', val: quizzes.length, icon: '📝' }, { label: 'Certificate', val: pricing.certificate ? 'Yes' : 'No', icon: '🏆' }].map(s => (
+        {[{ label: 'Lessons', val: lessons.length, icon: <Video size={16} /> }, { label: 'Quizzes', val: quizzes.length, icon: <FileText size={16} /> }, { label: 'Certificate', val: pricing.certificate ? 'Yes' : 'No', icon: <Trophy size={16} /> }].map(s => (
           <div key={s.label} style={{ background: 'var(--card2)', borderRadius: 10, padding: '14px 12px', textAlign: 'center', border: '1px solid var(--bdr)' }}>
             <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
             <div style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 20, color: 'var(--neon)' }}>{s.val}</div>
@@ -377,7 +378,7 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
             </div>
             <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{STEPS[step].sub}</div>
           </div>
-          <button className="btn bg sm" onClick={onClose}>✕</button>
+          <button className="btn bg sm" onClick={onClose}><X size={16} /></button>
         </div>
 
         <Stepper step={step} setStep={setStep} />
@@ -395,7 +396,7 @@ export default function CourseFormModal({ course, role, onClose, onSaved }: Prop
             <button className="btn bp" onClick={next}>Next: {STEPS[step + 1].label} →</button>
           ) : (
             <button className="btn bp" onClick={publish} disabled={saving}>
-              {saving ? 'Saving…' : editing ? '✓ Save Changes' : '🚀 Submit for Review'}
+              {saving ? 'Saving…' : editing ? 'Save Changes' : 'Submit for Review'}
             </button>
           )}
         </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
+import { Circle, X } from 'lucide-react'
 
 export default function LiveSessionBanner({ endpoint }: { endpoint: string }) {
   const [session, setSession] = useState<any>(null)
@@ -48,7 +49,7 @@ export default function LiveSessionBanner({ endpoint }: { endpoint: string }) {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#FF4444', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          🔴 Live Now
+          <Circle size={14} /> Live Now
         </span>
         <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginLeft: 10 }}>
           {session.title}
@@ -82,7 +83,7 @@ export default function LiveSessionBanner({ endpoint }: { endpoint: string }) {
       <button
         onClick={() => setVisible(false)}
         style={{ position: 'absolute', top: 8, right: 10, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>
-        ✕
+        <X size={16} />
       </button>
     </div>
   )

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { Megaphone } from 'lucide-react'
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -47,7 +48,7 @@ export default function Announcements() {
               background: !n.is_read ? 'rgba(191,255,0,.1)' : 'rgba(255,255,255,.05)',
               border: `1px solid ${!n.is_read ? 'rgba(191,255,0,.2)' : 'rgba(255,255,255,.08)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-            }}>📢</div>
+            }}><Megaphone size={16} /></div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontSize: 13, fontWeight: !n.is_read ? 700 : 500, color: !n.is_read ? '#fff' : '#bbb' }}>

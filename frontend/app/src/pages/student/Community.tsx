@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Brain, Heart, MessageSquare } from 'lucide-react'
 
 const posts = [
   { id: 1, flag: '🇷🇼', lang: 'Kinyarwanda', user: 'Amara K.', initials: 'AK', time: '2h ago', body: 'Just completed my 30-day streak in Kinyarwanda! The tonal patterns finally clicked for me. Anyone else find the verb conjugation system fascinating?', likes: 42, comments: 8, tag: 'MILESTONE' },
@@ -30,7 +31,7 @@ export default function Community() {
       {/* NAV */}
       <nav style={{ height: 66, background: 'rgba(10,10,10,0.95)', borderBottom: '1px solid #2a2a2a', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
         <a onClick={() => nav('/')} style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', cursor: 'pointer' }}>
-          <div style={{ width: 38, height: 38, background: '#BFFF00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🧠</div>
+          <div style={{ width: 38, height: 38, background: '#BFFF00', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}><Brain size={16} /></div>
           <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#fff' }}>
             FLUENT<span style={{ color: '#BFFF00' }}>FUSION</span>
           </div>
@@ -108,10 +109,10 @@ export default function Community() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                   <button onClick={() => setLiked(prev => { const s = new Set(prev); s.has(post.id) ? s.delete(post.id) : s.add(post.id); return s; })}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: isLiked ? '#BFFF00' : '#888', transition: 'color .15s' }}>
-                    {isLiked ? '♥' : '♡'} {post.likes + (isLiked ? 1 : 0)}
+                    {isLiked ? <Heart size={16} /> : <Heart size={16} />} {post.likes + (isLiked ? 1 : 0)}
                   </button>
                   <button style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888' }}>
-                    💬 {post.comments}
+                    <MessageSquare size={16} /> {post.comments}
                   </button>
                   <button onClick={() => nav('/signup')} style={{ marginLeft: 'auto', background: 'none', border: '1px solid #2a2a2a', borderRadius: 6, padding: '4px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>
                     Reply

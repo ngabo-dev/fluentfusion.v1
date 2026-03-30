@@ -66,7 +66,7 @@ class _PulsePredictor:
 
         # Build ordered feature vector
         vec = np.array(
-            [feat_copy.get(f, 0) for f in self._meta["features"]], dtype=float
+            [feat_copy.get(f, 0) for f in self._meta["feature_columns"]], dtype=float
         ).reshape(1, -1)
 
         scaled     = self._scaler.transform(vec)
@@ -90,7 +90,7 @@ class _PulsePredictor:
             for col, enc in self._encoders.items():
                 raw = str(feat_copy.get(col, "Unknown"))
                 feat_copy[col] = int(enc.transform([raw])[0]) if raw in enc.classes_ else 0
-            vec    = np.array([feat_copy.get(f, 0) for f in self._meta["features"]], dtype=float)
+            vec    = np.array([feat_copy.get(f, 0) for f in self._meta["feature_columns"]], dtype=float)
             results.append(vec)
 
         matrix = np.array(results)

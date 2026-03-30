@@ -1,61 +1,167 @@
-import React from 'react'
-import { NavLink } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useSidebar } from './SidebarContext'
+import { useAuth } from './AuthContext'
+import api from '../api/client'
+import { playNotificationSound } from '../utils/sounds'
+import {
+  LayoutDashboard, BookOpen, Search, Video, HelpCircle,
+  Layers, Mic, Target, BarChart2, Trophy, Flame, TrendingUp,
+  MessageSquare, Megaphone, Bell, Settings, PanelLeft, Shield,
+  Zap, LogOut, User,
+} from 'lucide-react'
 
-type NavItem = { to: string; label: string; icon: string; badge?: string }
-type NavGroup = { section: string; items: NavItem[] }
+const SIZE = 16
 
-const links: NavGroup[] = [
+const links = [
   { section: 'Overview', items: [
-    { to: '/dashboard', label: 'Dashboard', icon: '⚡' },
+    { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={SIZE} /> },
   ]},
   { section: 'Learning', items: [
-    { to: '/dashboard/courses', label: 'My Courses', icon: '📚' },
-    { to: '/dashboard/catalog', label: 'Course Catalog', icon: '🔍' },
-    { to: '/dashboard/live-sessions', label: 'Live Sessions', icon: '🎙️' },
-    { to: '/dashboard/quizzes', label: 'Quizzes', icon: '📝' },
+    { to: '/dashboard/courses',      label: 'My Courses',    icon: <BookOpen size={SIZE} /> },
+    { to: '/dashboard/catalog',      label: 'Course Catalog', icon: <Search size={SIZE} /> },
+    { to: '/dashboard/live-sessions',label: 'Live Sessions',  icon: <Video size={SIZE} /> },
+    { to: '/dashboard/quizzes',      label: 'Quizzes',        icon: <HelpCircle size={SIZE} /> },
   ]},
   { section: 'Practice', items: [
-    { to: '/dashboard/flashcards', label: 'Flashcards', icon: '🃏' },
-    { to: '/dashboard/speaking', label: 'Speaking Practice', icon: '🎤' },
-    { to: '/dashboard/daily-challenge', label: 'Daily Challenge', icon: '🎯' },
+    { to: '/dashboard/flashcards',     label: 'Flashcards',        icon: <Layers size={SIZE} /> },
+    { to: '/dashboard/speaking',       label: 'Speaking Practice', icon: <Mic size={SIZE} /> },
+    { to: '/dashboard/daily-challenge',label: 'Daily Challenge',   icon: <Target size={SIZE} /> },
   ]},
   { section: 'Progress', items: [
-    { to: '/dashboard/progress', label: 'My Progress', icon: '📊' },
-    { to: '/dashboard/achievements', label: 'Achievements', icon: '🏆' },
-    { to: '/dashboard/streak', label: 'Streak Tracker', icon: '🔥' },
-    { to: '/dashboard/leaderboard', label: 'Leaderboard', icon: '📈' },
+    { to: '/dashboard/progress',     label: 'My Progress',  icon: <BarChart2 size={SIZE} /> },
+    { to: '/dashboard/achievements', label: 'Achievements', icon: <Trophy size={SIZE} /> },
+    { to: '/dashboard/streak',       label: 'Streak Tracker',icon: <Flame size={SIZE} /> },
+    { to: '/dashboard/leaderboard',  label: 'Leaderboard',  icon: <TrendingUp size={SIZE} /> },
   ]},
   { section: 'Community', items: [
-    { to: '/dashboard/messages', label: 'Messages', icon: '💬', badge: '2' },
-    { to: '/dashboard/announcements', label: 'Announcements', icon: '📢' },
+    { to: '/dashboard/messages',     label: 'Messages',      icon: <MessageSquare size={SIZE} />, badge: '2' },
+    { to: '/dashboard/announcements',label: 'Announcements', icon: <Megaphone size={SIZE} /> },
+    { to: '/dashboard/data-rights',   label: 'Data & Privacy', icon: <Shield size={SIZE} /> },
   ]},
   { section: 'Account', items: [
-    { to: '/dashboard/notifications', label: 'Notifications', icon: '🔔' },
-    { to: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
+    { to: '/dashboard/notifications', label: 'Notifications', icon: <Bell size={SIZE} /> },
+    { to: '/dashboard/settings',      label: 'Settings',      icon: <Settings size={SIZE} /> },
   ]},
 ]
 
 export default function Sidebar() {
-  const { collapsed } = useSidebar()
+  const { collapsed, toggle } = useSidebar()
+  const { user, logout } = useAuth()
+  const nav = useNavigate()
+  const [dropOpen, setDropOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
+  const dropRef = useRef<HTMLDivElement>(null)
+  const prevUnread = useRef(0)
+
+  useEffect(() => {
+    const fetch = () => api.get('/api/student/notifications/unread-count').then(r => {
+      const count = r.data.count ?? 0
+      if (prevUnread.current > 0 && count > prevUnread.current) playNotificationSound()
+      prevUnread.current = count
+      setUnread(count)
+    }).catch(() => {})
+    fetch()
+    const t = setInterval(fetch, 30000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
   return (
-    <aside className="sb" data-collapsed={collapsed ? 'true' : 'false'} style={{ overflow: collapsed ? 'hidden' : undefined }}>
-      {!collapsed && <>
+    <aside className="sb" data-collapsed={collapsed ? 'true' : 'false'}>
+      {/* Header: logo + toggle */}
+      <div className={`sb-head${collapsed ? ' sb-head-collapsed' : ''}`}>
+        {!collapsed && (
+          <Link to="/dashboard" className="logo">
+            <div className="logo-mark">FF</div>
+          </Link>
+        )}
+        <button className="sb-toggle" onClick={toggle} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <PanelLeft size={18} />
+        </button>
+      </div>
+
+      {/* Nav links */}
+      <div className="sb-scroll">
         {links.map(group => (
           <React.Fragment key={group.section}>
-            <div className="ss">{group.section}</div>
-            {group.items.map(item => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}>
-                <span>{item.icon}</span> {item.label}
-                {item.badge && <span className="sbg">{item.badge}</span>}
+            {!collapsed && <div className="ss">{group.section}</div>}
+            {collapsed && <div style={{ height: 8 }} />}
+            {group.items.map((item: any) => (
+              <NavLink key={item.to} to={item.to} end={item.to === '/dashboard'} className={({ isActive }) => `si${isActive ? ' active' : ''}`}
+                title={collapsed ? item.label : undefined}>
+                {item.icon}
+                <span className="si-label">{item.label}</span>
+                {item.badge && !collapsed && <span className="sbg">{item.badge}</span>}
               </NavLink>
             ))}
           </React.Fragment>
         ))}
-        <div className="sb-bot">
-          <div className="pl"><span className="pd" />PULSE Active · v2.0</div>
+      </div>
+
+      {/* PULSE status */}
+      <div className="sb-bot">
+        <div className="pl">
+          <span className="pd" />
+          {!collapsed && 'PULSE Active · v2.0'}
         </div>
-      </>}
+      </div>
+
+      {/* User footer */}
+      <div ref={dropRef} className="sb-user" onClick={() => setDropOpen(o => !o)}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          {user?.avatar_url
+            ? <img src={user.avatar_url} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(191,255,0,.3)' }} />
+            : <div className="nav-ava" style={{ width: 30, height: 30, fontSize: 11 }}>{user?.avatar_initials || 'ST'}</div>
+          }
+          {unread > 0 && (
+            <span style={{ position: 'absolute', top: -4, right: -4, background: '#FF4444', color: '#fff', borderRadius: '50%', width: 14, height: 14, fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </div>
+        <div className="sb-user-info">
+          <div className="sb-user-name">{user?.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--ok)' }}>STUDENT</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--neon)', display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Zap size={9} />{user?.xp ?? 0} XP
+            </span>
+          </div>
+        </div>
+
+        {dropOpen && (
+          <div style={{ position: 'absolute', left: collapsed ? 56 : 0, bottom: '100%', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 10, minWidth: 190, zIndex: 300, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            {[
+              { label: 'Profile', icon: <User size={14} />, path: '/dashboard/settings' },
+              { label: 'Notifications', icon: <Bell size={14} />, path: '/dashboard/notifications' },
+              { label: 'Settings', icon: <Settings size={14} />, path: '/dashboard/settings' },
+            ].map(item => (
+              <div key={item.label} onClick={(e) => { e.stopPropagation(); nav(item.path); setDropOpen(false) }}
+                style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#ccc', display: 'flex', alignItems: 'center', gap: 10 }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#222')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                {item.icon} {item.label}
+              </div>
+            ))}
+            <div style={{ borderTop: '1px solid #2a2a2a' }}>
+              <div onClick={(e) => { e.stopPropagation(); logout(); setDropOpen(false) }}
+                style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#FF4444', display: 'flex', alignItems: 'center', gap: 10 }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,68,68,0.08)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                <LogOut size={14} /> Logout
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   )
 }

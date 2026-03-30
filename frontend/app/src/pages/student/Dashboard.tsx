@@ -3,8 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
 import { useAuth } from '../../components/AuthContext'
 import LiveSessionBanner from '../../components/LiveSessionBanner'
+import StatCard from '../../components/StatCard'
+import { BookOpen, Hand, Mic, TrendingUp, Wallet, Zap } from 'lucide-react'
 
-const PULSE_LABELS: Record<string, string> = { thriving: '🔥 Thriving', coasting: '⚡ Coasting', struggling: '⚠️ Struggling', burning_out: '😮‍💨 Burning Out', disengaged: '💤 Disengaged' }
+const PULSE_LABELS: Record<string, string> = {
+  thriving: 'Thriving',
+  coasting: 'Coasting',
+  struggling: 'Struggling',
+  burning_out: 'Burning Out',
+  disengaged: 'Disengaged',
+}
 
 export default function Dashboard() {
   const [data, setData] = useState<any>(null)
@@ -18,39 +26,27 @@ export default function Dashboard() {
       <LiveSessionBanner endpoint="/api/meetings" />
       <div className="ph">
         <div>
-          <h1>Welcome back, {user?.name?.split(' ')[0] ?? 'Student'} 👋</h1>
+          <h1>Welcome back, {user?.name?.split(' ')[0] ?? 'Student'} <Hand size={16} /></h1>
           <p>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <div className="pa">
-          <button className="btn bp" onClick={() => nav('/dashboard/courses')}>📚 My Courses</button>
-          <button className="btn bo sm" onClick={() => nav('/dashboard/live-sessions')}>🎙️ Live</button>
+          <button className="btn bp" onClick={() => nav('/dashboard/courses')}><BookOpen size={16} /> My Courses</button>
+          <button className="btn bo sm" onClick={() => nav('/dashboard/live-sessions')}><Mic size={16} /> Live</button>
         </div>
       </div>
 
       {/* Stat Row */}
       <div className="sr">
-        <div className="sc">
-          <div className="sl">Enrolled Courses</div>
-          <div className="sv">{data.total_courses}</div>
-          <div className="ss2">Active enrollments</div>
-        </div>
-        <div className="sc ok">
-          <div className="sl">Avg Completion</div>
-          <div className="sv ok">{data.avg_completion?.toFixed(0)}%</div>
-          <div className="ss2">Across all courses</div>
-        </div>
-        <div className="sc wa">
-          <div className="sl">Total Spent</div>
-          <div className="sv wa">${data.total_spent?.toLocaleString()}</div>
-          <div className="ss2">Lifetime investment</div>
-        </div>
-        <div className="sc in">
-          <div className="sl">XP Points</div>
-          <div className="sv in">⚡ {data.xp?.toLocaleString()}</div>
-          <div className="ss2">
-            <span className={`pulse-badge pulse-${data.pulse_state}`}>{PULSE_LABELS[data.pulse_state] ?? data.pulse_state}</span>
-          </div>
-        </div>
+        <StatCard label="Enrolled Courses" value={data.total_courses} sub="Active enrollments" icon={<BookOpen size={16} />} />
+        <StatCard label="Avg Completion" value={`${data.avg_completion?.toFixed(0)}%`} sub="Across all courses" icon={<TrendingUp size={16} />} variant="ok" />
+        <StatCard label="Total Spent" value={`$${data.total_spent?.toLocaleString()}`} sub="Lifetime investment" icon={<Wallet size={16} />} variant="wa" />
+        <StatCard
+          label="XP Points"
+          value={data.xp?.toLocaleString()}
+          icon={<Zap size={16} />}
+          variant="in"
+          sub={<span className={`pulse-badge pulse-${data.pulse_state}`}>{PULSE_LABELS[data.pulse_state] ?? data.pulse_state}</span> as any}
+        />
       </div>
 
       <div className="g21">
@@ -103,7 +99,7 @@ export default function Dashboard() {
           {/* XP Progress */}
           <div style={{ marginTop: 16, padding: '12px', background: 'var(--card2)', borderRadius: 'var(--r)', border: '1px solid var(--bdr)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 600 }}>⚡ XP Progress</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600 }}><Zap size={13} /> XP Progress</span>
               <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: 'var(--neon)' }}>{data.xp} / {Math.ceil(data.xp / 500) * 500} XP</span>
             </div>
             <div className="xp-bar"><div className="xp-fill" style={{ width: `${(data.xp % 500) / 5}%` }} /></div>

@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext'
 import api from '../api/client'
 import { useSidebar } from './SidebarContext'
 import { playNotificationSound } from '../utils/sounds'
+import { Bell, Settings, LogOut, Megaphone, ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -43,29 +44,30 @@ export default function Navbar() {
   return (
     <nav className="nav">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mu)', fontSize: 18, padding: '4px 6px', borderRadius: 6, lineHeight: 1, transition: 'color .15s' }}
+        <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mu)', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'color .15s' }}
           title={collapsed ? 'Show sidebar' : 'Hide sidebar'}>
-          {collapsed ? '▶' : '◀'}
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
         <Link to="/instructor" className="logo">
           <div className="logo-mark">FF</div>
           <div className="logo-name">Fluent<span>Fusion</span></div>
         </Link>
       </div>
+
       <div className="nav-r">
         <span style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: 'var(--in)', background: 'rgba(0,207,255,.1)', padding: '3px 8px', borderRadius: 4, border: '1px solid rgba(0,207,255,.2)' }}>INSTRUCTOR PORTAL</span>
 
         {/* Bell */}
-        <div style={{ position: 'relative', cursor: 'pointer' }} onClick={goNotifications}>
-          <span style={{ fontSize: 18 }}>🔔</span>
+        <div style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={goNotifications}>
+          <Bell size={20} color="var(--mu)" strokeWidth={1.8} />
           {unread > 0 && (
-            <span style={{ position: 'absolute', top: -4, right: -4, background: '#FF4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+            <span style={{ position: 'absolute', top: -5, right: -5, background: '#FF4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
               {unread > 9 ? '9+' : unread}
             </span>
           )}
         </div>
 
-        {/* Avatar only */}
+        {/* Avatar dropdown */}
         <div ref={dropRef} style={{ position: 'relative' }}>
           <div onClick={() => setDropOpen(o => !o)} style={{ cursor: 'pointer' }}>
             {user?.avatar_url
@@ -87,23 +89,23 @@ export default function Navbar() {
                 </div>
               </div>
               {[
-                { label: '📢 Announcements', path: '/instructor/announcements' },
-                { label: '🔔 Notifications', path: '/instructor/notifications' },
-                { label: '⚙️ Settings', path: '/instructor/settings' },
+                { label: 'Announcements', icon: <Megaphone size={14} />, path: '/instructor/announcements' },
+                { label: 'Notifications',  icon: <Bell size={14} />,     path: '/instructor/notifications' },
+                { label: 'Settings',       icon: <Settings size={14} />, path: '/instructor/settings' },
               ].map(item => (
                 <div key={item.label} onClick={() => { nav(item.path); setDropOpen(false) }}
-                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#ccc' }}
+                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#ccc', display: 'flex', alignItems: 'center', gap: 10 }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#222')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  {item.label}
+                  {item.icon} {item.label}
                 </div>
               ))}
               <div style={{ borderTop: '1px solid #2a2a2a' }}>
                 <div onClick={() => { logout(); setDropOpen(false) }}
-                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#FF4444' }}
+                  style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', color: '#FF4444', display: 'flex', alignItems: 'center', gap: 10 }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,68,68,0.08)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  🚪 Logout
+                  <LogOut size={14} /> Logout
                 </div>
               </div>
             </div>

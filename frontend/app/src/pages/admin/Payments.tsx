@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import StatCard from '../../components/StatCard'
+import { Search } from 'lucide-react'
 
 export default function Payments() {
   const [payments, setPayments] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('')
-  useEffect(() => { api.get('/api/admin/payments', { params: status ? { status } : {} }).then(r => setPayments(r.data)) }, [status])
+  useEffect(() => { setLoading(true); api.get('/api/admin/payments', { params: status ? { status } : {} }).then(r => setPayments(r.data)).catch(() => {}).finally(() => setLoading(false)) }, [status])
 
   const total = payments.filter(p => p.status === 'completed').reduce((a, p) => a + p.amount, 0)
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -22,7 +26,7 @@ export default function Payments() {
         <StatCard label="Refunds" value={payments.filter(p => p.status === 'refunded').length} variant="wa" />
       </div>
       <div className="ab">
-        <div className="sw"><span className="si2">🔍</span><input className="inp" placeholder="Search by user or course..." /></div>
+        <div className="sw"><span className="si2"><Search size={16} /></span><input className="inp" placeholder="Search by user or course..." /></div>
         <select className="sel" style={{ width: 'auto' }} value={status} onChange={e => setStatus(e.target.value)}>
           <option value="">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="refunded">Refunded</option>
         </select>

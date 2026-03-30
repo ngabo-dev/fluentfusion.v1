@@ -1,15 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/client'
+import { Circle, Play } from 'lucide-react'
 
 export default function LiveSessions() {
   const nav = useNavigate()
   const [meetings, setMeetings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
 
   useEffect(() => {
-    api.get('/api/meetings').then(r => setMeetings(r.data)).catch(() => {})
+    api.get('/api/meetings')
+      .then(r => setMeetings(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
+
+  if (loading) return <div className="pgload" />
 
   const upcoming = meetings.filter(m => m.status === 'scheduled' || m.status === 'live')
   const past = meetings.filter(m => m.status === 'ended' || m.status === 'cancelled')
@@ -57,7 +64,7 @@ export default function LiveSessions() {
               </div>
               {!isCancelled && (
                 <button className={`btn sm ${isLive ? 'bp' : 'bo'}`} onClick={() => nav(`/meeting/${m.room_id}`)}>
-                  {isLive ? '🔴 Join Now' : '▶ Open'}
+                  {isLive ? 'Join Now' : 'Open'}
                 </button>
               )}
             </div>

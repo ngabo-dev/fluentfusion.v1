@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
+import { Lock } from 'lucide-react'
 
 export default function AuditLog() {
   const [logs, setLogs] = useState<any[]>([])
-  useEffect(() => { api.get('/api/admin/audit-log').then(r => setLogs(r.data)) }, [])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => { setLoading(true); api.get('/api/admin/audit-log').then(r => setLogs(r.data)).catch(() => {}).finally(() => setLoading(false)) }, [])
 
   const typeClass: any = { USER: 'lw3', COURSE: 'lw3', FINANCE: 'li3', SYSTEM: 'li3' }
   const criticalTypes = ['SYSTEM']
+
+  if (loading) return <div className="pgload" />
 
   return (
     <div className="pg">
@@ -15,7 +19,7 @@ export default function AuditLog() {
         <div className="pa"><button className="btn bo sm">Export Log</button></div>
       </div>
       <div className="alr ai" style={{ marginBottom: 14 }}>
-        <span>🔒</span><div>This log records all administrator actions. Entries cannot be modified or deleted.</div>
+        <span><Lock size={16} /></span><div>This log records all administrator actions. Entries cannot be modified or deleted.</div>
       </div>
       <div className="ab">
         <select className="sel" style={{ width: 'auto' }}><option>All Admins</option></select>

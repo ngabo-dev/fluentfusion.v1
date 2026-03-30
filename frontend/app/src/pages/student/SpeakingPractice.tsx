@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { Lightbulb, Mic, Volume2 } from 'lucide-react'
 
 const phrases = [
   { text: 'Muraho, amakuru?',       phonetic: '/mu-RA-ho, a-MA-ku-ru/', meaning: 'Hello, how are you?' },
@@ -68,7 +69,7 @@ export default function SpeakingPractice() {
           <div style={{ fontFamily: 'Syne', fontSize: 36, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.02em', color: 'var(--neon)', marginBottom: 8 }}>{phrase.text}</div>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 16, color: 'var(--mu)', marginBottom: 4 }}>{phrase.phonetic}</div>
           <div style={{ fontSize: 15, color: 'var(--mu)', marginBottom: 16 }}>{phrase.meaning}</div>
-          <button style={{ background: 'none', border: '1px solid var(--bdr)', color: 'var(--fg)', padding: '8px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>🔊 Play Native Audio</button>
+          <button style={{ background: 'none', border: '1px solid var(--bdr)', color: 'var(--fg)', padding: '8px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}><Volume2 size={16} /> Play Native Audio</button>
         </div>
 
         {/* Record area */}
@@ -91,7 +92,7 @@ export default function SpeakingPractice() {
               boxShadow: recording ? '0 0 0 12px rgba(255,68,68,0.2)' : 'none',
               transition: 'all 0.2s',
             }}
-          >🎙</button>
+          ><Mic size={16} /></button>
 
           {recording && (
             <div style={{ fontFamily: 'JetBrains Mono', fontSize: 12, color: '#FF4444' }}>● Recording · {fmt(seconds)}</div>
@@ -109,11 +110,11 @@ export default function SpeakingPractice() {
               </div>
             ))}
             <div style={{ marginTop: 16, padding: 14, background: 'rgba(191,255,0,0.05)', border: '1px solid rgba(191,255,0,0.12)', borderRadius: 8 }}>
-              <div style={{ fontSize: 13, color: 'var(--neon)', fontWeight: 600, marginBottom: 4 }}>💡 AI Tip</div>
+              <div style={{ fontSize: 13, color: 'var(--neon)', fontWeight: 600, marginBottom: 4 }}><Lightbulb size={16} /> AI Tip</div>
               <div style={{ fontSize: 13, color: 'var(--mu)' }}>Great tone! Try to soften the "ku" syllable — it should be short and light.</div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <button onClick={toggleRecord} style={{ background: 'var(--neon)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>Try Again 🎙</button>
+              <button onClick={toggleRecord} style={{ background: 'var(--neon)', color: '#000', border: 'none', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>Try Again <Mic size={16} /></button>
               <button onClick={nextPhrase} style={{ background: 'none', border: '1px solid var(--bdr)', color: 'var(--fg)', padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Next Phrase →</button>
             </div>
           </div>

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.models import Base, engine
 from app.routers import auth, admin, instructor, student, messages, meetings, notifications
+from app.routers import ethics as ethics_router
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -46,6 +47,12 @@ def _run_migrations():
         ("lessons",       "content",                "TEXT"),
         ("lessons",       "resource_url",           "VARCHAR"),
         ("lessons",       "is_preview",             "BOOLEAN DEFAULT FALSE"),
+        ("lessons",       "thumbnail_url",          "VARCHAR"),
+        ("lessons",       "external_embed_code",    "TEXT"),
+        ("lessons",       "transcript",             "TEXT"),
+        ("lessons",       "is_downloadable",        "BOOLEAN DEFAULT FALSE"),
+        ("lessons",       "mime_type",              "VARCHAR"),
+        ("lessons",       "file_size_bytes",        "INTEGER"),
     ]
     with engine.connect() as conn:
         for table, col, definition in migrations:
@@ -90,6 +97,7 @@ app.include_router(student.router)
 app.include_router(messages.router)
 app.include_router(meetings.router)
 app.include_router(notifications.router)
+app.include_router(ethics_router.router)
 
 @app.get("/health")
 def health():

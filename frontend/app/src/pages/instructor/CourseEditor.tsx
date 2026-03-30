@@ -14,12 +14,12 @@ const LANGUAGES = [
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'All Levels']
 const CATEGORIES = ['Language Basics', 'Conversation', 'Grammar', 'Business', 'Travel', 'Exam Prep', 'Culture', 'Writing', 'Pronunciation']
 
-type LessonDraft = { id?: number; title: string; lesson_type: 'video' | 'text' | 'audio'; duration_min: string; description: string; is_preview: boolean; video_url: string; content: string }
+type LessonDraft = { id?: number; title: string; lesson_type: 'video' | 'text' | 'audio'; duration_min: string; description: string; is_preview: boolean; video_url: string; content: string; _uploadFile?: File | null }
 type QuizQuestion = { id?: number; question_text: string; question_type: string; options: string; correct_answer: string; explanation: string; points: number }
 type ModuleQuiz = { id?: number; title: string; position: 'start' | 'middle' | 'end'; passing_score: number; time_limit_min: number | null; is_required: boolean; questions: QuizQuestion[] }
 type Module = { id?: number; title: string; description: string; lessons: LessonDraft[]; quizzes: ModuleQuiz[] }
 
-const emptyLesson = (): LessonDraft => ({ title: '', lesson_type: 'video', duration_min: '', description: '', is_preview: false, video_url: '', content: '' })
+const emptyLesson = (): LessonDraft => ({ title: '', lesson_type: 'video', duration_min: '', description: '', is_preview: false, video_url: '', content: '', _uploadFile: null })
 const emptyQuizQuestion = (): QuizQuestion => ({ question_text: '', question_type: 'multiple_choice', options: JSON.stringify(['', '', '', '']), correct_answer: '', explanation: '', points: 1 })
 const emptyQuiz = (): ModuleQuiz => ({ title: '', position: 'end', passing_score: 70, time_limit_min: null, is_required: true, questions: [] })
 
@@ -223,9 +223,21 @@ export default function CourseEditor() {
           if (l.id && existingLessonIds.has(l.id)) {
             // Patch existing lesson
             await api.patch(`/api/instructor/courses/${id}/lessons/${l.id}`, lessonData)
+            // Upload video file if one was selected
+            if (l._uploadFile) {
+              const fd = new FormData(); fd.append('file', l._uploadFile)
+              const up = await api.post(`/api/instructor/lessons/${l.id}/upload-video`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+              await api.patch(`/api/instructor/courses/${id}/lessons/${l.id}`, { video_url: up.data.url })
+            }
           } else {
             // Create new lesson
-            await api.post(`/api/instructor/courses/${id}/lessons`, lessonData)
+            const nr = await api.post(`/api/instructor/courses/${id}/lessons`, lessonData)
+            // Upload video file if one was selected
+            if (l._uploadFile) {
+              const fd = new FormData(); fd.append('file', l._uploadFile)
+              const up = await api.post(`/api/instructor/lessons/${nr.data.id}/upload-video`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+              await api.patch(`/api/instructor/courses/${id}/lessons/${nr.data.id}`, { video_url: up.data.url })
+            }
           }
         }
         
@@ -435,7 +447,9 @@ export default function CourseEditor() {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{l.title}{l.is_preview && <span style={{ marginLeft: 8, fontSize: 9, color: 'var(--neon)', fontFamily: 'JetBrains Mono', background: 'rgba(191,255,0,.1)', padding: '2px 6px', borderRadius: 4 }}>FREE PREVIEW</span>}</div>
                       {(l.duration_min || l.description) && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>{l.duration_min ? `${l.duration_min} min` : ''}{l.duration_min && l.description ? ' · ' : ''}{l.description}</div>}
-                      {l.video_url && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>Video: {l.video_url}</div>}
+                      {l.video_url && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>
+                        {l.video_url.startsWith('/uploads/') ? '📁 Uploaded file' : `🔗 ${l.video_url.length > 50 ? l.video_url.slice(0, 50) + '…' : l.video_url}`}
+                      </div>}
                       {l.content && <div style={{ fontSize: 11, color: 'var(--mu)', marginTop: 2 }}>Content: {l.content.substring(0, 50)}{l.content.length > 50 ? '...' : ''}</div>}
                     </div>
                     <button className="btn bd sm" onClick={() => removeLesson(activeModule, li)}>Remove</button>
@@ -459,10 +473,32 @@ export default function CourseEditor() {
                 <input className="inp" type="number" min={1} placeholder="Duration (min)" value={lessonDraft.duration_min} onChange={e => setLessonDraft(d => ({ ...d, duration_min: e.target.value }))} />
                 <input className="inp" placeholder="Short description (optional)" value={lessonDraft.description} onChange={e => setLessonDraft(d => ({ ...d, description: e.target.value }))} />
               </div>
-              {lessonDraft.lesson_type === 'video' && (
-                <div className="fg" style={{ marginBottom: 10 }}>
-                  <label className="lbl">Video URL</label>
-                  <input className="inp" placeholder="https://..." value={lessonDraft.video_url} onChange={e => setLessonDraft(d => ({ ...d, video_url: e.target.value }))} />
+              {(lessonDraft.lesson_type === 'video' || lessonDraft.lesson_type === 'audio') && (
+                <div style={{ marginBottom: 10 }}>
+                  <label className="lbl">{lessonDraft.lesson_type === 'video' ? 'Video' : 'Audio'} Source</label>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer', color: !lessonDraft._uploadFile ? 'var(--neon)' : 'var(--mu)' }}>
+                      <input type="radio" checked={!lessonDraft._uploadFile} onChange={() => setLessonDraft(d => ({ ...d, _uploadFile: null }))} /> URL
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer', color: !!lessonDraft._uploadFile ? 'var(--neon)' : 'var(--mu)' }}>
+                      <input type="radio" checked={!!lessonDraft._uploadFile} onChange={() => {}} /> Upload from PC
+                    </label>
+                  </div>
+                  {!lessonDraft._uploadFile ? (
+                    <input className="inp" placeholder="https://youtube.com/watch?v=… or direct URL" value={lessonDraft.video_url} onChange={e => setLessonDraft(d => ({ ...d, video_url: e.target.value }))} />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(191,255,0,.06)', border: '1px solid rgba(191,255,0,.2)', borderRadius: 8 }}>
+                      <span style={{ fontSize: 12, color: 'var(--neon)', flex: 1 }}>{lessonDraft._uploadFile.name}</span>
+                      <button className="btn bd sm" onClick={() => setLessonDraft(d => ({ ...d, _uploadFile: null }))}>✕</button>
+                    </div>
+                  )}
+                  {!lessonDraft._uploadFile && (
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, color: 'var(--mu)', cursor: 'pointer', textDecoration: 'underline' }}>
+                      <input type="file" accept={lessonDraft.lesson_type === 'video' ? 'video/*' : 'audio/*'} style={{ display: 'none' }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) setLessonDraft(d => ({ ...d, _uploadFile: f, video_url: '' })) }} />
+                      Or pick a file from your PC
+                    </label>
+                  )}
                 </div>
               )}
               {lessonDraft.lesson_type === 'text' && (

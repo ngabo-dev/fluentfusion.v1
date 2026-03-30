@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { messagesApi } from '../api/client'
 import { useAuth } from './AuthContext'
 import { playMessageSound } from '../utils/sounds'
+import { BarChart2, Check, ClipboardList, FileText, Mic, Minimize2, Paperclip, X } from 'lucide-react'
 
 const BACKEND = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace('/api', '')
@@ -20,12 +21,12 @@ const GROUPS = [
 ]
 
 const DOC_ICONS: Record<string, string> = {
-  pdf: '📄', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
-  ppt: '📋', pptx: '📋', txt: '📃', csv: '📊', zip: '🗜️',
+  pdf: <FileText size={16} />, doc: <FileText size={16} />, docx: <FileText size={16} />, xls: '<BarChart2 size={16} />', xlsx: '<BarChart2 size={16} />',
+  ppt: <ClipboardList size={16} />, pptx: <ClipboardList size={16} />, txt: <FileText size={16} />, csv: '<BarChart2 size={16} />', zip: '<Minimize2 size={16} />️',
 }
 function docIcon(name?: string) {
   const ext = (name || '').split('.').pop()?.toLowerCase() || ''
-  return DOC_ICONS[ext] || '📎'
+  return DOC_ICONS[ext] || <Paperclip size={16} />
 }
 
 function AttachmentBubble({ url, type, name, isMine }: { url: string; type: string; name?: string; isMine: boolean }) {
@@ -49,6 +50,7 @@ function AttachmentBubble({ url, type, name, isMine }: { url: string; type: stri
 export default function MessagesPage({ role }: { role: 'student' | 'instructor' | 'admin' }) {
   const { user } = useAuth()
   const [threads, setThreads] = useState<Thread[]>([])
+  const [threadsLoading, setThreadsLoading] = useState(true)
   const [active, setActive] = useState<Thread | null>(null)
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [text, setText] = useState('')
@@ -77,6 +79,7 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
   const prevUnreadRef = useRef(0)
 
   const loadThreads = () => messagesApi.getThreads().then(data => {
+    setThreadsLoading(false)
     const totalUnread = data.reduce((s: number, t: Thread) => s + (t.unread || 0), 0)
     if (prevUnreadRef.current > 0 && totalUnread > prevUnreadRef.current) playMessageSound()
     prevUnreadRef.current = totalUnread
@@ -209,8 +212,9 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
             Conversations
             {threads.filter(t => t.unread > 0).length > 0 && <span className="sbg" style={{ marginLeft: 6 }}>{threads.filter(t => t.unread > 0).length}</span>}
           </div>
-          {threads.length === 0 && <div style={{ padding: 16, color: 'var(--mu)', fontSize: 11, textAlign: 'center' }}>No conversations yet</div>}
-          {threads.map(t => (
+          {threadsLoading && <div className="loading" />}
+          {!threadsLoading && threads.length === 0 && <div style={{ padding: 16, color: 'var(--mu)', fontSize: 11, textAlign: 'center' }}>No conversations yet</div>}
+          {!threadsLoading && threads.map(t => (
             <div key={t.id} className={`ci${active?.id === t.id ? ' active' : ''}`} onClick={() => setActive(t)}>
               <div className="av avs">{t.avatar_initials}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -257,7 +261,7 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
                         {m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
                         {isMine && (
                           <span title={m.is_read ? 'Read' : 'Delivered'} style={{ color: m.is_read ? '#000' : 'rgba(0,0,0,0.4)' }}>
-                            {m.is_read ? '✓✓' : '✓'}
+                            {m.is_read ? <Check size={16} /> : '<Check size={16} />'}
                           </span>
                         )}
                       </div>
@@ -271,10 +275,10 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
               {attachment && (
                 <div style={{ padding: '6px 12px', borderTop: '1px solid var(--bdr)', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--card2)' }}>
                   {attachment.type === 'image' && <img src={`${BACKEND}${attachment.url}`} style={{ height: 40, borderRadius: 4 }} />}
-                  {attachment.type === 'audio' && <span style={{ fontSize: 18 }}>🎤</span>}
+                  {attachment.type === 'audio' && <span style={{ fontSize: 18 }}><Mic size={16} /></span>}
                   {attachment.type === 'document' && <span style={{ fontSize: 18 }}>{docIcon(attachment.name)}</span>}
                   <span style={{ fontSize: 11, color: 'var(--mu)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attachment.name}</span>
-                  <button className="btn bg sm" style={{ fontSize: 10 }} onClick={() => setAttachment(null)}>✕</button>
+                  <button className="btn bg sm" style={{ fontSize: 10 }} onClick={() => setAttachment(null)}><X size={16} /></button>
                 </div>
               )}
 
@@ -284,13 +288,13 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
                   accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip"
                   onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
 
-                <button className="btn bg sm" title="Attach file" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ fontSize: 16, padding: '0 10px' }}>📎</button>
+                <button className="btn bg sm" title="Attach file" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ fontSize: 16, padding: '0 10px' }}><Paperclip size={16} /></button>
                 <button
                   className={`btn sm ${recording ? 'bp' : 'bg'}`}
                   title={recording ? 'Stop recording' : 'Record voice message'}
                   onClick={toggleRecording}
                   style={{ fontSize: 16, padding: '0 10px', ...(recording ? { animation: 'pulse 1s infinite' } : {}) }}
-                >🎤</button>
+                ><Mic size={16} /></button>
                 <input className="inp" placeholder={uploading ? 'Uploading…' : 'Type a message…'} value={text}
                   onChange={e => setText(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendReply()} />
@@ -307,7 +311,7 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
           <div style={{ background: 'var(--card)', border: '1px solid var(--bdr)', borderRadius: 12, width: 520, maxHeight: '85vh', display: 'flex', flexDirection: 'column', padding: 20, gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: 700, fontSize: 14 }}>New Message</div>
-              <button className="btn bg sm" onClick={() => { setShowCompose(false); setSelected([]); setSearch(''); setFilterRole(''); setFilterCourse(undefined); setComposeAttachment(null) }}>✕</button>
+              <button className="btn bg sm" onClick={() => { setShowCompose(false); setSelected([]); setSearch(''); setFilterRole(''); setFilterCourse(undefined); setComposeAttachment(null) }}><X size={16} /></button>
             </div>
 
             {/* group shortcuts */}
@@ -340,7 +344,7 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
                   const c = contacts.find(x => x.id === id)
                   return c ? (
                     <span key={id} style={{ background: 'var(--neon)', color: '#000', borderRadius: 20, padding: '2px 8px', fontSize: 10, fontWeight: 600, cursor: 'pointer' }} onClick={() => toggleContact(id)}>
-                      {c.name} ✕
+                      {c.name} <X size={16} />
                     </span>
                   ) : null
                 })}
@@ -358,7 +362,7 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
                     <div style={{ fontSize: 12, fontWeight: 600 }}>{c.name}</div>
                     <div style={{ fontSize: 10, color: 'var(--mu)', textTransform: 'capitalize' }}>{c.role}</div>
                   </div>
-                  {selected.includes(c.id) && <span style={{ color: 'var(--neon)', fontSize: 14 }}>✓</span>}
+                  {selected.includes(c.id) && <span style={{ color: 'var(--neon)', fontSize: 14 }}><Check size={16} /></span>}
                 </div>
               ))}
             </div>
@@ -367,10 +371,10 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
             {composeAttachment && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--card2)', borderRadius: 8, padding: '6px 10px' }}>
                 {composeAttachment.type === 'image' && <img src={`${BACKEND}${composeAttachment.url}`} style={{ height: 36, borderRadius: 4 }} />}
-                {composeAttachment.type === 'audio' && <span style={{ fontSize: 18 }}>🎤</span>}
+                {composeAttachment.type === 'audio' && <span style={{ fontSize: 18 }}><Mic size={16} /></span>}
                 {composeAttachment.type === 'document' && <span style={{ fontSize: 18 }}>{docIcon(composeAttachment.name)}</span>}
                 <span style={{ fontSize: 11, color: 'var(--mu)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{composeAttachment.name}</span>
-                <button className="btn bg sm" style={{ fontSize: 10 }} onClick={() => setComposeAttachment(null)}>✕</button>
+                <button className="btn bg sm" style={{ fontSize: 10 }} onClick={() => setComposeAttachment(null)}><X size={16} /></button>
               </div>
             )}
 
@@ -381,7 +385,7 @@ export default function MessagesPage({ role }: { role: 'student' | 'instructor' 
               <input ref={cFileRef} type="file" style={{ display: 'none' }}
                 accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip"
                 onChange={e => e.target.files?.[0] && handleFile(e.target.files[0], true)} />
-              <button className="btn bg sm" title="Attach file" onClick={() => cFileRef.current?.click()} disabled={uploading} style={{ fontSize: 15 }}>📎 Attach</button>
+              <button className="btn bg sm" title="Attach file" onClick={() => cFileRef.current?.click()} disabled={uploading} style={{ fontSize: 15 }}><Paperclip size={16} /> Attach</button>
               <button className="btn bp" style={{ flex: 1 }} onClick={sendCompose} disabled={sending || uploading || selected.length === 0 || (!composeText.trim() && !composeAttachment)}>
                 {sending ? 'Sending…' : `Send to ${selected.length} recipient${selected.length !== 1 ? 's' : ''}`}
               </button>

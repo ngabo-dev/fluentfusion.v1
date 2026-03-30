@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../api/client'
 import Avatar from '../../components/Avatar'
+import { Banknote } from 'lucide-react'
 
 export default function Payouts() {
   const [payouts, setPayouts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pending')
-  const load = () => api.get('/api/admin/payouts', { params: { status: tab } }).then(r => setPayouts(r.data))
+  const load = () => { setLoading(true); api.get('/api/admin/payouts', { params: { status: tab } }).then(r => setPayouts(r.data)).catch(() => {}).finally(() => setLoading(false)) }
   useEffect(() => { load() }, [tab])
 
   async function update(id: number, status: string) { await api.patch(`/api/admin/payouts/${id}/status`, { status }); load() }
 
   const total = payouts.filter(p => p.status === 'pending').reduce((a, p) => a + p.amount, 0)
 
+  if (loading) return <div className="pgload" />
+
   return (
     <div className="pg">
       <div className="ph"><div><h1>Payouts</h1><p>Instructor payout management</p></div></div>
       {tab === 'pending' && payouts.length > 0 && (
         <div className="alr aw" style={{ marginBottom: 14 }}>
-          <span>💸</span><div style={{ flex: 1 }}><b>{payouts.length} payout requests awaiting approval — total ${total.toLocaleString()}</b></div>
+          <span><Banknote size={16} /></span><div style={{ flex: 1 }}><b>{payouts.length} payout requests awaiting approval — total ${total.toLocaleString()}</b></div>
         </div>
       )}
       <div className="tabs">

@@ -4,12 +4,18 @@ import StatCard from '../../components/StatCard'
 import BarChart from '../../components/BarChart'
 import Avatar from '../../components/Avatar'
 import Badge from '../../components/Badge'
+import { Flame, Frown, Meh, Moon, Play, Rocket } from 'lucide-react'
 
 const MONTHS = ['J','F','M','A','M','J','J','A','S','O','N','D']
 
 export default function PulseEngine() {
   const [data, setData] = useState<any>(null)
-  useEffect(() => { api.get('/api/admin/pulse').then(r => setData(r.data)) }, [])
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    api.get('/api/admin/pulse').then(r => setData(r.data)).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <div className="pgload" />
   if (!data) return <div className="loading" />
 
   const pd = data.distribution ?? {}
@@ -32,16 +38,16 @@ export default function PulseEngine() {
           </div>
           <div style={{ display: 'flex', gap: 7 }}>
             <button className="btn bo sm">Schedule</button>
-            <button className="btn bp">▶ Run PULSE Now</button>
+            <button className="btn bp"><Play size={16} /> Run PULSE Now</button>
           </div>
         </div>
       </div>
       <div className="sr sr5">
-        <StatCard label="🚀 Thriving" value={(pd.thriving ?? 0).toLocaleString()} sub={`${Math.round((pd.thriving??0)/total*100)}% of learners`} variant="ok" />
-        <StatCard label="😐 Coasting" value={(pd.coasting ?? 0).toLocaleString()} sub={`${Math.round((pd.coasting??0)/total*100)}% of learners`} variant="in" />
-        <StatCard label="😓 Struggling" value={(pd.struggling ?? 0).toLocaleString()} sub={`${Math.round((pd.struggling??0)/total*100)}% of learners`} variant="wa" />
-        <StatCard label="🔥 Burning Out" value={(pd.burning_out ?? 0).toLocaleString()} sub={`${Math.round((pd.burning_out??0)/total*100)}% of learners`} />
-        <StatCard label="💤 Disengaged" value={(pd.disengaged ?? 0).toLocaleString()} sub={`${Math.round((pd.disengaged??0)/total*100)}% of learners`} variant="er" />
+        <StatCard label="Thriving" value={(pd.thriving ?? 0).toLocaleString()} sub={`${Math.round((pd.thriving??0)/total*100)}% of learners`} variant="ok" />
+        <StatCard label="Coasting" value={(pd.coasting ?? 0).toLocaleString()} sub={`${Math.round((pd.coasting??0)/total*100)}% of learners`} variant="in" />
+        <StatCard label="Struggling" value={(pd.struggling ?? 0).toLocaleString()} sub={`${Math.round((pd.struggling??0)/total*100)}% of learners`} variant="wa" />
+        <StatCard label="Burning Out" value={(pd.burning_out ?? 0).toLocaleString()} sub={`${Math.round((pd.burning_out??0)/total*100)}% of learners`} />
+        <StatCard label="Disengaged" value={(pd.disengaged ?? 0).toLocaleString()} sub={`${Math.round((pd.disengaged??0)/total*100)}% of learners`} variant="er" />
       </div>
       <div className="g21">
         <div className="card">
