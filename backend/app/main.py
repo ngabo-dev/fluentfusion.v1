@@ -108,6 +108,17 @@ app.include_router(notifications.router)
 app.include_router(ethics_router.router)
 app.include_router(translate_router.router)
 
+@app.get("/")
+def root():
+    return {
+        "name": "FluentFusion API",
+        "version": "1.0.0",
+        "status": "online",
+        "docs": "/docs",
+        "health": "/health",
+        "translation": "/api/translate",
+    }
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
