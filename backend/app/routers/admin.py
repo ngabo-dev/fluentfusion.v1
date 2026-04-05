@@ -631,28 +631,58 @@ def delete_admin(user_id: int, db: Session = Depends(get_db), current_user: User
 
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(guard)):
-    from fastapi import HTTPException
-    from app.models import Payment, Payout, Enrollment, AuditLog, Report, Message, Review, MonthlyRevenue
+    from app.models import (
+        Payment, Payout, Enrollment, AuditLog, Report, Message, Review,
+        MonthlyRevenue, NotificationRead, NotificationReaction, NotificationReply,
+        ConsentRecord, DataSubjectRequest, PulseStateFeedback, MeetingInvite,
+        QuizAttempt, ContentVersion, CourseDraft, EthicsChangeLog,
+    )
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user.role == RoleEnum.super_admin:
         raise HTTPException(status_code=403, detail="Cannot delete super admin")
     email = user.email
-    # Delete related records to avoid FK violations
-    db.query(Enrollment).filter(Enrollment.student_id == user_id).delete()
-    db.query(Payment).filter(Payment.user_id == user_id).delete()
-    db.query(Payout).filter(Payout.instructor_id == user_id).delete()
-    db.query(Report).filter(Report.reporter_id == user_id).delete()
-    db.query(Message).filter((Message.sender_id == user_id) | (Message.receiver_id == user_id)).delete(synchronize_session=False)
-    db.query(Review).filter(Review.student_id == user_id).delete()
-    db.query(MonthlyRevenue).filter(MonthlyRevenue.instructor_id == user_id).delete()
-    db.query(AuditLog).filter(AuditLog.admin_id == user_id).delete()
-    # Nullify instructor_id on courses rather than deleting them
-    db.query(Course).filter(Course.instructor_id == user_id).update({"instructor_id": None})
-    db.delete(user); db.commit()
-    db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Admin deleted user: {email}"))
-    db.commit()
+    try:
+        # Ethics & consent
+        db.query(ConsentRecord).filter(ConsentRecord.user_id == user_id).delete()
+        db.query(DataSubjectRequest).filter(
+            (DataSubjectRequest.user_id == user_id) | (DataSubjectRequest.resolved_by == user_id)
+        ).delete(synchronize_session=False)
+        db.query(PulseStateFeedback).filter(PulseStateFeedback.user_id == user_id).delete()
+        db.query(EthicsChangeLog).filter(EthicsChangeLog.created_by == user_id).update({"created_by": None})
+        # Notifications
+        db.query(NotificationRead).filter(NotificationRead.user_id == user_id).delete()
+        db.query(NotificationReaction).filter(NotificationReaction.user_id == user_id).delete()
+        db.query(NotificationReply).filter(NotificationReply.user_id == user_id).delete()
+        db.query(Notification).filter(Notification.sender_id == user_id).update({"sender_id": None})
+        # Meetings
+        db.query(MeetingInvite).filter(MeetingInvite.user_id == user_id).delete()
+        # Quizzes
+        db.query(QuizAttempt).filter(QuizAttempt.student_id == user_id).delete()
+        # Content versions & drafts
+        db.query(ContentVersion).filter(ContentVersion.created_by == user_id).update({"created_by": None})
+        db.query(CourseDraft).filter(CourseDraft.instructor_id == user_id).delete()
+        # Core relations
+        db.query(Enrollment).filter(Enrollment.student_id == user_id).delete()
+        db.query(Payment).filter(Payment.user_id == user_id).delete()
+        db.query(Payout).filter(Payout.instructor_id == user_id).delete()
+        db.query(Report).filter(Report.reporter_id == user_id).delete()
+        db.query(Message).filter(
+            (Message.sender_id == user_id) | (Message.receiver_id == user_id)
+        ).delete(synchronize_session=False)
+        db.query(Review).filter(Review.student_id == user_id).delete()
+        db.query(MonthlyRevenue).filter(MonthlyRevenue.instructor_id == user_id).delete()
+        db.query(AuditLog).filter(AuditLog.admin_id == user_id).delete()
+        # Nullify instructor_id on courses rather than deleting them
+        db.query(Course).filter(Course.instructor_id == user_id).update({"instructor_id": None})
+        db.delete(user)
+        db.commit()
+        db.add(AuditLog(admin_id=current_user.id, action_type="USER", description=f"Admin deleted user: {email}"))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
     return {"ok": True}
 
 @router.get("/settings")
