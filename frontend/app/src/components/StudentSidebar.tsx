@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, Search, Video, HelpCircle,
   Layers, Mic, Target, BarChart2, Trophy, Flame, TrendingUp,
   MessageSquare, Megaphone, Bell, Settings, PanelLeft, Shield,
-  Zap, LogOut, User,
+  Zap, LogOut, User, Languages,
 } from 'lucide-react'
 
 const SIZE = 16
@@ -26,6 +26,7 @@ const links = [
   { section: 'Practice', items: [
     { to: '/dashboard/flashcards',     label: 'Flashcards',        icon: <Layers size={SIZE} /> },
     { to: '/dashboard/speaking',       label: 'Speaking Practice', icon: <Mic size={SIZE} /> },
+    { to: '/dashboard/translate',      label: 'Live Translation',  icon: <Languages size={SIZE} /> },
     { to: '/dashboard/daily-challenge',label: 'Daily Challenge',   icon: <Target size={SIZE} /> },
   ]},
   { section: 'Progress', items: [

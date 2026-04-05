@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from app.models import Base, engine
 from app.routers import auth, admin, instructor, student, messages, meetings, notifications
 from app.routers import ethics as ethics_router
+from app.routers import translate as translate_router
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -98,6 +99,7 @@ app.include_router(messages.router)
 app.include_router(meetings.router)
 app.include_router(notifications.router)
 app.include_router(ethics_router.router)
+app.include_router(translate_router.router)
 
 @app.get("/health")
 def health():

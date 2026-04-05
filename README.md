@@ -7,6 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-2.0+-FF6600?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
 
 ---
@@ -28,11 +29,13 @@ FluentFusion is a full-stack language learning platform built for the ALU Capsto
 Three roles — **Students, Instructors, Admins** — each with a fully dedicated dashboard, sidebar navigation, and feature set.
 
 Key highlights:
-- 🔐 **JWT Authentication** — Register, login, OTP email verification, password reset
+- 🔐 **JWT Authentication** — Register, login, OTP email verification, password reset, Google OAuth
 - 🎓 **4-Step Onboarding** — Native language → target language → goal → level (persisted to DB)
 - 📊 **Role-Based Dashboards** — Separate layouts and routes for all three roles
-- 📧 **Dual Email Provider** — Resend API (production) with SMTP fallback (local dev)
-- 🧠 **PULSE ML Engine** — Classifies learners into 5 behavioural states using OULAD dataset
+- 📧 **Dual Email Provider** — SendGrid API (production) with Gmail SMTP fallback (local dev)
+- 🧠 **PULSE ML Engine** — XGBoost classifier (72.93% accuracy) trained on OULAD dataset
+- 🎥 **WebRTC Live Sessions** — Real-time video/audio meetings with WebSocket signaling
+- 🔒 **Ethics & Compliance** — GDPR consent management, data subject requests, REC approval J26BSE087
 - 🌍 **Public Pages** — Welcome, Features, Pricing, Community with live platform stats
 
 ---
@@ -43,19 +46,22 @@ Key highlights:
 
 | Feature | Details |
 |---|---|
-| Authentication | Email/password signup & login, JWT, OTP verification, password reset |
+| Authentication | Email/password signup & login, JWT, OTP verification, password reset, Google OAuth |
 | Onboarding | 4-step setup persisted to DB: native lang → learn lang → goal → level |
 | Student Dashboard | XP, pulse state, enrolled courses, live sessions, leaderboard (real DB data) |
 | Instructor Dashboard | Courses, students, sessions, quizzes, revenue, payouts, analytics, pulse insights |
 | Admin Dashboard | User management, course approvals, analytics, geo data, payments, revenue, audit log, pulse engine, settings |
 | Leaderboard | Real XP rankings from DB — top 50 students ordered by XP |
 | Messaging | Unified messages system for all roles with file/image/audio attachments |
-| Email System | OTP + welcome emails per role + password reset via Resend API / SMTP fallback |
-| PULSE ML | 5-state learner classifier trained on OULAD dataset (32k real students) |
+| Live Sessions | WebRTC video/audio meetings with WebSocket signaling, screen share, in-room chat |
+| Live Translation | AI-powered real-time translation via Google Gemini LLM — English ↔ Kinyarwanda ↔ 8 other languages, phonetic guides, Rwanda tourism quick phrases |
+| Email System | OTP + welcome emails per role + password reset via SendGrid / Gmail SMTP fallback |
+| PULSE ML | XGBoost classifier — 72.93% accuracy, 72.39% F1, 31 features, 28,785 OULAD students |
+| Ethics & Compliance | GDPR consent records, data subject requests, PULSE feedback, processing register, REC approval J26BSE087 |
+| Notifications | Emoji reactions, threaded replies, per-notification read tracking |
 | Public Pages | Welcome (live stats), Features, Pricing (monthly/annual), Community |
 
 ### 🔜 Coming Soon
-- Live session video interface
 - Certificate generation
 - Mobile app (React Native)
 
@@ -74,36 +80,42 @@ Key highlights:
 ### Backend
 | Technology | Version | Purpose |
 |---|---|---|
-| FastAPI | 0.111.0 | REST API |
+| FastAPI | 0.111.0 | REST API + WebSocket |
 | PostgreSQL | 15 (Aiven cloud) | Primary database |
-| SQLAlchemy | 2.0.30 | ORM |
+| SQLAlchemy | 2.0.36 | ORM |
 | Python-Jose | 3.3.0 | JWT |
-| Resend | 2.24.0 | Email delivery (production) |
+| SendGrid | 6.11.0 | Email delivery (production) |
 | smtplib | stdlib | Email fallback (local dev) |
+| google-auth | 2.49.1 | Google OAuth |
 
 ### ML (PULSE)
 | Technology | Purpose |
 |---|---|
-| scikit-learn | Model training (GradientBoostingClassifier) |
+| XGBoost 2.0+ | Model training (XGBClassifier, 500 estimators, lr=0.05, max_depth=6) |
+| scikit-learn | Preprocessing, scaling, cross-validation |
 | pandas / numpy | Feature engineering from OULAD dataset |
-| OULAD Dataset | 32k real Open University students — ground truth labels |
+| OULAD Dataset | 28,785 real Open University students — ground truth labels |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-Instructo&admin/
+fluentfusionfinal/
 ├── backend/
 │   ├── app/
 │   │   ├── routers/
-│   │   │   ├── auth.py          # register, login, verify-email, forgot/reset-password
+│   │   │   ├── auth.py          # register, login, verify-email, forgot/reset-password, Google OAuth
 │   │   │   ├── admin.py         # all /api/admin/* endpoints
 │   │   │   ├── instructor.py    # all /api/instructor/* endpoints
 │   │   │   ├── student.py       # all /api/student/* endpoints + leaderboard + onboarding
-│   │   │   └── messages.py      # unified messaging for all roles
-│   │   ├── auth.py              # JWT helpers, password hashing
-│   │   ├── email_utils.py       # Resend → SMTP fallback, role-specific welcome emails
+│   │   │   ├── messages.py      # unified messaging for all roles
+│   │   │   ├── meetings.py      # WebRTC live sessions + WebSocket signaling
+│   │   │   ├── notifications.py # reactions, replies, read tracking
+│   │   │   └── ethics.py        # GDPR consent, data subject requests, PULSE feedback
+│   │   ├── auth.py              # JWT helpers, password hashing, Google OAuth
+│   │   ├── email_utils.py       # SendGrid → Gmail SMTP fallback, role-specific welcome emails
+│   │   ├── pulse_predictor.py   # PULSE inference — loads model artifacts, predicts state
 │   │   ├── models.py            # SQLAlchemy models
 │   │   ├── main.py              # FastAPI app, CORS, /api/stats
 │   │   └── seed.py              # DB seeding script
@@ -124,13 +136,14 @@ Instructo&admin/
 │   └── vite.config.ts
 │
 ├── PULSE/
+│   ├── pulse_artifacts/         # Trained model, scaler, encoders, metadata
 │   └── PULSE_ML_Notebook.ipynb  # Full ML pipeline — OULAD data → trained model
 │
 ├── archive/                     # OULAD dataset files
 │   ├── studentInfo.csv
 │   ├── studentAssessment.csv
 │   ├── studentRegistration.csv
-│   ├── studentVle_0-7.csv
+│   ├── studentVle_0.csv … studentVle_7.csv   # split VLE interaction files
 │   ├── assessments.csv
 │   ├── vle.csv
 │   └── courses.csv
@@ -183,7 +196,8 @@ SECRET_KEY=your-secret-key-min-32-chars
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 FRONTEND_URL=http://localhost:5173
-RESEND_API_KEY=your-resend-api-key
+SENDGRID_API_KEY=your-sendgrid-api-key
+GEMINI_API_KEY=your-gemini-api-key
 EMAIL_ENABLED=True
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -197,6 +211,7 @@ FROM_NAME=FluentFusion AI
 ```env
 VITE_API_URL=http://localhost:8000/api
 VITE_FRONTEND_URL=http://localhost:5173
+VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
 ```
 
 ---
@@ -233,6 +248,7 @@ cd frontend/app && npm run dev
 ```
 POST /api/auth/register
 POST /api/auth/login
+POST /api/auth/google              ← Google OAuth
 POST /api/auth/verify-email
 POST /api/auth/resend-verification
 POST /api/auth/forgot-password
@@ -318,6 +334,53 @@ POST /api/messages/send
 POST /api/messages/upload
 ```
 
+### Meetings — `/api/meetings/`
+```
+GET/POST /api/meetings
+GET      /api/meetings/contacts/search
+GET      /api/meetings/{room_id}
+PATCH    /api/meetings/{room_id}/start
+PATCH    /api/meetings/{room_id}/end
+DELETE   /api/meetings/{room_id}
+WS       /api/meetings/ws/{room_id}/{user_id}   ← WebRTC signaling
+```
+
+### Ethics & Compliance — `/api/v1/ethics/`
+```
+POST   /api/v1/ethics/consent
+GET    /api/v1/ethics/consent/me
+DELETE /api/v1/ethics/consent/me/{consent_type}
+GET    /api/v1/ethics/consent/versions
+POST   /api/v1/ethics/data-rights
+GET    /api/v1/ethics/data-rights/me
+GET    /api/v1/ethics/data-rights           ← admin
+PATCH  /api/v1/ethics/data-rights/{id}      ← admin
+POST   /api/v1/ethics/pulse-feedback
+GET    /api/v1/ethics/pulse-feedback/me
+GET    /api/v1/ethics/pulse-feedback        ← admin
+GET    /api/v1/ethics/processing-register   ← admin
+POST   /api/v1/ethics/processing-register   ← admin
+GET/POST /api/v1/ethics/ethics-change-log   ← admin
+GET    /api/v1/ethics/documents/{doc_type}
+GET    /api/v1/ethics/overview              ← admin
+```
+
+### Notifications — `/api/notifications/`
+```
+GET  /api/notifications/{id}
+POST /api/notifications/{id}/react
+POST /api/notifications/{id}/reply
+GET  /api/notifications/{id}/reactions
+```
+
+### Translation — `/api/translate/`
+```
+POST /api/translate          ← translate text between any supported language pair
+GET  /api/translate/languages ← list supported languages
+```
+Supported languages: English, Kinyarwanda 🇷🇼, French, Swahili, Spanish, German, Chinese, Arabic, Portuguese, Hindi.
+Requires `GEMINI_API_KEY` — get a free key at https://aistudio.google.com/app/apikey
+
 ---
 
 ## 🧠 PULSE ML Engine
@@ -332,8 +395,18 @@ PULSE classifies each learner into one of 5 behavioural states:
 | 🔥 Burning Out | Declining metrics, at-risk of churn |
 | 💤 Disengaged | Very low activity, near dropout |
 
+### Model Performance
+| Metric | Score |
+|---|---|
+| Test Accuracy | **72.93%** |
+| Test F1 (weighted) | **72.39%** |
+| CV Mean F1 | 72.71% ± 0.85% |
+| Algorithm | XGBoost (n_estimators=500, lr=0.05, max_depth=6) |
+| Features | 31 engineered features |
+| Training samples | 20,149 / Val: 4,318 / Test: 4,318 |
+
 ### Training Data — OULAD Dataset
-Real data from 32,000 Open University students (`/archive/`):
+Real data from 28,785 Open University students (`/archive/`):
 
 | OULAD Result | PULSE State |
 |---|---|
@@ -343,8 +416,14 @@ Real data from 32,000 Open University students (`/archive/`):
 | Withdrawn (late) | Burning Out (3) |
 | Withdrawn (early) | Disengaged (4) |
 
-### Engineered Features
-`total_clicks`, `active_days`, `avg_clicks_per_day`, `avg_score`, `num_assessments`, `days_to_first_submit`, `num_of_prev_attempts`, `studied_credits`, `days_registered_before_start`, `withdrew_early`, plus 4 composite scores.
+### Engineered Features (31 total)
+**Behavioural:** `total_clicks`, `active_days`, `max_clicks_day`, `last_active_day`, `first_active_day`, `avg_clicks_per_day`, `activity_span`
+
+**Assessment:** `avg_score`, `max_score`, `min_score`, `score_std`, `score_range`, `num_assessments`, `days_to_first_submit`
+
+**Demographic:** `gender`, `highest_education`, `imd_band`, `age_band`, `disability`, `num_of_prev_attempts`, `studied_credits`, `days_registered_before_start`, `withdrew_early`
+
+**Composite:** `engagement_score`, `performance_score`, `decline_index`, `consistency_score`, `clicks_per_assessment`, `score_per_credit`, `engagement_x_perf`, `active_days_x_score`
 
 ### Running the Notebook
 ```bash
