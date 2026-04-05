@@ -108,6 +108,23 @@ app.include_router(notifications.router)
 app.include_router(ethics_router.router)
 app.include_router(translate_router.router)
 
+@app.on_event("startup")
+async def start_keepalive():
+    import asyncio, httpx, os
+    async def ping():
+        url = os.getenv("RENDER_EXTERNAL_URL", "").rstrip("/")
+        if not url:  # only runs on Render, not locally
+            return
+        await asyncio.sleep(60)  # wait 1 min after startup
+        while True:
+            try:
+                async with httpx.AsyncClient(timeout=10) as c:
+                    await c.get(f"{url}/health")
+            except Exception:
+                pass
+            await asyncio.sleep(600)  # ping every 10 minutes
+    asyncio.create_task(ping())
+
 @app.get("/")
 def root():
     return {
