@@ -51,7 +51,7 @@ export default function Reviews() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 9 }}>
               <Avatar initials={r.avatar_initials || r.student.slice(0,2).toUpperCase()} />
               <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 600 }}>{r.student}</div><div style={{ fontSize: 10, color: 'var(--mu)' }}>{r.course} · {r.created_at?.slice(0,10)}</div></div>
-              <span style={{ color: 'var(--wa)' }}>{<Star size={16} />.repeat(r.rating)}{<Star size={16} />.repeat(5-r.rating)}</span>
+              <span style={{ color: 'var(--wa)' }}>{Array.from({length: r.rating}, (_, i) => <Star key={i} size={14} />)}<span style={{opacity:0.25}}>{Array.from({length: 5-r.rating}, (_, i) => <Star key={i} size={14} />)}</span></span>
             </div>
             <p style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--mu)', marginBottom: 9 }}>"{r.comment}"</p>
             {r.reply ? (
