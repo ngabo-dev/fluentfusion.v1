@@ -266,25 +266,20 @@ FRONTEND_URL=http://localhost:5173
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# Email — choose one provider
-# Option A: SendGrid (production)
-SENDGRID_API_KEY=your-sendgrid-api-key
-
-# Option B: Gmail SMTP (local dev fallback)
+# Email — Gmail SMTP (local dev)
 EMAIL_ENABLED=True
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-gmail@gmail.com
 SMTP_PASSWORD=your-gmail-app-password
 FROM_EMAIL=your-gmail@gmail.com
-FROM_NAME=FluentFusion
+FROM_NAME=FluentFusion AI
 
-# Gemini API (optional — enhances translation with phonetic guides)
-# Get a free key at https://aistudio.google.com/app/apikey
+# Gemini API (optional — adds phonetic guides to translations)
 GEMINI_API_KEY=your-gemini-api-key
 ```
 
-> **Note:** The Live Translation feature works without any API key using `deep-translator`. The `GEMINI_API_KEY` is optional and only adds phonetic romanization on top of translations.
+> **Note:** The moderator access credentials and live `.env` values will be shared privately with the assessment panel.
 
 ### `frontend/app/.env`
 
