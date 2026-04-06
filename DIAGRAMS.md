@@ -1,195 +1,356 @@
 # 📐 FluentFusion — System Diagrams
 
-> Render at [mermaid.live](https://mermaid.live) then export as PNG (1920×1080, scale 2) for Google Docs.
-> Insert as image — never paste Mermaid code directly into Google Docs.
+> Render each diagram at [mermaid.live](https://mermaid.live) → Actions → PNG → insert into Google Docs at 16cm width.
 
 ---
 
-## 1. 🔄 Flowchart — Full User Journey
+## 1. 🏗️ System Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph Users["👥 Users"]
+        direction LR
+        ST["🎓 Student"]
+        IN["👨‍🏫 Instructor"]
+        AD["🛡️ Admin"]
+        TO["✈️ Tourist"]
+    end
+
+    subgraph Frontend["☁️ Frontend — Vercel"]
+        direction TB
+        FE["React 18 + TypeScript\nVite 5 · React Router 6\nfluentfusionv1.vercel.app"]
+        subgraph Pages["Pages"]
+            P1["Student Dashboard\n/dashboard/*"]
+            P2["Instructor Dashboard\n/instructor/*"]
+            P3["Admin Dashboard\n/admin/*"]
+            P4["Live Translation\n/dashboard/translate"]
+        end
+    end
+
+    subgraph Backend["☁️ Backend — Render"]
+        direction TB
+        API["FastAPI 0.111\nPython 3.12 · Uvicorn\nfluentfusion-v1.onrender.com"]
+        subgraph Routers["API Routers"]
+            R1["/api/auth"]
+            R2["/api/student"]
+            R3["/api/instructor"]
+            R4["/api/admin"]
+            R5["/api/translate"]
+            R6["/api/messages"]
+            R7["/api/meetings (WebRTC)"]
+            R8["/api/v1/ethics"]
+        end
+        subgraph ML["🧠 PULSE ML Engine"]
+            M1["XGBoost Classifier\npulse_model.pkl"]
+            M2["StandardScaler\npulse_scaler.pkl"]
+            M3["LabelEncoders\nlabel_encoders.pkl"]
+        end
+    end
+
+    subgraph External["External Services"]
+        direction TB
+        DB[("🗄️ PostgreSQL 15\nAiven Cloud\nSSL encrypted")]
+        GT["🌍 Google Translate\ndeep-translator\nNo API key needed"]
+        SG["📧 SendGrid\nEmail Production"]
+        GM["📧 Gmail SMTP\nEmail Dev Fallback"]
+        GO["🔑 Google OAuth\nSign-in with Google"]
+        CJ["⏰ cron-job.org\nKeep-alive ping\nevery 10 min"]
+    end
+
+    Users --> FE
+    FE --> API
+    API --> DB
+    API --> GT
+    API --> SG
+    SG -. fallback .-> GM
+    API --> GO
+    API --> M1
+    M1 --- M2
+    M1 --- M3
+    CJ -. "GET /health" .-> API
+```
+
+---
+
+## 2. 🔄 Flowchart — Complete User Journey
 
 ```mermaid
 flowchart TD
-    A([User visits /]) --> B{Logged in?}
-    B -- No --> C[Welcome Page]
-    B -- Yes --> D{Role?}
+    START([User opens FluentFusion]) --> AUTH{Has account?}
 
-    C --> E[/signup]
-    C --> F[/login]
+    AUTH -- No --> SIGNUP["/signup\nEnter name, email,\npassword, role"]
+    AUTH -- Yes --> LOGIN["/login\nEnter email & password\nor Google OAuth"]
 
-    E --> G[Register: name, email, password, role]
-    G --> H[OTP sent via Email]
-    H --> I[/verify-email — Enter 6-digit OTP]
-    I --> J{OTP valid?}
-    J -- No --> K[Resend OTP]
-    K --> I
-    J -- Yes --> L{Role?}
+    SIGNUP --> OTP["OTP sent to email\n6-digit code, 10 min expiry"]
+    OTP --> VERIFY["/verify-email\nEnter OTP code"]
+    VERIFY --> VALID{OTP valid?}
+    VALID -- No --> RESEND[Resend OTP]
+    RESEND --> VERIFY
+    VALID -- Yes --> WELCOME["Welcome email sent\nAccount activated"]
+    WELCOME --> ROLE1{Role?}
 
-    F --> M[Enter credentials]
-    M --> N{Valid?}
-    N -- No --> O[Error: Invalid credentials]
-    N -- Yes --> P{Email verified?}
-    P -- No --> Q[Error: EMAIL_NOT_VERIFIED]
-    P -- Yes --> L
+    LOGIN --> CREDS{Credentials valid?}
+    CREDS -- No --> ERR1["❌ Invalid credentials"]
+    CREDS -- Yes --> VERIFIED{Email verified?}
+    VERIFIED -- No --> ERR2["❌ Please verify email"]
+    VERIFIED -- Yes --> ROLE1
 
-    L -- student + first login --> R[Onboarding Step 1: Native Language]
-    R --> S[Step 2: Target Language]
-    S --> T[Step 3: Goal]
-    T --> U[Step 4: Level]
-    U --> V[POST /api/student/onboarding]
-    V --> W[/dashboard]
+    ROLE1 -- "Student\n(first login)" --> ONBOARD
 
-    L -- student + returning --> W
-    L -- instructor --> X[/instructor]
-    L -- admin / super_admin --> Y[/admin]
+    subgraph ONBOARD["4-Step Onboarding"]
+        O1["Step 1: Native Language"] --> O2["Step 2: Target Language"]
+        O2 --> O3["Step 3: Learning Goal"]
+        O3 --> O4["Step 4: Proficiency Level"]
+        O4 --> O5["Save to DB\nPOST /api/student/onboarding"]
+    end
 
-    D -- student --> W
-    D -- instructor --> X
-    D -- admin --> Y
+    ROLE1 -- "Student\n(returning)" --> SDASH
+    ONBOARD --> SDASH
 
-    W --> W1[Browse Catalog]
-    W --> W2[Live Translation]
-    W --> W3[Take Quiz]
-    W --> W4[Join Live Session]
-    W --> W5[View Leaderboard]
+    subgraph SDASH["/dashboard — Student"]
+        S1["📚 Browse Course Catalog"]
+        S2["🎓 Enroll & Watch Lessons"]
+        S3["📝 Take Quizzes"]
+        S4["🎥 Join Live Sessions"]
+        S5["🌍 Live Translation"]
+        S6["🏆 Leaderboard & XP"]
+        S7["💬 Messages"]
+        S8["🧠 View PULSE State"]
+    end
 
-    X --> X1[Create Course]
-    X --> X2[Schedule Live Session]
-    X --> X3[View PULSE Insights]
+    ROLE1 -- Instructor --> IDASH
 
-    Y --> Y1[Approve Courses]
-    Y --> Y2[Manage Users]
-    Y --> Y3[Run PULSE Engine]
+    subgraph IDASH["/instructor — Instructor"]
+        I1["📖 Create & Edit Courses"]
+        I2["🎬 Add Lessons & Modules"]
+        I3["📅 Schedule Live Sessions"]
+        I4["📊 View PULSE Insights"]
+        I5["💰 Revenue & Payouts"]
+        I6["⭐ Manage Reviews"]
+    end
+
+    ROLE1 -- "Admin /\nSuper Admin" --> ADASH
+
+    subgraph ADASH["/admin — Admin"]
+        A1["✅ Approve / Reject Courses"]
+        A2["👥 Manage All Users"]
+        A3["🧠 Run PULSE Engine"]
+        A4["📈 Analytics & Geo Data"]
+        A5["💳 Payments & Payouts"]
+        A6["📋 Audit Log"]
+        A7["🔒 Ethics & GDPR"]
+    end
 ```
 
 ---
 
-## 2a. 👤 Use Case Diagram — Student & Auth
+## 3. 👤 Use Case Diagram — All Actors
 
 ```mermaid
 flowchart LR
-    ST([Student])
-    SY([System])
-
-    subgraph Auth
-        UC1[Register]
-        UC2[Login / Google OAuth]
-        UC3[Verify Email OTP]
-        UC4[Reset Password]
+    subgraph Actors["Actors"]
+        ST(["🎓 Student"])
+        IN(["👨‍🏫 Instructor"])
+        AD(["🛡️ Admin"])
+        SA(["🔑 Super Admin"])
+        SY(["⚙️ System"])
     end
 
-    subgraph Student
-        UC5[Complete Onboarding]
-        UC6[Browse Course Catalog]
-        UC7[Enroll in Course]
-        UC8[Watch Lessons]
-        UC9[Take Quiz]
-        UC10[Join Live Session]
-        UC11[View Leaderboard & XP]
-        UC12[Live Translation]
-        UC13[Send Messages]
-        UC14[View PULSE State]
-        UC15[Speaking Practice]
-        UC16[Flashcards & Daily Challenge]
+    subgraph UC_AUTH["Authentication"]
+        A1["Register with email"]
+        A2["Login with email/password"]
+        A3["Login with Google OAuth"]
+        A4["Verify email via OTP"]
+        A5["Reset forgotten password"]
     end
 
-    subgraph SystemAuto[System Automated]
-        UC17[Send OTP Email]
-        UC18[Send Welcome Email]
-        UC19[Classify via PULSE ML]
+    subgraph UC_ST["Student Features"]
+        B1["Complete 4-step onboarding"]
+        B2["Browse course catalog"]
+        B3["Enroll in a course"]
+        B4["Watch video lessons"]
+        B5["Take quizzes"]
+        B6["Join live sessions (WebRTC)"]
+        B7["Use Live Translation"]
+        B8["View XP & leaderboard"]
+        B9["Track PULSE state"]
+        B10["Send & receive messages"]
+        B11["Speaking practice"]
+        B12["Flashcards & daily challenge"]
+        B13["Manage GDPR data rights"]
     end
 
-    ST --> UC1 & UC2 & UC3 & UC4
-    ST --> UC5 & UC6 & UC7 & UC8 & UC9 & UC10
-    ST --> UC11 & UC12 & UC13 & UC14 & UC15 & UC16
-    SY --> UC17 & UC18 & UC19
-    UC1 -.-> UC17
-    UC3 -.-> UC18
+    subgraph UC_IN["Instructor Features"]
+        C1["Create & edit courses"]
+        C2["Add lessons & modules"]
+        C3["Create quizzes"]
+        C4["Schedule live sessions"]
+        C5["View student roster"]
+        C6["View PULSE engagement insights"]
+        C7["View revenue & request payout"]
+        C8["Reply to student reviews"]
+        C9["Send messages to students"]
+    end
+
+    subgraph UC_AD["Admin Features"]
+        D1["Approve or reject courses"]
+        D2["Manage all platform users"]
+        D3["Ban or unban users"]
+        D4["Run PULSE ML engine"]
+        D5["View analytics & geo data"]
+        D6["Manage payments & payouts"]
+        D7["View audit log"]
+        D8["Send platform notifications"]
+        D9["Manage platform settings"]
+        D10["Oversee ethics & compliance"]
+    end
+
+    subgraph UC_SA["Super Admin Only"]
+        E1["Create admin accounts"]
+        E2["Delete admin accounts"]
+    end
+
+    subgraph UC_SYS["System Automated"]
+        F1["Send OTP verification email"]
+        F2["Send welcome email on signup"]
+        F3["Send password reset email"]
+        F4["Classify learner via PULSE ML"]
+        F5["Keep-alive ping via cron-job.org"]
+    end
+
+    ST --> A1 & A2 & A3 & A4 & A5
+    ST --> B1 & B2 & B3 & B4 & B5 & B6 & B7 & B8 & B9 & B10 & B11 & B12 & B13
+
+    IN --> A1 & A2 & A3 & A4 & A5
+    IN --> C1 & C2 & C3 & C4 & C5 & C6 & C7 & C8 & C9
+
+    AD --> A2
+    AD --> D1 & D2 & D3 & D4 & D5 & D6 & D7 & D8 & D9 & D10
+
+    SA --> E1 & E2
+
+    SY --> F1 & F2 & F3 & F4 & F5
+
+    A1 -.triggers.-> F1
+    A4 -.triggers.-> F2
+    A5 -.triggers.-> F3
+    D4 -.triggers.-> F4
 ```
 
 ---
 
-## 2b. 👤 Use Case Diagram — Instructor & Admin
-
-```mermaid
-flowchart LR
-    IN([Instructor])
-    AD([Admin])
-    SA([Super Admin])
-
-    subgraph Instructor
-        UC1[Create / Edit Course]
-        UC2[Add Lessons & Modules]
-        UC3[Schedule Live Session]
-        UC4[Create Quiz]
-        UC5[View Student Roster]
-        UC6[View PULSE Insights]
-        UC7[View Revenue & Request Payout]
-        UC8[Reply to Reviews]
-        UC9[Send Messages]
-    end
-
-    subgraph Admin
-        UC10[Approve / Reject Courses]
-        UC11[Manage All Users]
-        UC12[Ban / Unban Users]
-        UC13[Run PULSE Engine]
-        UC14[View Analytics & Geo Data]
-        UC15[Manage Payments & Payouts]
-        UC16[View Audit Log]
-        UC17[Send Platform Notifications]
-        UC18[Manage Platform Settings]
-        UC19[Ethics & GDPR Compliance]
-    end
-
-    subgraph SuperAdmin[Super Admin Only]
-        UC20[Create Admin Accounts]
-        UC21[Delete Admin Accounts]
-    end
-
-    IN --> UC1 & UC2 & UC3 & UC4 & UC5 & UC6 & UC7 & UC8 & UC9
-    AD --> UC10 & UC11 & UC12 & UC13 & UC14 & UC15 & UC16 & UC17 & UC18 & UC19
-    SA --> UC20 & UC21
-```
-
----
-
-## 3. 🔁 Sequence Diagram — Registration & Onboarding
+## 4. 🔁 Sequence Diagram — Student Registration & Onboarding
 
 ```mermaid
 sequenceDiagram
     actor U as Student
     participant FE as React Frontend
     participant API as FastAPI Backend
-    participant DB as PostgreSQL
+    participant DB as PostgreSQL (Aiven)
     participant EM as Email Service
 
-    U->>FE: Fill signup form
-    FE->>API: POST /api/auth/register
-    API->>DB: Check email uniqueness
-    DB-->>API: Not found
-    API->>DB: INSERT User (is_verified=false)
-    API->>EM: send_otp_email(otp)
-    EM-->>U: 6-digit OTP email
-    API-->>FE: access_token
+    rect rgb(20, 30, 20)
+        Note over U,EM: Step 1 — Registration
+        U->>FE: Fill signup form (name, email, password, role)
+        FE->>API: POST /api/auth/register
+        API->>DB: SELECT user WHERE email = ?
+        DB-->>API: Not found (email available)
+        API->>DB: INSERT User (is_verified=false, otp_code=XXXXXX)
+        DB-->>API: User created (id=N)
+        API->>EM: send_otp_email(email, name, otp)
+        EM-->>U: Email with 6-digit OTP code
+        API-->>FE: { access_token, role, id }
+        FE->>FE: Redirect → /verify-email
+    end
 
-    U->>FE: Enter OTP
-    FE->>API: POST /api/auth/verify-email
-    API->>DB: Validate OTP
-    API->>DB: SET is_verified=true
-    API->>EM: send_welcome_email()
-    API-->>FE: verified
+    rect rgb(20, 20, 30)
+        Note over U,EM: Step 2 — Email Verification
+        U->>FE: Enter 6-digit OTP code
+        FE->>API: POST /api/auth/verify-email { email, code }
+        API->>DB: SELECT user WHERE email = ?
+        DB-->>API: User record with otp_code
+        API->>API: Validate code & check expiry
+        API->>DB: UPDATE SET is_verified=true, otp_code=null
+        API->>EM: send_welcome_email(email, name, role)
+        EM-->>U: Welcome email
+        API-->>FE: { message: "verified", role: "student" }
+        FE->>FE: Redirect → /onboard/native-language
+    end
 
-    Note over U,FE: 4-Step Onboarding
-    U->>FE: native lang → target lang → goal → level
-    FE->>API: POST /api/student/onboarding
-    API->>DB: UPDATE user onboarding fields
-    API-->>FE: saved
-    FE->>FE: Redirect /dashboard
+    rect rgb(30, 20, 20)
+        Note over U,FE: Step 3 — 4-Step Onboarding
+        U->>FE: Select native language
+        FE->>FE: Save to localStorage
+        U->>FE: Select target language
+        FE->>FE: Save to localStorage
+        U->>FE: Select learning goal
+        FE->>FE: Save to localStorage
+        U->>FE: Select proficiency level
+        FE->>API: POST /api/student/onboarding\n{ native_lang, learn_lang, goal, level }
+        API->>DB: UPDATE users SET onboarding fields
+        DB-->>API: OK
+        API-->>FE: { message: "onboarding saved" }
+        FE->>FE: Redirect → /dashboard
+    end
 ```
 
 ---
 
-## 4a. 🗄️ ERD — Core Tables
+## 5. 🔐 Sequence Diagram — JWT Authentication & Role Routing
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant FE as React Frontend
+    participant AC as AuthContext
+    participant API as FastAPI Backend
+    participant DB as PostgreSQL
+
+    rect rgb(20, 30, 20)
+        Note over U,DB: Login Flow
+        U->>FE: Enter email & password → Submit
+        FE->>API: POST /api/auth/login\n(form: username, password)
+        API->>DB: SELECT user WHERE email = ?
+        DB-->>API: User record
+        API->>API: verify_password(plain, hashed)
+        API->>API: Check is_verified = true
+        API->>API: Check status != banned
+        API->>API: create_access_token({ sub: user_id, role })
+        API-->>FE: { access_token, role, name, id, is_first_login }
+        FE->>AC: setToken() + setUser()
+        AC->>AC: Persist to localStorage
+    end
+
+    rect rgb(20, 20, 30)
+        Note over FE,FE: Role-Based Redirect
+        FE->>FE: role = "student" → /dashboard
+        FE->>FE: role = "instructor" → /instructor
+        FE->>FE: role = "admin" → /admin
+        FE->>FE: role = "super_admin" → /admin
+    end
+
+    rect rgb(30, 25, 10)
+        Note over FE,DB: Protected API Request
+        FE->>API: GET /api/student/dashboard\nAuthorization: Bearer <token>
+        API->>API: decode JWT → user_id + role
+        API->>DB: SELECT user WHERE id = user_id
+        DB-->>API: User record
+        API->>API: Verify role matches route guard
+        API-->>FE: Dashboard data (JSON)
+    end
+
+    rect rgb(30, 10, 10)
+        Note over U,FE: Token Expiry (1440 min)
+        FE->>API: Request with expired token
+        API-->>FE: 401 Unauthorized
+        FE->>AC: clearToken()
+        FE->>FE: Redirect → /login?reason=expired
+    end
+```
+
+---
+
+## 6. 🗄️ ERD — Core Tables (Users, Courses, Learning)
 
 ```mermaid
 erDiagram
@@ -198,8 +359,8 @@ erDiagram
         string name
         string email
         string hashed_password
-        enum role
-        enum status
+        enum role "student|instructor|admin|super_admin"
+        enum status "active|banned|pending"
         string avatar_initials
         string avatar_url
         text bio
@@ -207,7 +368,7 @@ erDiagram
         string otp_code
         datetime otp_expiry
         string reset_token
-        enum pulse_state
+        enum pulse_state "thriving|coasting|struggling|burning_out|disengaged"
         int xp
         bool first_login
         datetime created_at
@@ -224,13 +385,14 @@ erDiagram
         string level
         string flag_emoji
         string thumbnail_url
-        enum status
+        enum status "draft|pending|approved|published|rejected"
         int instructor_id FK
         float price
         bool is_free
         text what_you_learn
         text requirements
         datetime created_at
+        datetime published_at
     }
 
     MODULES {
@@ -246,12 +408,13 @@ erDiagram
         int course_id FK
         int module_id FK
         string title
-        string lesson_type
+        string lesson_type "video|text|pdf|audio"
         string video_url
         text content
         int duration_min
         int order
         bool is_preview
+        bool is_downloadable
     }
 
     ENROLLMENTS {
@@ -262,42 +425,6 @@ erDiagram
         datetime enrolled_at
     }
 
-    USERS ||--o{ COURSES : "teaches"
-    USERS ||--o{ ENROLLMENTS : "enrolls"
-    COURSES ||--o{ ENROLLMENTS : "has"
-    COURSES ||--o{ MODULES : "contains"
-    MODULES ||--o{ LESSONS : "has"
-    COURSES ||--o{ LESSONS : "has"
-```
-
----
-
-## 4b. 🗄️ ERD — Sessions, Quizzes & Payments
-
-```mermaid
-erDiagram
-    COURSES {
-        int id PK
-        string title
-    }
-
-    USERS {
-        int id PK
-        string name
-        string email
-    }
-
-    LIVE_SESSIONS {
-        int id PK
-        int course_id FK
-        string title
-        datetime scheduled_at
-        int duration_min
-        int attendees
-        enum status
-        string recording_url
-    }
-
     MODULE_QUIZZES {
         int id PK
         int module_id FK
@@ -305,15 +432,17 @@ erDiagram
         int passing_score
         int time_limit_min
         bool is_required
+        int order
     }
 
     QUIZ_QUESTIONS {
         int id PK
         int quiz_id FK
         text question_text
-        string question_type
+        string question_type "multiple_choice|true_false|fill_blank"
         text options
         string correct_answer
+        text explanation
         int points
     }
 
@@ -323,7 +452,49 @@ erDiagram
         int student_id FK
         int score
         bool passed
+        text answers
         datetime completed_at
+    }
+
+    USERS ||--o{ COURSES : "teaches (instructor)"
+    USERS ||--o{ ENROLLMENTS : "enrolls in"
+    COURSES ||--o{ ENROLLMENTS : "enrolled by students"
+    COURSES ||--o{ MODULES : "organised into"
+    MODULES ||--o{ LESSONS : "contains"
+    MODULES ||--o{ MODULE_QUIZZES : "assessed by"
+    MODULE_QUIZZES ||--o{ QUIZ_QUESTIONS : "has"
+    MODULE_QUIZZES ||--o{ QUIZ_ATTEMPTS : "attempted by"
+    USERS ||--o{ QUIZ_ATTEMPTS : "takes"
+```
+
+---
+
+## 7. 🗄️ ERD — Payments, Sessions & Communication
+
+```mermaid
+erDiagram
+    USERS {
+        int id PK
+        string name
+        string email
+        enum role
+    }
+
+    COURSES {
+        int id PK
+        string title
+        int instructor_id FK
+    }
+
+    LIVE_SESSIONS {
+        int id PK
+        int course_id FK
+        string title
+        datetime scheduled_at
+        int duration_min
+        int attendees
+        enum status "scheduled|live|completed"
+        string recording_url
     }
 
     PAYMENTS {
@@ -340,7 +511,7 @@ erDiagram
         int id PK
         int instructor_id FK
         float amount
-        enum status
+        enum status "pending|approved|paid|rejected"
         string reference
         datetime requested_at
         datetime paid_at
@@ -355,53 +526,15 @@ erDiagram
         int instructor_id FK
     }
 
-    COURSES ||--o{ LIVE_SESSIONS : "hosts"
-    COURSES ||--o{ PAYMENTS : "paid for"
-    USERS ||--o{ PAYMENTS : "makes"
-    USERS ||--o{ PAYOUTS : "requests"
-    USERS ||--o{ MONTHLY_REVENUE : "earns"
-    MODULE_QUIZZES ||--o{ QUIZ_QUESTIONS : "has"
-    MODULE_QUIZZES ||--o{ QUIZ_ATTEMPTS : "attempted by"
-    USERS ||--o{ QUIZ_ATTEMPTS : "takes"
-```
-
----
-
-## 4c. 🗄️ ERD — Communication & Compliance
-
-```mermaid
-erDiagram
-    USERS {
-        int id PK
-        string name
-    }
-
     MESSAGES {
         int id PK
         int sender_id FK
         int receiver_id FK
         text content
         string attachment_url
-        string attachment_type
+        string attachment_type "image|audio|document"
         bool is_read
         datetime created_at
-    }
-
-    NOTIFICATIONS {
-        int id PK
-        string title
-        text message
-        string target
-        string notif_type
-        int sender_id FK
-        datetime sent_at
-    }
-
-    NOTIFICATION_READS {
-        int id PK
-        int user_id FK
-        int notification_id FK
-        datetime read_at
     }
 
     MEETINGS {
@@ -410,7 +543,7 @@ erDiagram
         int host_id FK
         datetime scheduled_at
         int duration_min
-        enum status
+        enum status "scheduled|live|ended|cancelled"
         string room_id
     }
 
@@ -421,31 +554,25 @@ erDiagram
         bool accepted
     }
 
-    CONSENT_RECORDS {
+    REVIEWS {
         int id PK
-        int user_id FK
-        enum consent_type
-        string version
-        bool accepted
-        datetime accepted_at
-    }
-
-    DATA_SUBJECT_REQUESTS {
-        int id PK
-        int user_id FK
-        enum request_type
-        enum status
-        text details
+        int student_id FK
+        int course_id FK
+        int rating
+        text comment
+        text reply
         datetime created_at
     }
 
-    PULSE_STATE_FEEDBACK {
+    NOTIFICATIONS {
         int id PK
-        int user_id FK
-        enum current_state
-        bool disagreed
-        enum user_reported_state
-        datetime created_at
+        string title
+        text message
+        string target
+        string notif_type "announcement|notification"
+        int sender_id FK
+        bool allow_replies
+        datetime sent_at
     }
 
     AUDIT_LOGS {
@@ -456,170 +583,156 @@ erDiagram
         datetime created_at
     }
 
+    COURSES ||--o{ LIVE_SESSIONS : "hosts"
+    COURSES ||--o{ PAYMENTS : "purchased via"
+    COURSES ||--o{ REVIEWS : "reviewed by"
+    USERS ||--o{ PAYMENTS : "makes"
+    USERS ||--o{ PAYOUTS : "requests"
+    USERS ||--o{ MONTHLY_REVENUE : "earns"
     USERS ||--o{ MESSAGES : "sends"
     USERS ||--o{ MESSAGES : "receives"
-    USERS ||--o{ NOTIFICATION_READS : "reads"
     USERS ||--o{ MEETINGS : "hosts"
+    MEETINGS ||--o{ MEETING_INVITES : "invites"
     USERS ||--o{ MEETING_INVITES : "invited to"
-    MEETINGS ||--o{ MEETING_INVITES : "has"
-    USERS ||--o{ CONSENT_RECORDS : "gives"
-    USERS ||--o{ DATA_SUBJECT_REQUESTS : "files"
-    USERS ||--o{ PULSE_STATE_FEEDBACK : "submits"
-    USERS ||--o{ AUDIT_LOGS : "generates"
+    USERS ||--o{ REVIEWS : "writes"
+    USERS ||--o{ AUDIT_LOGS : "logged by"
 ```
 
 ---
 
-## 5. 🧠 PULSE ML Pipeline
+## 8. 🗄️ ERD — Ethics & Compliance
 
 ```mermaid
-flowchart TD
-    A[OULAD Dataset\n28785 students] --> B[Feature Engineering\n31 features]
+erDiagram
+    USERS {
+        int id PK
+        string name
+        string email
+    }
 
-    B --> B1[Behavioural\ntotal_clicks, active_days\navg_clicks_per_day]
-    B --> B2[Assessment\navg_score, num_assessments\ndays_to_first_submit]
-    B --> B3[Demographic\ngender, age_band\nstudied_credits]
-    B --> B4[Composite\nengagement_score\ndecline_index]
+    CONSENT_RECORDS {
+        int id PK
+        int user_id FK
+        enum consent_type "terms|privacy|pulse_processing|marketing|cookie"
+        string version
+        bool accepted
+        string ip_address
+        datetime accepted_at
+        datetime revoked_at
+    }
 
-    B1 & B2 & B3 & B4 --> C[Preprocessing\nStandardScaler + LabelEncoders]
+    DATA_SUBJECT_REQUESTS {
+        int id PK
+        int user_id FK
+        enum request_type "access|correction|deletion|portability|restriction"
+        enum status "pending|in_progress|completed|rejected"
+        text details
+        datetime created_at
+        datetime resolved_at
+        int resolved_by FK
+    }
 
-    C --> D[XGBoost Classifier\nn_estimators=500\nlr=0.05, max_depth=6]
+    PULSE_STATE_FEEDBACK {
+        int id PK
+        int user_id FK
+        enum current_state
+        bool disagreed
+        enum user_reported_state
+        text comment
+        datetime created_at
+    }
 
-    D --> E{Prediction}
+    CONSENT_VERSIONS {
+        int id PK
+        enum document_type "terms|privacy_policy|pulse_disclosure|cookie_policy"
+        string version_number
+        string content_hash
+        datetime effective_date
+    }
 
-    E --> S0[🚀 Thriving\nAccuracy: 72.93%]
-    E --> S1[😐 Coasting]
-    E --> S2[😓 Struggling]
-    E --> S3[🔥 Burning Out]
-    E --> S4[💤 Disengaged]
+    PROCESSING_ACTIVITY_LOGS {
+        int id PK
+        string activity_name
+        text purpose
+        string legal_basis
+        text data_categories
+        string retention_period
+        bool cross_border_transfer
+        datetime created_at
+    }
 
-    S0 & S1 & S2 & S3 & S4 --> F[UPDATE users.pulse_state]
-    F --> G[Student Dashboard\nInstructor Insights\nAdmin PULSE Engine]
+    ETHICS_CHANGE_LOGS {
+        int id PK
+        string change_type
+        text description
+        bool notified_rec
+        datetime created_at
+        int created_by FK
+    }
+
+    USERS ||--o{ CONSENT_RECORDS : "gives consent"
+    USERS ||--o{ DATA_SUBJECT_REQUESTS : "files request"
+    USERS ||--o{ PULSE_STATE_FEEDBACK : "submits feedback"
+    USERS ||--o{ ETHICS_CHANGE_LOGS : "logs change"
 ```
 
 ---
 
-## 6. 🏗️ System Architecture
-
-```mermaid
-flowchart TB
-    subgraph Client["Browser"]
-        FE["React 18 + TypeScript\nVite 5 / React Router 6"]
-    end
-
-    subgraph Vercel["Vercel — Frontend"]
-        PROD["fluentfusionv1.vercel.app"]
-    end
-
-    subgraph Render["Render — Backend"]
-        API["FastAPI 0.111\nPython 3.12\nUvicorn"]
-        TRANS["deep-translator\nLive Translation"]
-        PULSE["XGBoost\nPULSE ML Engine"]
-    end
-
-    subgraph Aiven["Aiven Cloud"]
-        PG["PostgreSQL 15\nSSL ca.pem"]
-    end
-
-    subgraph Email["Email"]
-        SG["SendGrid\nProduction"]
-        SMTP["Gmail SMTP\nDev Fallback"]
-    end
-
-    subgraph Cron["cron-job.org"]
-        PING["Keep-alive ping\nevery 10 min"]
-    end
-
-    FE -- "HTTP/REST + JWT" --> API
-    PROD -- "HTTPS/REST + JWT" --> API
-    API -- "SQLAlchemy ORM" --> PG
-    API --> TRANS
-    API --> PULSE
-    API --> SG
-    SG -- fallback --> SMTP
-    PING -- "GET /health" --> API
-```
-
----
-
-## 7. 🔐 Sequence — JWT Auth & Role Routing
-
-```mermaid
-sequenceDiagram
-    actor U as User
-    participant FE as React Frontend
-    participant API as FastAPI Backend
-    participant DB as PostgreSQL
-
-    U->>FE: Submit login form
-    FE->>API: POST /api/auth/login
-    API->>DB: SELECT user WHERE email=?
-    DB-->>API: User record
-    API->>API: verify_password()
-    API->>API: check is_verified & not banned
-    API->>API: create_access_token(sub, role)
-    API-->>FE: access_token + role
-
-    FE->>FE: Store token in localStorage
-    FE->>FE: role=student → /dashboard
-    FE->>FE: role=instructor → /instructor
-    FE->>FE: role=admin → /admin
-
-    Note over FE,API: Protected request
-    FE->>API: GET /api/student/dashboard\nBearer token
-    API->>API: decode JWT → user_id
-    API->>DB: SELECT user WHERE id=?
-    API->>API: verify role guard
-    API-->>FE: dashboard data
-
-    Note over FE,API: Token expired
-    FE->>API: Request with expired token
-    API-->>FE: 401 Unauthorized
-    FE->>FE: clear token → /login
-```
-
----
-
-## 8. 🌍 Live Translation Flow
+## 9. 🌍 Sequence — Live Translation
 
 ```mermaid
 sequenceDiagram
     actor U as Tourist / User
     participant FE as React Frontend
     participant API as FastAPI Backend
-    participant GT as Google Translate\n(deep-translator)
+    participant CA as In-Memory Cache
+    participant GT as Google Translate (deep-translator)
+    participant PH as Phonetic Dictionary
 
-    U->>FE: Type text or click quick phrase
-    FE->>API: POST /api/translate\n{text, source_lang, target_lang}
-    API->>API: Check in-memory cache
+    U->>FE: Type text or click quick phrase button
+    FE->>FE: Set source lang + target lang
+    FE->>API: POST /api/translate\n{ text, source_lang, target_lang }
+
+    API->>CA: Check cache (md5 key)
     alt Cache hit
-        API-->>FE: Cached translation
+        CA-->>API: Cached result
+        API-->>FE: { translated_text, romanization, usage_note }
     else Cache miss
         API->>GT: GoogleTranslator(src, tgt).translate(text)
         GT-->>API: Translated text
-        API->>API: Lookup phonetic guide\n(Kinyarwanda dictionary)
-        API->>API: Store in cache
-        API-->>FE: {translated_text, romanization, usage_note}
+        API->>PH: Lookup phonetic guide\n(Kinyarwanda dictionary)
+        PH-->>API: romanization + usage_note
+        API->>CA: Store result in cache
+        API-->>FE: { translated_text, romanization, usage_note }
     end
-    FE->>U: Show translation + phonetic guide
-    U->>FE: Click Listen → browser TTS
-    U->>FE: Click Copy → clipboard
+
+    FE->>U: Display translation
+    FE->>U: Show phonetic guide (e.g. mu-ra-KO-ze)
+    FE->>U: Show Rwanda tourism tip
+
+    alt User clicks Listen
+        FE->>FE: SpeechSynthesisUtterance(text, lang)
+        FE->>U: Browser reads translation aloud
+    end
+
+    alt User clicks Copy
+        FE->>FE: navigator.clipboard.writeText()
+        FE->>U: ✅ Copied confirmation
+    end
 ```
 
 ---
 
 ## Summary
 
-| # | Diagram | What it shows |
+| # | Diagram | Page in Report |
 |---|---|---|
-| 1 | Flowchart | Complete user journey — signup, onboarding, all 3 dashboards |
-| 2a | Use Case | Student & Auth actor interactions |
-| 2b | Use Case | Instructor, Admin & Super Admin interactions |
-| 3 | Sequence | Registration, OTP verification, onboarding |
-| 4a | ERD | Core tables: Users, Courses, Modules, Lessons, Enrollments |
-| 4b | ERD | Sessions, Quizzes, Payments, Payouts |
-| 4c | ERD | Messages, Notifications, Meetings, Ethics & Compliance |
-| 5 | ML Pipeline | PULSE: OULAD data → XGBoost → 5 engagement states |
-| 6 | Architecture | Full system: Vercel, Render, Aiven, Email, cron-job.org |
-| 7 | Sequence | JWT auth, role-based routing, token expiry |
-| 8 | Sequence | Live Translation: cache → deep-translator → phonetic guide |
+| 1 | System Architecture | Implementation chapter |
+| 2 | Flowchart — User Journey | System Design chapter |
+| 3 | Use Case — All Actors | System Design chapter |
+| 4 | Sequence — Registration & Onboarding | System Design chapter |
+| 5 | Sequence — JWT Auth & Role Routing | System Design chapter |
+| 6 | ERD — Core Tables | Database Design chapter |
+| 7 | ERD — Payments, Sessions & Communication | Database Design chapter |
+| 8 | ERD — Ethics & Compliance | Ethics chapter |
+| 9 | Sequence — Live Translation | Implementation chapter |
