@@ -239,64 +239,7 @@ flowchart LR
 
 ---
 
-## 4. 🔁 Sequence Diagram — Student Registration & Onboarding
-
-```mermaid
-sequenceDiagram
-    actor U as Student
-    participant FE as React Frontend
-    participant API as FastAPI Backend
-    participant DB as PostgreSQL (Aiven)
-    participant EM as Email Service
-
-    rect rgb(20, 30, 20)
-        Note over U,EM: Step 1 — Registration
-        U->>FE: Fill signup form (name, email, password, role)
-        FE->>API: POST /api/auth/register
-        API->>DB: SELECT user WHERE email = ?
-        DB-->>API: Not found (email available)
-        API->>DB: INSERT User (is_verified=false, otp_code=XXXXXX)
-        DB-->>API: User created (id=N)
-        API->>EM: send_otp_email(email, name, otp)
-        EM-->>U: Email with 6-digit OTP code
-        API-->>FE: { access_token, role, id }
-        FE->>FE: Redirect → /verify-email
-    end
-
-    rect rgb(20, 20, 30)
-        Note over U,EM: Step 2 — Email Verification
-        U->>FE: Enter 6-digit OTP code
-        FE->>API: POST /api/auth/verify-email { email, code }
-        API->>DB: SELECT user WHERE email = ?
-        DB-->>API: User record with otp_code
-        API->>API: Validate code & check expiry
-        API->>DB: UPDATE SET is_verified=true, otp_code=null
-        API->>EM: send_welcome_email(email, name, role)
-        EM-->>U: Welcome email
-        API-->>FE: { message: "verified", role: "student" }
-        FE->>FE: Redirect → /onboard/native-language
-    end
-
-    rect rgb(30, 20, 20)
-        Note over U,FE: Step 3 — 4-Step Onboarding
-        U->>FE: Select native language
-        FE->>FE: Save to localStorage
-        U->>FE: Select target language
-        FE->>FE: Save to localStorage
-        U->>FE: Select learning goal
-        FE->>FE: Save to localStorage
-        U->>FE: Select proficiency level
-        FE->>API: POST /api/student/onboarding\n{ native_lang, learn_lang, goal, level }
-        API->>DB: UPDATE users SET onboarding fields
-        DB-->>API: OK
-        API-->>FE: { message: "onboarding saved" }
-        FE->>FE: Redirect → /dashboard
-    end
-```
-
----
-
-## 5. 🔐 Sequence Diagram — JWT Authentication & Role Routing
+## 4. 🔁 Sequence Diagram — Full System Interaction
 
 ```mermaid
 sequenceDiagram
@@ -305,46 +248,79 @@ sequenceDiagram
     participant AC as AuthContext
     participant API as FastAPI Backend
     participant DB as PostgreSQL
+    participant EM as Email Service
+    participant GT as Google Translate
 
-    rect rgb(20, 30, 20)
-        Note over U,DB: Login Flow
-        U->>FE: Enter email & password → Submit
-        FE->>API: POST /api/auth/login\n(form: username, password)
-        API->>DB: SELECT user WHERE email = ?
+    rect rgb(20, 40, 20)
+        Note over U,EM: Registration & Email Verification
+        U->>FE: Fill signup form (name, email, password, role)
+        FE->>API: POST /api/auth/register
+        API->>DB: Check email uniqueness
+        DB-->>API: Not found
+        API->>DB: INSERT User (is_verified=false, otp=XXXXXX)
+        API->>EM: send_otp_email()
+        EM-->>U: 6-digit OTP email
+        API-->>FE: access_token
+        U->>FE: Enter OTP code
+        FE->>API: POST /api/auth/verify-email
+        API->>DB: Validate OTP & expiry
+        API->>DB: SET is_verified=true
+        API->>EM: send_welcome_email()
+        EM-->>U: Welcome email
+        FE->>FE: Redirect → /onboard/native-language
+    end
+
+    rect rgb(20, 20, 40)
+        Note over U,FE: 4-Step Onboarding (Students only)
+        U->>FE: native lang → target lang → goal → level
+        FE->>API: POST /api/student/onboarding
+        API->>DB: UPDATE user onboarding fields
+        API-->>FE: saved
+        FE->>FE: Redirect → /dashboard
+    end
+
+    rect rgb(40, 20, 20)
+        Note over U,DB: Login & Role-Based Routing
+        U->>FE: Enter email & password
+        FE->>API: POST /api/auth/login
+        API->>DB: SELECT user WHERE email=?
         DB-->>API: User record
-        API->>API: verify_password(plain, hashed)
-        API->>API: Check is_verified = true
-        API->>API: Check status != banned
-        API->>API: create_access_token({ sub: user_id, role })
-        API-->>FE: { access_token, role, name, id, is_first_login }
+        API->>API: verify_password()
+        API->>API: check is_verified & not banned
+        API->>API: create_access_token(sub, role)
+        API-->>FE: access_token + role
         FE->>AC: setToken() + setUser()
-        AC->>AC: Persist to localStorage
+        FE->>FE: student → /dashboard
+        FE->>FE: instructor → /instructor
+        FE->>FE: admin → /admin
     end
 
-    rect rgb(20, 20, 30)
-        Note over FE,FE: Role-Based Redirect
-        FE->>FE: role = "student" → /dashboard
-        FE->>FE: role = "instructor" → /instructor
-        FE->>FE: role = "admin" → /admin
-        FE->>FE: role = "super_admin" → /admin
-    end
-
-    rect rgb(30, 25, 10)
+    rect rgb(40, 35, 10)
         Note over FE,DB: Protected API Request
-        FE->>API: GET /api/student/dashboard\nAuthorization: Bearer <token>
+        FE->>API: GET /api/student/dashboard\nAuthorization: Bearer token
         API->>API: decode JWT → user_id + role
-        API->>DB: SELECT user WHERE id = user_id
-        DB-->>API: User record
-        API->>API: Verify role matches route guard
-        API-->>FE: Dashboard data (JSON)
+        API->>DB: SELECT user WHERE id=?
+        API->>API: verify role guard
+        API-->>FE: dashboard data
     end
 
-    rect rgb(30, 10, 10)
-        Note over U,FE: Token Expiry (1440 min)
+    rect rgb(30, 10, 40)
+        Note over U,GT: Live Translation
+        U->>FE: Type text, select languages
+        FE->>API: POST /api/translate
+        API->>API: Check cache
+        API->>GT: GoogleTranslator().translate()
+        GT-->>API: Translated text
+        API-->>FE: translation + phonetic guide
+        FE->>U: Display result + Listen + Copy
+    end
+
+    rect rgb(10, 10, 10)
+        Note over U,FE: Token Expiry
         FE->>API: Request with expired token
         API-->>FE: 401 Unauthorized
         FE->>AC: clearToken()
-        FE->>FE: Redirect → /login?reason=expired
+        FE->>FE: Redirect → /login
     end
 ```
 
@@ -730,9 +706,7 @@ sequenceDiagram
 | 1 | System Architecture | Implementation chapter |
 | 2 | Flowchart — User Journey | System Design chapter |
 | 3 | Use Case — All Actors | System Design chapter |
-| 4 | Sequence — Registration & Onboarding | System Design chapter |
-| 5 | Sequence — JWT Auth & Role Routing | System Design chapter |
-| 6 | ERD — Core Tables | Database Design chapter |
-| 7 | ERD — Payments, Sessions & Communication | Database Design chapter |
-| 8 | ERD — Ethics & Compliance | Ethics chapter |
-| 9 | Sequence — Live Translation | Implementation chapter |
+| 4 | Sequence — Full System Interaction | System Design chapter |
+| 5 | ERD — Core Tables | Database Design chapter |
+| 6 | ERD — Payments, Sessions & Communication | Database Design chapter |
+| 7 | ERD — Ethics & Compliance | Ethics chapter |
